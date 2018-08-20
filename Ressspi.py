@@ -7,6 +7,7 @@ Created on Wed Oct 12 19:54:51 2016
 """
 import sys
 import os
+
 #Import public paths
 #sys.path.append('Solar_modules')
 #sys.path.append('General_modules')
@@ -1183,7 +1184,7 @@ def ressspiSIM(ressspiReg,data_reg,inputsDjango,inputFile,printReport,plots,imag
 
         if ressspiReg==-2: 
             data=""
-        template_vars=reportOutput(ressspiReg,reg,reportsVar,inputs,data,printReport,pk,version,(os.path.dirname(__file__)))
+        template_vars=reportOutput(ressspiReg,reg,reportsVar,inputs,data,printReport,pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)))
     else:
         template_vars={}
         reportsVar={}

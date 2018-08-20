@@ -15,6 +15,17 @@ from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,thermalOil
 import io
 import base64
 import os
+import PIL
+from PIL import Image
+
+def resize(file,basewidth):
+    img = Image.open(file)
+    wpercent = (basewidth / float(img.size[0]))
+    hsize = int((float(img.size[1]) * float(wpercent)))
+    img = img.resize((basewidth, hsize), PIL.Image.ANTIALIAS)
+    img.save(file,'PNG',quality=200)
+    
+
 
 def SankeyPlot(ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath):
 
@@ -85,6 +96,7 @@ def SankeyPlot(ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI
     plt.tight_layout()
     plt.show()
     fig.savefig(str(plotPath)+'Sankey.png', format='png', dpi=imageQlty)
+
     return sankeyDict
     if ressspiReg==-2:
         f = io.BytesIO()           # Python 3
@@ -1224,7 +1236,8 @@ def prodMonths(ressspiReg,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty):
         ax.set_xticklabels(meses)  #replace the name of the x ticks with your Groups name  
         plt.legend(loc='upper right', borderaxespad=0.,frameon=True)        
       
-    fig.savefig(str(plotPath)+'prodMonths.png', format='png', dpi=imageQlty)    
+    fig.savefig(str(plotPath)+'prodMonths.png', format='png', dpi=imageQlty)  
+#    resize(str(plotPath)+'prodMonths.png',260)
     if ressspiReg==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
