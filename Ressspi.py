@@ -617,7 +617,6 @@ def ressspiSIM(ressspiReg,data_reg,inputsDjango,inputFile,printReport,plots,imag
         outProcess_s=0 #Not used
         hProcess_out=0 #Not used
         
-        
         P_op_Mpa=P_op_bar/10
         
         T_in_K=T_in_C+273
