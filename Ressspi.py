@@ -111,7 +111,9 @@ def ressspiSIM(ressspiReg,data_reg,inputsDjango,inputFile,printReport,plots,imag
     #%%
     # ---------------------------------------------------------------------------------
     
-    if ressspiReg==-2: 
+    if ressspiReg==-2:
+        
+        co2factor=1 #CAMBIAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
         
         file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
@@ -137,28 +139,10 @@ def ressspiSIM(ressspiReg,data_reg,inputsDjango,inputFile,printReport,plots,imag
         co2TonPrice=inputs['co2TonPrice']
         fuel=inputs['currentFuel']
          
-        priceFactor=1
-        if fuel=="Gas Natural" or fuel=="GNL" or fuel=="Natural gas" or fuel=="LNG" or fuel=="NG":
-            co2factor=.2016/1000 #TonCo2/kWh     
-            if fuelPriceUnit=="eur/m3":
-                priceFactor=1/9.02 #http://petromercado.com/blog/37-articulos/182-poder-calorifico-en-kw-del-gasoleo-c-butano-y-pellet.html
+        Fuel_price=inputs['fuelPrice']   #Price of fossil fuel in €/kWh
         
-        if fuel=="Gasoil" or fuel=="Fueloil" or fuel=='Gasoil-C' or fuel=='Gasoil-B' or fuel=='Fueloil1' or fuel=='Fueloil2' or fuel=='Fueloil3':
-            co2factor=.27/1000 #TonCo2/kWh          
-            if fuelPriceUnit=="eur/litro":
-                priceFactor=1/10.18 #http://petromercado.com/blog/37-articulos/182-poder-calorifico-en-kw-del-gasoleo-c-butano-y-pellet.html
-        
-        if fuel=="Electricidad" or fuel=="Electricity":
-            co2factor=.385/1000 #TonCo2/kWh  
-        
-        if fuel=="Otro" or fuel=="Other" or fuel=="Air-propane" or fuel=="Butane" or fuel=="Propane" or fuel=="Biomass":
-            co2factor=.385/1000 #TonCo2/kWh
-            if fuelPriceUnit=="eur/litro":
-                priceFactor=1/10.18 #http://petromercado.com/blog/37-articulos/182-poder-calorifico-en-kw-del-gasoleo-c-butano-y-pellet.html
-    
         
         businessModel=inputs['businessModel']      #Modelo de negocio seleccionado                               
-        Fuel_price=inputs['fuelPrice']*priceFactor   #Price of fossil fuel in €/kWh
          
         #Meteo
         meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
@@ -1121,7 +1105,7 @@ def ressspiSIM(ressspiReg,data_reg,inputsDjango,inputFile,printReport,plots,imag
     # Annual simulations
     if steps_sim==8759:
         if plots[0]==1: #(0) Sankey plot
-            sankeyDict=SankeyPlot(ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
+            image_base64,sankeyDict=SankeyPlot(ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
         if plots[0]==0: #(0) Sankey plot -> no plotting
             sankeyDict={'Production':0,'raw_potential':0,'Thermal_loss':0,'Utilization':0}
         if plots[1]==1: #(1) Production week Winter & Summer
@@ -1241,7 +1225,7 @@ hora_fin_sim=24
 data_reg=74
 inputsDjango={}
 inputFile=1 #For reading directly from file
-ressspiReg=1 #0 if new record #1 if it's already in the database #-1 if it comes from a text file #-2 if it comes from django
+ressspiReg=-2 #0 if new record #1 if it's already in the database #-1 if it comes from a text file #-2 if it comes from django
 
 printReport=1
 
