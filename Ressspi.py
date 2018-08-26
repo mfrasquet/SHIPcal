@@ -1151,6 +1151,7 @@ def ressspiSIM(ressspiReg,data_reg,inputsDjango,inputFile,printReport,plots,imag
     
     #%% 
     if steps_sim==8759:
+        template_vars={}
         reportsVar={'date':inputs['date'],'type_integration':type_integration,
                     'fileName':fileName,'reg':reg,
                     'Area_total':Area_total,'n_coll_loop':n_coll_loop,
@@ -1167,7 +1168,7 @@ def ressspiSIM(ressspiReg,data_reg,inputsDjango,inputFile,printReport,plots,imag
 
         if ressspiReg==-2: 
             data=""
-        template_vars=reportOutput(ressspiReg,reg,reportsVar,inputs,data,printReport,pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)))
+        #template_vars=reportOutput(ressspiReg,reg,reportsVar,inputs,data,printReport,pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)))
     else:
         template_vars={}
         reportsVar={}
