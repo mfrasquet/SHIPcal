@@ -105,7 +105,7 @@ def SankeyPlot(ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI
         f.close()
         return image_base64,sankeyDict
     else:
-        return sankeyDict
+        return 0,sankeyDict
     
 def mollierPlotST(ressspiReg,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty):
     P_op_Mpa=P_op_bar/10
@@ -239,7 +239,7 @@ def mollierPlotST(ressspiReg,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T
     axes = plt.gca()
     axes.set_ylim([0,400])
     axes.set_xlim([-3,11])
-        
+    fig.savefig(str(plotPath)+'Mollier.png', format='png', dpi=imageQlty)    
     if ressspiReg==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
