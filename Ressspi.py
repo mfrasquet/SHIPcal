@@ -980,15 +980,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
 # -------------------------------------------------------------------------
     #%% 
        
-#lang="spa"
-lang="eng"
-#sender="generico"
-sender="solatom"
-#sender="ressspi"
-#cabecera="Estudio preliminar"
-cabecera="Resultados de la <br> simulación"
-#cabecera="Simulation results"
-mapama=0 #mapama=1 generates a mapama image
+
     
     
 #Plot Control ---------------------------------------
@@ -1017,14 +1009,11 @@ mes_ini_sim=1
 dia_ini_sim=1
 hora_ini_sim=1
 
-mes_fin_sim=1  
-dia_fin_sim=2
+mes_fin_sim=12 
+dia_fin_sim=31
 hora_fin_sim=24
 
 
-
-inputsDjango={}
-ressspiReg=0 #0 if new record; -2 if it comes from www.ressspi.com
 
 # -------------------- FINE TUNNING CONTROL ---------
 mofINV=1.6 #Sobre el coste de inversion
@@ -1043,18 +1032,26 @@ n_coll_loop=4
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_S_PD"
+type_integration="SL_L_P"
 almVolumen=5000 #litros
 
 # --------------------------------------------------
-confReport={'lang':lang,'sender':sender,'cabecera':cabecera,'mapama':mapama}
+confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
 # ---------------------------------------------------
 
-inputsDjango={'date': '2018-08-06', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'Deretil 2', 'sectorIndustry': 'Chemical', 'fuel': 'NG', 'fuelPrice': 0.03, 'co2TonPrice': 0.0, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Almeria', 'location_aux': '', 'surface': 400, 'terrain': 'rooftop_sandwich', 'distance': 400, 'orientation': 'NS', 'inclination': 'soft-tilt', 'shadows': 'free', 'fluid': 'steam', 'pressure': 7.5, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 125.0, 'connection': 'process', 'process': '', 'demand': 78699261.0, 'demandUnit': 'kWh', 'hourINI': '1', 'hourEND': '24', 'Mond': 0.14285714285714285, 'Tues': 0.14285714285714285, 'Wend': 0.14285714285714285, 'Thur': 0.14285714285714285, 'Fri': 0.14285714285714285, 'Sat': 0.14285714285714285, 'Sun': 0.14285714285714285, 'Jan': 0.08333333333333333, 'Feb': 0.08333333333333333, 'Mar': 0.08333333333333333, 'Apr': 0.08333333333333333, 'May': 0.08333333333333333, 'Jun': 0.08333333333333333, 'Jul': 0.08333333333333333, 'Aug': 0.08333333333333333, 'Sep': 0.08333333333333333, 'Oct': 0.08333333333333333, 'Nov': 0.08333333333333333, 'Dec': 0.08333333333333333, 'last_reg': 81}
+ressspiReg=0 #0 if new record; -2 if it comes from www.ressspi.com
 
-
-#[template_vars,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,inputsDjango['last_reg'])
+if ressspiReg==0:
+    #To perform simulations from command line using hardcoded inputs
+    inputsDjango={}
+    last_reg=666
+else:
+    #To perform simulations from command line using inputs from django
+    inputsDjango={'date': '2018-09-15', 'name': 'Salchi', 'email': 'zzaira.fernandez@gmail.com', 'industry': 'para server3', 'sectorIndustry': 'Food_beverages', 'fuel': 'NG', 'fuelPrice': 0.057, 'fuelUnit': 'eur_kWh', 'co2factor': 0.0002, 'co2TonPrice': 0.0, 'businessModel': 'turnkey', 'location': 'Ahmednagar', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 70.0, 'tempOUT': 120.0, 'connection': '', 'process': '', 'demand': 5000.0, 'demandUnit': 'MWh', 'hourINI': 7, 'hourEND': 21, 'Mond': 0.2, 'Tues': 0.2, 'Wend': 0.2, 'Thur': 0.2, 'Fri': 0.2, 'Sat': 0.0, 'Sun': 0.0, 'Jan': 0.08, 'Feb': 0.08, 'Mar': 0.08, 'Apr': 0.08, 'May': 0.08, 'Jun': 0.08, 'Jul': 0.08, 'Aug': 0.08, 'Sep': 0.08, 'Oct': 0.08, 'Nov': 0.08, 'Dec': 0.08, 'last_reg': 221}
+    last_reg=inputsDjango['last_reg']
+   
+#[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
