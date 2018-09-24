@@ -938,7 +938,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     if steps_sim==8759: #The report is only available when annual simulation is performed
         if ressspiReg==-2:
             fileName="results"+str(reg)
-            reportsVar={'date':inputs['date'],'type_integration':type_integration,
+            reportsVar={'logo_output':'no_logo','date':inputs['date'],'type_integration':type_integration,
                         'fileName':fileName,'reg':reg,
                         'Area_total':Area_total,'n_coll_loop':n_coll_loop,
                         'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs}
@@ -958,7 +958,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
         else:
             template_vars={} 
-            reportsVar={'version':version,'type_integration':type_integration,
+            reportsVar={'logo_output':'no_logo','version':version,'type_integration':type_integration,
                         'energyStored':energyStored,"location":localMeteo,
                         'Area_total':Area_total,'n_coll_loop':n_coll_loop,
                         'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,

@@ -40,7 +40,7 @@ def djangoReport(inputsDjango):
         factor_uni_consum=1000/1000
     if inputsDjango['demandUnit']=='GWh':
         factor_uni_consum=1000000/1000
-    if inputsDjango['demandUnit']=='kJ':
+    if inputsDjango['demandUnit']=='KJ':
         factor_uni_consum=0.000278/1000
     if inputsDjango['demandUnit']=='BTU':
         factor_uni_consum=0.000293/1000
