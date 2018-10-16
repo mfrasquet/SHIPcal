@@ -1021,7 +1021,7 @@ mofDNI=1.1  #Corrección a fichero Meteonorm
 mofProd=.9 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=1  
+num_loops=4  
 n_coll_loop=4
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1032,7 +1032,7 @@ n_coll_loop=4
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
+type_integration="SL_L_PS"
 almVolumen=5000 #litros
 
 # --------------------------------------------------
@@ -1042,7 +1042,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
 # ---------------------------------------------------
 
-ressspiReg=0 #0 if new record; -2 if it comes from www.ressspi.com
+ressspiReg=-2 #0 if new record; -2 if it comes from www.ressspi.com
 
 if ressspiReg==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1050,7 +1050,7 @@ if ressspiReg==0:
     last_reg=666
 else:
     #To perform simulations from command line using inputs from django
-    inputsDjango={'date': '2018-09-15', 'name': 'Salchi', 'email': 'zzaira.fernandez@gmail.com', 'industry': 'para server3', 'sectorIndustry': 'Food_beverages', 'fuel': 'NG', 'fuelPrice': 0.057, 'fuelUnit': 'eur_kWh', 'co2factor': 0.0002, 'co2TonPrice': 0.0, 'businessModel': 'turnkey', 'location': 'Ahmednagar', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 70.0, 'tempOUT': 120.0, 'connection': '', 'process': '', 'demand': 5000.0, 'demandUnit': 'MWh', 'hourINI': 7, 'hourEND': 21, 'Mond': 0.2, 'Tues': 0.2, 'Wend': 0.2, 'Thur': 0.2, 'Fri': 0.2, 'Sat': 0.0, 'Sun': 0.0, 'Jan': 0.08, 'Feb': 0.08, 'Mar': 0.08, 'Apr': 0.08, 'May': 0.08, 'Jun': 0.08, 'Jul': 0.08, 'Aug': 0.08, 'Sep': 0.08, 'Oct': 0.08, 'Nov': 0.08, 'Dec': 0.08, 'last_reg': 221}
+    inputsDjango= {'date': '2018-10-14', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'replica_indio', 'sectorIndustry': 'Laundries', 'fuel': 'Gasoil-B', 'fuelPrice': 9.823182711198428e-05, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Ahmednagar', 'location_aux': '', 'surface': 50000, 'terrain': '', 'distance': 50000, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 3.0, 'pressureUnit': 'bar', 'tempIN': 30.0, 'tempOUT': 130.0, 'connection': 'storage', 'process': '', 'demand': 5000.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 24, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 269}   
     last_reg=inputsDjango['last_reg']
    
 #[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
