@@ -3,6 +3,9 @@
 """
 Created on Wed Oct 12 19:54:51 2016
 
+version="1.1.7" 
+    -Significant change in IAM function to allow Pitch/Azimuth/Roll
+
 @author: Miguel Frasquet
 """
 
@@ -42,7 +45,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     #Sender identity. Needed for use customized modules or generic modules (Solar collectors, finance, etc.)
     sender=confReport['sender']
     
-    version="1.0.7" #Ressspi version
+    version="1.1.7" #Ressspi version
     lang=confReport['lang'] #Language
         
     #Paths
