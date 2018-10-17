@@ -83,9 +83,51 @@ def theta_IAMs(SUN_AZ_DP,SUN_ELV_DP,beta,orient_az_rad):
     #theta_transv_deg=theta_transv_rad*180/np.pi
     # -----------------------------------------------------
     return [theta_transv_rad,theta_i_rad]
+
+def theta_IAMs_v2(SUN_AZ,SUN_ELV,LONG_INCL,HEAD,ROLL):
+   
+    
+   sunX=np.cos(SUN_ELV)*np.sin(SUN_AZ)
+   sunY=np.cos(SUN_ELV)*np.cos(SUN_AZ)
+   sunZ=np.sin(SUN_ELV)
+
+   theta=LONG_INCL*np.pi/180
+   alpha=ROLL*np.pi/180
+   beta=HEAD*np.pi/180
+
+   sunXl = sunX*(np.cos(alpha)*np.cos(beta) + np.sin(alpha)*np.sin(beta)*np.sin(theta)) - sunY*(np.cos(alpha)*np.sin(beta) - np.cos(beta)*np.sin(alpha)*np.sin(theta)) + sunZ*np.sin(alpha)*np.cos(theta)
+   sunYl = sunY*np.cos(beta)*np.cos(theta) - sunZ*np.sin(theta) + sunX*np.sin(beta)*np.cos(theta)
+   sunZl = sunY*(np.sin(alpha)*np.sin(beta) + np.cos(alpha)*np.cos(beta)*np.sin(theta)) - sunX*(np.cos(beta)*np.sin(alpha) - np.cos(alpha)*np.sin(beta)*np.sin(theta)) + sunZ*np.cos(alpha)*np.cos(theta)
+
+
+
+   elevacion_local_trans=np.arctan(sunZl/sunXl)
+
+   if elevacion_local_trans<0 and sunZl>0:
+       elevacion_local_trans=elevacion_local_trans+np.pi # adjuste arc tangente para tener elevaccion es siempre positiva
+
+   if elevacion_local_trans>0 and sunZl<0:
+       elevacion_local_trans=elevacion_local_trans-np.pi #elevaccion relativa negativa, en el (imposible?) caso que el sol sea por debajo del plano base del contenedor
+
+
+   elevacion_local_long=np.arctan(sunZl/sunYl)
+
+   if elevacion_local_long<0 and sunZl>0:
+       elevacion_local_long=elevacion_local_long+np.pi #adjuste arc tangente para tener elevaccion es siempre positiva
+
+   if elevacion_local_long>0 and sunZl<0:
+       elevacion_local_long=elevacion_local_long-np.pi #elevaccion relativa negativa, en el (imposible?) caso que el sol sea por debajo del plano base del contenedor
+
+
+   elevacion_local_long=elevacion_local_long*180/np.pi-90
+   elevacion_local_trans=elevacion_local_trans*180/np.pi-90
+
+
+
+   return[elevacion_local_trans,elevacion_local_long]
     
 def IAM_calc(ang_target,IAM_type,file_loc):
-
+    ang_target=abs(ang_target)
     IAM_raw = np.loadtxt(file_loc, delimiter=",")
     
     
