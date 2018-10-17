@@ -581,21 +581,23 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     for i in range(0,steps_sim):
    
-#        theta_transv_rad[i],theta_i_rad[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad)
         theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
         theta_i_deg[i]=abs(theta_i_deg[i])
 
-        if sender!='solatom': #Using Solatom Collector
+        if sender=='solatom': #Using Solatom Collector
             IAM[i]=optic_efficiency_N(theta_transv_deg[i],theta_i_deg[i],n_coll_loop) #(theta_transv_deg[i],theta_i_deg[i],n_coll_loop):
             IAM_long[i]=0
             IAM_t[i]=0
         else:
-            #Cálculo del IAM long y transv
-            
-            [IAM_long[i]]=IAM_calc(theta_i_deg[i],0,IAMfile_loc) #Longitudinal
-            [IAM_t[i]]=IAM_calc(theta_transv_deg[i],1,IAMfile_loc) #Transversal
-            IAM[i]=IAM_long[i]*IAM_t[i]
-
+                #Cálculo del IAM long y transv
+            if SUN_ELV[i]>0:
+                [IAM_long[i]]=IAM_calc(theta_i_deg[i],0,IAMfile_loc) #Longitudinal
+                [IAM_t[i]]=IAM_calc(theta_transv_deg[i],1,IAMfile_loc) #Transversal
+                IAM[i]=IAM_long[i]*IAM_t[i]
+            else:
+                IAM_long[i]=0
+                IAM_t[i]=0
+                IAM[i]=IAM_long[i]*IAM_t[i]
 
         
       
