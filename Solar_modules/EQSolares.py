@@ -85,7 +85,7 @@ def theta_IAMs(SUN_AZ_DP,SUN_ELV_DP,beta,orient_az_rad):
     return [theta_transv_rad,theta_i_rad]
     
 def IAM_calc(ang_target,IAM_type,file_loc):
-
+    ang_target=abs(ang_target)
     IAM_raw = np.loadtxt(file_loc, delimiter=",")
     
     
