@@ -614,6 +614,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                         [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageWaterSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
                     else:
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                 
+                        
                         [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageOilSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
      
                 if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
@@ -641,7 +642,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                         T_av_process_K=(T_out_process_K+T_in_process_K)/2
                         [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
                         flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K))      
-                        [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                 
+                        [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                                                                                                          
                         [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageOilSimple(Q_prod[i],Demand[i])
     
                 if type_integration=="SL_L_RF":
@@ -676,6 +677,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                         [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
                         flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K))      
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                 
+                        
                         if newBypass=="REC":
                             flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating                         
                         else:
@@ -1021,7 +1023,7 @@ mofDNI=1.1  #Corrección a fichero Meteonorm
 mofProd=.9 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=4  
+num_loops=1 
 n_coll_loop=4
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1032,7 +1034,7 @@ n_coll_loop=4
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_PS"
+type_integration="SL_L_P"
 almVolumen=5000 #litros
 
 # --------------------------------------------------
@@ -1050,8 +1052,8 @@ if ressspiReg==0:
     last_reg=666
 else:
     #To perform simulations from command line using inputs from django
-    inputsDjango= {'date': '2018-10-14', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'replica_indio', 'sectorIndustry': 'Laundries', 'fuel': 'Gasoil-B', 'fuelPrice': 9.823182711198428e-05, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Ahmednagar', 'location_aux': '', 'surface': 50000, 'terrain': '', 'distance': 50000, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 3.0, 'pressureUnit': 'bar', 'tempIN': 30.0, 'tempOUT': 130.0, 'connection': 'storage', 'process': '', 'demand': 5000.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 24, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 269}   
+    inputsDjango= {'fuelPrice': 0.05, 'demandUnit': 'kWh', 'businessModel': 'turnkey', 'co2factor': 0.0002, 'Sun': 0.0, 'location': 'Sevilla', 'Feb': 0.091, 'sectorIndustry': 'Chemical', 'distance': 500, 'surface': 500, 'Aug': 0.0, 'Nov': 0.091, 'connection': 'storage', 'Mond': 0.2, 'May': 0.091, 'Sep': 0.091, 'orientation': 'NS', 'hourEND': 18, 'Mar': 0.091, 'hourINI': 8, 'tempIN': 35.0, 'name': 'server', 'Sat': 0.0, 'pressure': 25.0, 'fluid': 'oil', 'location_aux': '', 'last_reg': 271, 'tempOUT': 200.0, 'Thur': 0.2, 'email': 'miguel.frasquet@solatom.com', 'Apr': 0.091, 'fuel': 'NG', 'Jan': 0.091, 'pressureUnit': 'bar', 'Oct': 0.091, 'Wend': 0.2, 'demand': 180000.0, 'terrain': 'clean_ground', 'Jun': 0.091, 'Jul': 0.091, 'Dec': 0.091, 'fuelUnit': 'eur_kWh', 'inclination': 'flat', 'shadows': 'free', 'industry': 'Magtel', 'date': '2018-10-17', 'Fri': 0.2, 'process': '', 'Tues': 0.2, 'co2TonPrice': 15.0}
     last_reg=inputsDjango['last_reg']
    
-#[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 

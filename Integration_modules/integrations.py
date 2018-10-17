@@ -185,6 +185,45 @@ def operationWaterSimple(bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_
         newBypass="PROD"
     return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
 
+def operationOilSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old):
+#SL_L_P Supply level with liquid heat transfer media Parallel integration pg52    
+    [T_in_K]=inputsWithDNIOilSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)    
+    #Calculo el flowrate necesario para poder dar el salto de temp necesario
+    T_out_K=T_out_C+273
+    T_av_K=(T_in_K+T_out_K)/2
+    [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
+    
+    flow_rate_kgs=1 #kg/s
+    T_out_K,Perd_termicas=IT_tempOil(T_in_K,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
+
+    if flow_rate_kgs<=m_dot_min_kgs and T_out_K>T_in_K: #El caudal necesario para obtener la temp de salida es inferior al mínimo
+        #RECIRCULACION
+        flow_rate_rec=flow_rate_kgs
+        T_out_K,Perd_termicas=IT_tempOil(T_in_K,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
+        Q_prod=0 #No hay produccion
+        
+        T_av_K=(T_in_K+T_out_K)/2
+        [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
+        
+        Q_prod_rec=flow_rate_rec*Cp_av*(T_out_K-T_in_K)
+        bypass.append("REC")
+        newBypass="REC"
+    else:
+        #PRODUCCION
+        if bypass_old=="REC":
+            if Q_prod_rec_old>0:
+                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*FS #In kWh
+            else:
+                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS#In kWh
+        else:
+            Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS #In kW
+        flow_rate_rec=0
+        Q_prod_rec=0
+        bypass.append("PROD")
+        newBypass="PROD"
+    return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
+ 
+
 def outputKettle(P_op_Mpa,almVolumen,T_alm_K_old,Q_prod,T_in_C_AR):
     
     almacenamiento=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Propiedades en el almacenamiento
