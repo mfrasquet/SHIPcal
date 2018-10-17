@@ -5,6 +5,7 @@ Created on Wed Oct 12 19:54:51 2016
 
 version="1.1.7" 
     -Significant change in IAM function to allow Pitch/Azimuth/Roll
+    -operationOilSimple included
 
 @author: Miguel Frasquet
 """
