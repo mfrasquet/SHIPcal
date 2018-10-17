@@ -193,12 +193,12 @@ def operationOilSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,
     T_av_K=(T_in_K+T_out_K)/2
     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
     
-    flow_rate_kgs=1 #kg/s
-    T_out_K,Perd_termicas=IT_tempOil(T_in_K,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
+    [flow_rate_kgs,Perd_termicas]=flow_calcOil (T_out_K,T_in_K,Cp_av,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
+
 
     if flow_rate_kgs<=m_dot_min_kgs and T_out_K>T_in_K: #El caudal necesario para obtener la temp de salida es inferior al mínimo
         #RECIRCULACION
-        flow_rate_rec=flow_rate_kgs
+        flow_rate_rec=coef_flow_rec*m_dot_min_kgs
         T_out_K,Perd_termicas=IT_tempOil(T_in_K,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
         Q_prod=0 #No hay produccion
         

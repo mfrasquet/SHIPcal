@@ -211,7 +211,7 @@ def reportOutputOffline(reportsVar):
     print("")
     print("////////////////// Results from Ressspi v."+reportsVar['version']+" ///////////////////")
     print("Location: "+reportsVar['location']+" ("+str(round(reportsVar['DNI_anual_irradiation'],2))+" kWh with ModfDNI: "+str(reportsVar['mofDNI'])+")")
-    print("Solar plant: "+str(reportsVar['Area_total'])+" m2 with "+str(reportsVar['n_coll_loop'])+" collectors per loop, in "+str(reportsVar['num_loops'])+" loops")
+    print("Solar plant: "+str(int(reportsVar['Area_total']*1.5))+" m2 with "+str(reportsVar['n_coll_loop'])+" collectors per loop, in "+str(reportsVar['num_loops'])+" loops")
     print("Storage: "+str(int(reportsVar['energyStored']))+" kWh")
     print("Integration scheme: "+reportsVar['type_integration'])
     print("/// SOLAR PRODUCTION:")

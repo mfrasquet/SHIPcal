@@ -115,7 +115,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     if ressspiReg==0:  #Simulation called from Python file
 
         ## TO BE IMPLEMENTED 
-        surfaceAvailable=1000 #Surface available for the solar plant
+        surfaceAvailable=500 #Surface available for the solar plant
         orientation="NS" 
         inclination="flat"
         shadowInput="free"
@@ -123,27 +123,27 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         terreno="clean_ground"
         
         ## ENERGY DEMAND
-        dayArray=[0,0,0,0,0,0,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,0,0,0,0,0,0] #12 hours day profile
-        weekArray=[0.2,0.2,0.2,0.2,0.2,0,0] #No weekends
+        dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
+        weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=190000 #kWh
+        totalConsumption=180000 #kWh
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         
         ## PROCESS
-        fluidInput="steam" #"Agua sobrecalentada" "vapor" "Aceite térmico" 
-        T_out_C=180 #Temperatura alta
-        T_in_C=90 #Temperatura baja
-        P_op_bar=8 #bar 
+        fluidInput="oil" #"water" "steam" "oil" 
+        T_out_C=200 #Temperatura alta
+        T_in_C=20 #Temperatura baja
+        P_op_bar=25 #bar 
         
         ## FINANCE
         businessModel="turnkey"
         fuel="Gasoil-B" #Type of fuel
         Fuel_price=0.05 #Price of fossil fuel in €/kWh
-        co2TonPrice=7.5 #(€/TonCo2)
+        co2TonPrice=0 #(€/TonCo2)
         co2factor=1 #Default value 1, after it will be modified
 
         ## METEO
-        localMeteo="Badajoz.dat" #Be sure this location is included in Ressspi DB
+        localMeteo="Sevilla.dat" #Be sure this location is included in Ressspi DB
         meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
         file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
         Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
@@ -244,7 +244,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     #SUN_ZEN=output[:,8] #rad
     DNI=output[:,9] *mofDNI # W/m2
     DNI_positive_hours=(0 < DNI).sum()
-    temp=output[:,10]+273 #K
+    temp=output[:,10]+273 #K Ambient temperature
     step_sim=output [:,11]   
     steps_sim=len(output) #Numero de steps en la simulacion
     
@@ -268,7 +268,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     T_in_process_C=0 #Not used
     outProcess_s=0 #Not used
     hProcess_out=0 #Not used
-    
+    in_s=0
+    out_s=0
+    h_in=0
+    h_out=0
     
     if type_integration=="SL_L_RF":    
         
@@ -328,30 +331,32 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
             
         
-        inputState=IAPWS97(P=P_op_Mpa, T=T_in_process_K)
-        sProcess_in=inputState.s
-        hProcess_in=inputState.h  
+
         
         if fluidInput!="oil":
+            inputState=IAPWS97(P=P_op_Mpa, T=T_in_process_K)
+            sProcess_in=inputState.s
+            hProcess_in=inputState.h  
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273    
     
         T_out_K=T_out_C+273
         T_out_process_K=T_out_K
         T_out_process_C=T_out_C
-        outputProcessState=IAPWS97(P=P_op_Mpa, T=T_out_process_K)
-        outProcess_s=outputProcessState.s
-        hProcess_out=outputProcessState.h    
-        
-        
-        
-        inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
-        h_in=inputState.h    
-        in_s=inputState.s
-        in_x=inputState.x
-        outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
-        out_s=outputState.s
-        h_out=outputState.h
+        if fluidInput!="oil":
+            outputProcessState=IAPWS97(P=P_op_Mpa, T=T_out_process_K)
+            outProcess_s=outputProcessState.s
+            hProcess_out=outputProcessState.h    
+            
+            
+            
+            inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
+            h_in=inputState.h    
+            in_s=inputState.s
+            in_x=inputState.x
+            outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
+            out_s=outputState.s
+            h_out=outputState.h
         
     
     if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
@@ -574,6 +579,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     storage_energy=np.zeros(steps_sim)
     
     for i in range(0,steps_sim):
+        if i==40:
+            a=5
     
         theta_transv_rad[i],theta_i_rad[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad)
     
@@ -1007,24 +1014,24 @@ plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,0]
 
 finance_study=1
 
-mes_ini_sim=1
+mes_ini_sim=6
 dia_ini_sim=1
 hora_ini_sim=1
 
-mes_fin_sim=12 
-dia_fin_sim=31
+mes_fin_sim=6
+dia_fin_sim=1
 hora_fin_sim=24
 
 
 
 # -------------------- FINE TUNNING CONTROL ---------
-mofINV=1.6 #Sobre el coste de inversion
-mofDNI=1.1  #Corrección a fichero Meteonorm
-mofProd=.9 #Factor de seguridad a la producción de los módulos
+mofINV=1 #Sobre el coste de inversion
+mofDNI=1  #Corrección a fichero Meteonorm
+mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
 num_loops=1 
-n_coll_loop=4
+n_coll_loop=6
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1034,7 +1041,7 @@ n_coll_loop=4
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
+type_integration="SL_L_PS"
 almVolumen=5000 #litros
 
 # --------------------------------------------------
@@ -1044,7 +1051,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
 # ---------------------------------------------------
 
-ressspiReg=-2 #0 if new record; -2 if it comes from www.ressspi.com
+ressspiReg=0 #0 if new record; -2 if it comes from www.ressspi.com
 
 if ressspiReg==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1055,5 +1062,5 @@ else:
     inputsDjango= {'fuelPrice': 0.05, 'demandUnit': 'kWh', 'businessModel': 'turnkey', 'co2factor': 0.0002, 'Sun': 0.0, 'location': 'Sevilla', 'Feb': 0.091, 'sectorIndustry': 'Chemical', 'distance': 500, 'surface': 500, 'Aug': 0.0, 'Nov': 0.091, 'connection': 'storage', 'Mond': 0.2, 'May': 0.091, 'Sep': 0.091, 'orientation': 'NS', 'hourEND': 18, 'Mar': 0.091, 'hourINI': 8, 'tempIN': 35.0, 'name': 'server', 'Sat': 0.0, 'pressure': 25.0, 'fluid': 'oil', 'location_aux': '', 'last_reg': 271, 'tempOUT': 200.0, 'Thur': 0.2, 'email': 'miguel.frasquet@solatom.com', 'Apr': 0.091, 'fuel': 'NG', 'Jan': 0.091, 'pressureUnit': 'bar', 'Oct': 0.091, 'Wend': 0.2, 'demand': 180000.0, 'terrain': 'clean_ground', 'Jun': 0.091, 'Jul': 0.091, 'Dec': 0.091, 'fuelUnit': 'eur_kWh', 'inclination': 'flat', 'shadows': 'free', 'industry': 'Magtel', 'date': '2018-10-17', 'Fri': 0.2, 'process': '', 'Tues': 0.2, 'co2TonPrice': 15.0}
     last_reg=inputsDjango['last_reg']
    
-[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+#[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 

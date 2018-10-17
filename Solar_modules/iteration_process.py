@@ -111,5 +111,9 @@ def flow_calcOil (T_out_K,T_in_K,Cp_av,temp_amb_K,REC_type,theta_i_rad,DNI,Long,
     [Q_loss_rec]=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI) #W/m
     flow_rate_kgs=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/((T_out_K-T_in_K)*Cp_av*1000)
 
-    Perd_termicas=Q_loss_rec*n_coll_loop*Long    
+    Perd_termicas=Q_loss_rec*n_coll_loop*Long
+    if flow_rate_kgs<=0:
+        flow_rate_kgs=0
+        Perd_termicas=0
+        
     return [flow_rate_kgs,Perd_termicas]
