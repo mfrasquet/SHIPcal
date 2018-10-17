@@ -189,6 +189,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     IAMfile_loc=IAM_folder+IAM_file
     beta=0 #Inclination not implemented
     orient_az_rad=0 #Orientation not implemented
+    roll=0 #Roll not implemented
        
     
     D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
@@ -581,7 +582,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     for i in range(0,steps_sim):
    
         theta_transv_rad[i],theta_i_rad[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad)
-    
+        theta_transv_rad2[i],theta_long_rad2[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+        
         #Cálculo del IAM long y transv
         theta_i_deg[i]=theta_i_rad[i]*180/np.pi
         theta_transv_deg[i]=theta_transv_rad[i]*180/np.pi
