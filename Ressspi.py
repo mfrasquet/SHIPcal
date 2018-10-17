@@ -27,7 +27,7 @@ from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,check_overwrite
 from General_modules.demandCreator_v1 import demandCreator
 from General_modules.fromDjangotoRessspi import djangoReport
 from Solar_modules.EQSolares import SolarData
-from Solar_modules.EQSolares import theta_IAMs
+from Solar_modules.EQSolares import theta_IAMs,theta_IAMs_v2
 from Solar_modules.EQSolares import IAM_calc
 from Solar_modules.iteration_process import flow_calc, flow_calcOil
 from Solar_modules.iteration_process import IT_temp,IT_tempOil
@@ -582,7 +582,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     for i in range(0,steps_sim):
    
         theta_transv_rad[i],theta_i_rad[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad)
-        theta_transv_rad2[i],theta_long_rad2[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+#        theta_transv_rad[i],theta_i_rad[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
         
         #Cálculo del IAM long y transv
         theta_i_deg[i]=theta_i_rad[i]*180/np.pi
