@@ -193,7 +193,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     IAMfile_loc=IAM_folder+IAM_file
     beta=0 #Inclination not implemented
     orient_az_rad=0 #Orientation not implemented
-    roll=-8 #Roll not implemented
+    roll=0 #Roll not implemented
        
     
     D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
@@ -760,7 +760,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
     #---- ANUAL SUMMARY -----------------------------------------------            
-    print("IAM total: "+str(sum(IAM)))
     Production_max=sum(Q_prod) #Produccion total en kWh. Asumiendo que se consume todo lo producido
     Production_lim=sum(Q_prod_lim) #Produccion limitada total en kWh
     Demand_anual=sum(Demand) #Demanda energética anual
@@ -1071,5 +1070,5 @@ else:
     inputsDjango= {'fuelPrice': 0.05, 'demandUnit': 'kWh', 'businessModel': 'turnkey', 'co2factor': 0.0002, 'Sun': 0.0, 'location': 'Sevilla', 'Feb': 0.091, 'sectorIndustry': 'Chemical', 'distance': 500, 'surface': 500, 'Aug': 0.0, 'Nov': 0.091, 'connection': 'storage', 'Mond': 0.2, 'May': 0.091, 'Sep': 0.091, 'orientation': 'NS', 'hourEND': 18, 'Mar': 0.091, 'hourINI': 8, 'tempIN': 35.0, 'name': 'server', 'Sat': 0.0, 'pressure': 25.0, 'fluid': 'oil', 'location_aux': '', 'last_reg': 271, 'tempOUT': 200.0, 'Thur': 0.2, 'email': 'miguel.frasquet@solatom.com', 'Apr': 0.091, 'fuel': 'NG', 'Jan': 0.091, 'pressureUnit': 'bar', 'Oct': 0.091, 'Wend': 0.2, 'demand': 180000.0, 'terrain': 'clean_ground', 'Jun': 0.091, 'Jul': 0.091, 'Dec': 0.091, 'fuelUnit': 'eur_kWh', 'inclination': 'flat', 'shadows': 'free', 'industry': 'Magtel', 'date': '2018-10-17', 'Fri': 0.2, 'process': '', 'Tues': 0.2, 'co2TonPrice': 15.0}
     last_reg=inputsDjango['last_reg']
    
-[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+#[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
