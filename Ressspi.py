@@ -147,7 +147,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         co2factor=1 #Default value 1, after it will be modified
 
         ## METEO
-        localMeteo="Sevilla.dat" #Be sure this location is included in Ressspi DB
+        localMeteo="Fargo_SAM.dat" #Be sure this location is included in Ressspi DB
         meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
         file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
         Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
@@ -1022,12 +1022,12 @@ plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,0]
 
 finance_study=1
 
-mes_ini_sim=1
-dia_ini_sim=1
+mes_ini_sim=3
+dia_ini_sim=21
 hora_ini_sim=1
 
-mes_fin_sim=12
-dia_fin_sim=31
+mes_fin_sim=3
+dia_fin_sim=21
 hora_fin_sim=24
 
 
@@ -1038,8 +1038,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=1 
-n_coll_loop=6
+num_loops=2 
+n_coll_loop=10
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1050,7 +1050,7 @@ n_coll_loop=6
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
 type_integration="SL_L_PS"
-almVolumen=5000 #litros
+almVolumen=10000 #litros
 
 # --------------------------------------------------
 confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
@@ -1067,8 +1067,8 @@ if ressspiReg==0:
     last_reg=666
 else:
     #To perform simulations from command line using inputs from django
-    inputsDjango= {'fuelPrice': 0.05, 'demandUnit': 'kWh', 'businessModel': 'turnkey', 'co2factor': 0.0002, 'Sun': 0.0, 'location': 'Sevilla', 'Feb': 0.091, 'sectorIndustry': 'Chemical', 'distance': 500, 'surface': 500, 'Aug': 0.0, 'Nov': 0.091, 'connection': 'storage', 'Mond': 0.2, 'May': 0.091, 'Sep': 0.091, 'orientation': 'NS', 'hourEND': 18, 'Mar': 0.091, 'hourINI': 8, 'tempIN': 35.0, 'name': 'server', 'Sat': 0.0, 'pressure': 25.0, 'fluid': 'oil', 'location_aux': '', 'last_reg': 271, 'tempOUT': 200.0, 'Thur': 0.2, 'email': 'miguel.frasquet@solatom.com', 'Apr': 0.091, 'fuel': 'NG', 'Jan': 0.091, 'pressureUnit': 'bar', 'Oct': 0.091, 'Wend': 0.2, 'demand': 180000.0, 'terrain': 'clean_ground', 'Jun': 0.091, 'Jul': 0.091, 'Dec': 0.091, 'fuelUnit': 'eur_kWh', 'inclination': 'flat', 'shadows': 'free', 'industry': 'Magtel', 'date': '2018-10-17', 'Fri': 0.2, 'process': '', 'Tues': 0.2, 'co2TonPrice': 15.0}
+    inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
    
-#[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
