@@ -3,10 +3,10 @@
 """
 Created on Wed Oct 12 19:54:51 2016
 
-version="1.1.8" 
-    - Significant change in IAM function to allow Pitch/Azimuth/Roll
-    - OperationOilSimple included
-    - 5/1/2019 Modify code to allow offline simulations with other collectors,
+Version record:
+    - (1.1.1) Significant change in IAM function to allow Pitch/Azimuth/Roll
+    - (1.1.5) OperationOilSimple included
+    - (1.1.8) 5/1/2019 Modify code to allow offline simulations with other collectors,
     a very simple cost model has been included, this simplistic model will change
     in future versions, thanks to Jose Escamilla for his comments.
 
@@ -45,7 +45,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     if sender=='solatom':
         sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/') #SOLATOM
     
-    version="1.1.7" #Ressspi version
+    version="1.1.8" #Ressspi version
     lang=confReport['lang'] #Language
         
     #Paths
@@ -56,25 +56,26 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     
     #Input Control ---------------------------------------
+        #Modifiers to control extraordinary situations
+    mofINV=modificators['mofINV'] #Investment modificator to include: Subsidies, extra-costs, etc.
+    mofDNI=modificators['mofDNI'] #DNI modificator to take into correct Meteonorm data if necessary 
+    mofProd=modificators['mofProd'] #Production modificator to include: Dusty environments, shadows, etc.
     
-    mofINV=modificators['mofINV']
-    mofDNI=modificators['mofDNI']
-    mofProd=modificators['mofProd']
-    
-
-    num_loops=desginDict['num_loops']
-    n_coll_loop=desginDict['n_coll_loop']
-    type_integration=desginDict['type_integration']
-    almVolumen=0 #litres   
-    almVolumen=desginDict['almVolumen']
+        #Pre-design of the solar field
+    num_loops=desginDict['num_loops'] #Number of loops of the solar plant 
+    n_coll_loop=desginDict['n_coll_loop'] #Number of modules connected in series per loop
+    type_integration=desginDict['type_integration'] #Type of integration scheme from IEA Task 49 
+    almVolumen=desginDict['almVolumen'] #Storage capacity litres 
     
     #Simulation Control ---------------------------------------
+        #In order to include the financial study
     finance_study=simControl['finance_study']
     
+        #Initial step of the simulation
     mes_ini_sim=simControl['mes_ini_sim']
     dia_ini_sim=simControl['dia_ini_sim']
     hora_ini_sim=simControl['hora_ini_sim']
-    
+        #Final step of the simulation
     mes_fin_sim=simControl['mes_fin_sim'] 
     dia_fin_sim=simControl['dia_fin_sim']
     hora_fin_sim=simControl['hora_fin_sim']
@@ -95,15 +96,15 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
         ## PROCESS
         fluidInput=inputs['fluid'] #Type of fluid 
-        T_out_C=inputs['outletTemp'] #Temperatura alta
-        T_in_C=inputs['inletTemp'] #Temperatura baja
+        T_out_C=inputs['outletTemp'] #High temperature
+        T_in_C=inputs['inletTemp'] #Low temperature
         P_op_bar=P_op_bar
             
         ## FINANCE
-        businessModel=inputs['businessModel'] 
-        fuel=inputs['currentFuel']
+        businessModel=inputs['businessModel'] #Type of business model
+        fuel=inputs['currentFuel'] #Type of fuel used
         Fuel_price=inputs['fuelPrice']   #Price of fossil fuel in €/kWh
-        co2TonPrice=inputs['co2TonPrice']
+        co2TonPrice=inputs['co2TonPrice'] 
         co2factor=inputs['co2factor']
          
         ## METEO
@@ -117,7 +118,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                   
     if ressspiReg==0:  #Simulation called from Python file
 
-        ## TO BE IMPLEMENTED Hardcoded for the moment, it will change in future versions
+        ## TO BE IMPLEMENTED Not used for the moment, it will change in future versions
         surfaceAvailable=500 #Surface available for the solar plant
         orientation="NS"
         inclination="flat" 
@@ -160,8 +161,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
      
         
         # -------------------------------------------------
-        
-        
+        #CO2 factors of the different fuels availables
         if fuel in ["NG","LNG"]:
             co2factor=.2/1000 #TonCo2/kWh  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
         if fuel in ['Fueloil2','Fueloil3','Gasoil-B','Gasoil-C']:
@@ -195,29 +195,29 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
 
         IAM_file='defaultCollector.csv'
         IAM_folder=os.path.dirname(__file__)+"/Collector_modules/"
-        REC_type=1 #Type of receiver used
-        Area_coll=26.4 #Aperture area of collector module
+        REC_type=1 #Type of receiver used (1 -> Schott receiver tube)
+        Area_coll=26.4 #Aperture area of collector module in m2
         rho_optic_0=0.75583 #Optical eff. at incidence angle=0
-        Long=5.28 #Longitude of each module
+        Long=5.28 #Longitude of each module in m
         
         
     IAMfile_loc=IAM_folder+IAM_file
-    beta=0 #Inclination not implemented
+    beta=0 #Inclination not implemented [-]
     orient_az_rad=0 #Orientation not implemented
     roll=0 #Roll not implemented
        
     
     
-    Area=Area_coll*n_coll_loop #Area of one loop
-    Area_total=Area*num_loops #Total area
+    Area=Area_coll*n_coll_loop #Area of aperture per loop [m^2]
+    Area_total=Area*num_loops #Total area of aperture [m^2]
     
     #Process control
     T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid
-    T_in_C_AR=waterFromGrid(T_in_C_AR_mes)
+    T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
     #Process parameters
-    lim_inf_DNI=200 #Minimum temperature to start production
-    m_dot_min_kgs=0.08 #Minimum flowrate before re-circulation
-    coef_flow_rec=2 #Multiplier for flowrate when recirculating
+    lim_inf_DNI=200 #Minimum temperature to start production [W/m^2]
+    m_dot_min_kgs=0.08 #Minimum flowrate before re-circulation [kg/s]
+    coef_flow_rec=2 #Multiplier for flowrate when recirculating [-]
     
     
     
