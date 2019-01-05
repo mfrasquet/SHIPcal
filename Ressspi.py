@@ -57,15 +57,15 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     #Input Control ---------------------------------------
         #Modifiers to control extraordinary situations
-    mofINV=modificators['mofINV'] #Investment modificator to include: Subsidies, extra-costs, etc.
-    mofDNI=modificators['mofDNI'] #DNI modificator to take into correct Meteonorm data if necessary 
-    mofProd=modificators['mofProd'] #Production modificator to include: Dusty environments, shadows, etc.
+    mofINV=modificators['mofINV'] #Investment modificator to include: Subsidies, extra-costs, etc. [-]
+    mofDNI=modificators['mofDNI'] #DNI modificator to take into correct Meteonorm data if necessary [-] 
+    mofProd=modificators['mofProd'] #Production modificator to include: Dusty environments, shadows, etc. [-]
     
         #Pre-design of the solar field
-    num_loops=desginDict['num_loops'] #Number of loops of the solar plant 
-    n_coll_loop=desginDict['n_coll_loop'] #Number of modules connected in series per loop
+    num_loops=desginDict['num_loops'] #Number of loops of the solar plant [-]
+    n_coll_loop=desginDict['n_coll_loop'] #Number of modules connected in series per loop [-]
     type_integration=desginDict['type_integration'] #Type of integration scheme from IEA Task 49 
-    almVolumen=desginDict['almVolumen'] #Storage capacity litres 
+    almVolumen=desginDict['almVolumen'] #Storage capacity [litres]
     
     #Simulation Control ---------------------------------------
         #In order to include the financial study
@@ -96,16 +96,16 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
         ## PROCESS
         fluidInput=inputs['fluid'] #Type of fluid 
-        T_out_C=inputs['outletTemp'] #High temperature
-        T_in_C=inputs['inletTemp'] #Low temperature
-        P_op_bar=P_op_bar
+        T_out_C=inputs['outletTemp'] #High temperature [ºC]
+        T_in_C=inputs['inletTemp'] #Low temperature [ºC]
+        P_op_bar=P_op_bar #[bar]
             
         ## FINANCE
         businessModel=inputs['businessModel'] #Type of business model
         fuel=inputs['currentFuel'] #Type of fuel used
-        Fuel_price=inputs['fuelPrice']   #Price of fossil fuel in €/kWh
-        co2TonPrice=inputs['co2TonPrice'] 
-        co2factor=inputs['co2factor']
+        Fuel_price=inputs['fuelPrice']   #Price of fossil fuel [€/kWh]
+        co2TonPrice=inputs['co2TonPrice'] #[€/ton]
+        co2factor=inputs['co2factor'] #[-]
          
         ## METEO
         meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
@@ -123,28 +123,28 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         orientation="NS"
         inclination="flat" 
         shadowInput="free"
-        distanceInput=15 #From the solar plant to the network integration point (in meters)
+        distanceInput=15 #From the solar plant to the network integration point [m]
         terreno="clean_ground"
         
         ## ENERGY DEMAND
         dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=180000 #kWh
+        totalConsumption=180000 #[kWh]
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         
         ## PROCESS
         fluidInput="oil" #"water" "steam" "oil" 
-        T_out_C=200 #Temperatura alta
-        T_in_C=20 #Temperatura baja
-        P_op_bar=25 #bar 
+        T_out_C=200 #High temperature [ºC]
+        T_in_C=20 #Low temperature [ºC]
+        P_op_bar=25 #[bar] 
         
         ## FINANCE
         businessModel="turnkey"
         fuel="Gasoil-B" #Type of fuel
-        Fuel_price=0.05 #Price of fossil fuel in €/kWh
-        co2TonPrice=0 #(€/TonCo2)
-        co2factor=1 #Default value 1, after it will be modified
+        Fuel_price=0.05 #Price of fossil fuel [€/kWh]
+        co2TonPrice=0 #[€/TonCo2]
+        co2factor=1 #Default value 1, after it will be modified [-]
 
         localMeteo="Fargo_SAM.dat" #Be sure this location is included in Ressspi DB
         ## METEO
@@ -163,15 +163,15 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         # -------------------------------------------------
         #CO2 factors of the different fuels availables
         if fuel in ["NG","LNG"]:
-            co2factor=.2/1000 #TonCo2/kWh  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
+            co2factor=.2/1000 #[TonCo2/kWh]  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
         if fuel in ['Fueloil2','Fueloil3','Gasoil-B','Gasoil-C']:
-            co2factor=.27/1000 #TonCo2/kWh       #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html    
+            co2factor=.27/1000 #[TonCo2/kWh]       #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html    
         if fuel in ['Electricity']:
-            co2factor=.385/1000 #TonCo2/kWh  #https://www.eia.gov/tools/faqs/faq.php?id=74&t=11
+            co2factor=.385/1000 #[TonCo2/kWh]  #https://www.eia.gov/tools/faqs/faq.php?id=74&t=11
         if fuel in ['Propane','Butane','Air-propane']:
-            co2factor=.22/1000 #TonCo2/kWh    #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html  
+            co2factor=.22/1000 #[TonCo2/kWh]    #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html  
         if fuel in ['Biomass']:
-            co2factor=.41/1000 #TonCo2/kWh  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
+            co2factor=.41/1000 #[TonCo2/kWh]  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
 
         # --------------------------------------------------------------------------------------
 
@@ -196,26 +196,26 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         IAM_file='defaultCollector.csv'
         IAM_folder=os.path.dirname(__file__)+"/Collector_modules/"
         REC_type=1 #Type of receiver used (1 -> Schott receiver tube)
-        Area_coll=26.4 #Aperture area of collector module in m2
-        rho_optic_0=0.75583 #Optical eff. at incidence angle=0
-        Long=5.28 #Longitude of each module in m
+        Area_coll=26.4 #Aperture area of collector module [m²]
+        rho_optic_0=0.75583 #Optical eff. at incidence angle=0 [º]
+        Long=5.28 #Longitude of each module [m]
         
         
     IAMfile_loc=IAM_folder+IAM_file
     beta=0 #Inclination not implemented [-]
-    orient_az_rad=0 #Orientation not implemented
-    roll=0 #Roll not implemented
+    orient_az_rad=0 #Orientation not implemented [-]
+    roll=0 #Roll not implemented [-]
        
     
     
-    Area=Area_coll*n_coll_loop #Area of aperture per loop [m^2]
-    Area_total=Area*num_loops #Total area of aperture [m^2]
+    Area=Area_coll*n_coll_loop #Area of aperture per loop [m²]
+    Area_total=Area*num_loops #Total area of aperture [m²]
     
     #Process control
     T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid
     T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
     #Process parameters
-    lim_inf_DNI=200 #Minimum temperature to start production [W/m^2]
+    lim_inf_DNI=200 #Minimum temperature to start production [W/m²]
     m_dot_min_kgs=0.08 #Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=2 #Multiplier for flowrate when recirculating [-]
     
@@ -254,13 +254,13 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
 #    hour_day=output[:,2]
 #    hour_year= output[:,3]
 #    W=output[:,4]
-    SUN_ELV=output[:,5] #rad
-    SUN_AZ=output[:,6] #rad
-    #DECL=output[:,7] - #rad
-    #SUN_ZEN=output[:,8] #rad
-    DNI=output[:,9] *mofDNI # W/m2
+    SUN_ELV=output[:,5] #[rad]
+    SUN_AZ=output[:,6] #[rad]
+    #DECL=output[:,7] - #[rad]
+    #SUN_ZEN=output[:,8] #[rad]
+    DNI=output[:,9] *mofDNI # [W/m²]
 #    DNI_positive_hours=(0 < DNI).sum()
-    temp=output[:,10]+273 #K Ambient temperature
+    temp=output[:,10]+273 #[K] Ambient temperature
     step_sim=output [:,11]   
     steps_sim=len(output) #Numero de steps en la simulacion
     
