@@ -5,7 +5,7 @@ Archivo que contiene las funciones de ITERACION
 
 @author: Miguel Frasquet
 """
-from Solatom_modules.solatom_param import Rec_loss
+from Collector_modules.receivers import Rec_loss
 from General_modules.func_General import thermalOil
 from iapws import IAPWS97
 

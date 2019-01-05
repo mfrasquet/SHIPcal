@@ -3,9 +3,12 @@
 """
 Created on Wed Oct 12 19:54:51 2016
 
-version="1.1.7" 
-    -Significant change in IAM function to allow Pitch/Azimuth/Roll
-    -operationOilSimple included
+version="1.1.8" 
+    - Significant change in IAM function to allow Pitch/Azimuth/Roll
+    - OperationOilSimple included
+    - 5/1/2019 Modify code to allow offline simulations with other collectors,
+    a very simple cost model has been included, this simplistic model will change
+    un future versions, thanks to Jose Escamilla for his comments.
 
 @author: Miguel Frasquet
 """
@@ -17,13 +20,6 @@ import numpy as np
 import pandas as pd
 import datetime
 from iapws import IAPWS97
-
-#Place to import customized Libs
-sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/') #SOLATOM
-from Solatom_modules.Solatom_finance import Turn_key,ESCO
-from Solatom_modules.Solatom_finance import SP_plant_bymargin,SP_plant_bymargin2
-from Solatom_modules.templateSolatom import reportOutput
-from Solatom_modules.solatom_param import solatom_param,optic_efficiency_N
 
 #Place to import Ressspi Libs
 
@@ -37,6 +33,8 @@ from Solar_modules.iteration_process import flow_calc, flow_calcOil
 from Solar_modules.iteration_process import IT_temp,IT_tempOil
 from Integration_modules.integrations import *
 from Plot_modules.plottingRessspi import *
+from Collector_modules.receivers import Rec_loss
+from Finance_modules.FinanceModels import Turn_key,ESCO
 
 
 def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
@@ -45,6 +43,9 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
    
     #Sender identity. Needed for use customized modules or generic modules (Solar collectors, finance, etc.)
     sender=confReport['sender']
+    
+    if sender=='solatom':
+        sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/') #SOLATOM
     
     version="1.1.7" #Ressspi version
     lang=confReport['lang'] #Language
@@ -118,10 +119,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                   
     if ressspiReg==0:  #Simulation called from Python file
 
-        ## TO BE IMPLEMENTED 
+        ## TO BE IMPLEMENTED Hardcoded for the moment, it will change in future versions
         surfaceAvailable=500 #Surface available for the solar plant
-        orientation="NS" 
-        inclination="flat"
+        orientation="NS"
+        inclination="flat" 
         shadowInput="free"
         distanceInput=15 #From the solar plant to the network integration point (in meters)
         terreno="clean_ground"
@@ -146,12 +147,19 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         co2TonPrice=0 #(€/TonCo2)
         co2factor=1 #Default value 1, after it will be modified
 
-        ## METEO
         localMeteo="Fargo_SAM.dat" #Be sure this location is included in Ressspi DB
-        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
-        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
-        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        ## METEO
+        if sender=='solatom': #Use Solatom propietary meteo DB
+            meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
+            file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        else:
+            meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',') 
+            file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo       
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+     
         
         # -------------------------------------------------
         
@@ -178,17 +186,22 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     #Collector
     if sender=='solatom': #Using Solatom Collector
+        from Solatom_modules.solatom_param import solatom_param
         type_coll=20 #Solatom 20" fresnel collector - Change if other collector is used
         IAM_file='Solatom.csv'
         IAM_folder=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/IAM_files/"
         REC_type=1
+        D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
         
     else: #Using other collectors (to be filled with customized data)
-        #CAMBIAR !!!!
-        type_coll=20 #Solatom 20" fresnel collector - Change if other collector is used
-        IAM_file='Solatom.csv'
-        IAM_folder=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/IAM_files/"
-        REC_type=1
+
+        IAM_file='defaultCollector.csv'
+        IAM_folder=os.path.dirname(__file__)+"/Collector_modules/"
+        REC_type=1 #Type of receiver used
+        Area_coll=26.4 #Aperture area of collector module
+        rho_optic_0=0.75583 #Optical eff. at incidence angle=0
+        Long=5.28 #Longitude of each module
+        
         
     IAMfile_loc=IAM_folder+IAM_file
     beta=0 #Inclination not implemented
@@ -196,7 +209,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     roll=0 #Roll not implemented
        
     
-    D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
+    
     Area=Area_coll*n_coll_loop #Area of one loop
     Area_total=Area*num_loops #Total area
     
@@ -588,7 +601,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
         theta_i_deg[i]=abs(theta_i_deg[i])
 
-        if sender=='solatom': #Using Solatom Collector
+        if sender=='solatom': #Using Solatom IAMs 
+            from Solatom_modules.solatom_param import optic_efficiency_N
             IAM[i]=optic_efficiency_N(theta_transv_deg[i],theta_i_deg[i],n_coll_loop) #(theta_transv_deg[i],theta_i_deg[i],n_coll_loop):
             IAM_long[i]=0
             IAM_t[i]=0
@@ -786,33 +800,44 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     if finance_study==1 and steps_sim==8759:
         #---- FINANCIAL SIMULATION INPUTS ---------------------------------
     
-        #Variable generation para estudio sensibilidad
-    #    Tramos=25
-    #    IRR=np.zeros(Tramos)
-    #    Amort=np.zeros(Tramos)
-    #    Fuel_array=np.zeros(Tramos)
-    
-    
-
-        IPC=2.5 #%
-        fuelIncremento=3.5 #% Incremento anual precio fuel
+        #Fixed parameters
+        IPC=2.5 # Annual increase of the price of money in %
+        fuelIncremento=3.5 # Annual increase of fuel price in %
+        Boiler_eff=0.8 #Boiler efficiency to take into account the excess of fuel consumed
+        n_years_sim=25 #Number of years for the simulation
+        margin=0.20 #Margen sobre el precio de venta
+        
         
         incremento=IPC/100+fuelIncremento/100
     
-        Boiler_eff=0.8 #Boiler efficiency to take into account the excess of fuel consumed
-        n_years_sim=25 #Number of years for the simulation
+
         if co2TonPrice>0:
             CO2=1 #Flag to take into account co2 savings in terms of cost per ton emitted
         else:
             CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
         
-        margin=0.20 #Margen sobre el precio de venta
-        distance=400
-        [Selling_price,BM_cost,OM_cost_year]=SP_plant_bymargin(num_modulos_tot,num_loops,margin,type_coll)
-        [Selling_price2,BM_cost2,OM_cost_year2]=SP_plant_bymargin2(num_modulos_tot,margin,type_coll,distance)
-        #Selling_price=370000 #Selling_price of the plant in €. This value overrides the one calculate by the margin function
-        #margin=1-(BM_cost/Selling_price) #This value overrides the one calculate by the margin function
-        
+
+        if sender=='solatom': #Use Solatom propietary cost functions
+            from Solatom_modules.Solatom_finance import SP_plant_bymargin,SP_plant_bymargin2
+            distance=400 #Average distance of the project to calculate the cost of transport
+            [Selling_price,BM_cost,OM_cost_year]=SP_plant_bymargin(num_modulos_tot,num_loops,margin,type_coll)
+            [Selling_price2,BM_cost2,OM_cost_year2]=SP_plant_bymargin2(num_modulos_tot,margin,type_coll,distance)
+            #Selling_price=370000 #Selling_price of the plant in €. This value overrides the one calculate by the margin function
+            #margin=1-(BM_cost/Selling_price) #This value overrides the one calculate by the margin function
+            
+        else: #Use Default cost functions
+            
+            Legal_fees=430 #Cost of legal fees per module in €
+            Due_dilligence=825 #Cost of eng. per module in €
+            costs_power_block=575 #Cost of powerBlock (SL_L_P) per module in €
+            total_I_modules=4200 #Cost of construction of 1 module in €
+            OM_cost=290 #Cost of annual O&M per module in €
+            
+            BM_cost = total_I_modules + costs_power_block + Due_dilligence + Legal_fees #Before margin cost in €
+            Selling_price = (BM_cost/(1 - margin))*num_modulos_tot
+            OM_cost_year=OM_cost*num_modulos_tot
+            
+            
         #OM_cost_year=4000 #Cost of O&M/year in € #Para fijar un coste de operación
         Selling_price_module=Selling_price/(num_loops*n_coll_loop)
       
@@ -954,6 +979,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     #Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
     if steps_sim==8759: #The report is only available when annual simulation is performed
         if ressspiReg==-2:
+            from Solatom_modules.templateSolatom import reportOutput
             fileName="results"+str(reg)
             reportsVar={'logo_output':'no_logo','date':inputs['date'],'type_integration':type_integration,
                         'fileName':fileName,'reg':reg,
@@ -1022,12 +1048,12 @@ plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,0]
 
 finance_study=1
 
-mes_ini_sim=3
-dia_ini_sim=21
+mes_ini_sim=1
+dia_ini_sim=1
 hora_ini_sim=1
 
-mes_fin_sim=3
-dia_fin_sim=21
+mes_fin_sim=12
+dia_fin_sim=31
 hora_fin_sim=24
 
 
@@ -1053,7 +1079,7 @@ type_integration="SL_L_PS"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'solatom1','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
