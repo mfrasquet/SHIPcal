@@ -8,7 +8,7 @@ version="1.1.8"
     - OperationOilSimple included
     - 5/1/2019 Modify code to allow offline simulations with other collectors,
     a very simple cost model has been included, this simplistic model will change
-    un future versions, thanks to Jose Escamilla for his comments.
+    in future versions, thanks to Jose Escamilla for his comments.
 
 @author: Miguel Frasquet
 """
@@ -18,22 +18,20 @@ import sys
 import os
 import numpy as np
 import pandas as pd
-import datetime
 from iapws import IAPWS97
 
 #Place to import Ressspi Libs
 
-from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,check_overwrite,DemandData,waterFromGrid,thermalOil,reportOutputOffline 
+from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,DemandData,waterFromGrid,thermalOil,reportOutputOffline 
 from General_modules.demandCreator_v1 import demandCreator
 from General_modules.fromDjangotoRessspi import djangoReport
 from Solar_modules.EQSolares import SolarData
-from Solar_modules.EQSolares import theta_IAMs,theta_IAMs_v2
+from Solar_modules.EQSolares import theta_IAMs_v2
 from Solar_modules.EQSolares import IAM_calc
 from Solar_modules.iteration_process import flow_calc, flow_calcOil
 from Solar_modules.iteration_process import IT_temp,IT_tempOil
 from Integration_modules.integrations import *
 from Plot_modules.plottingRessspi import *
-from Collector_modules.receivers import Rec_loss
 from Finance_modules.FinanceModels import Turn_key,ESCO
 
 
@@ -251,17 +249,17 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     T_in_flag=1 #Flag 1 si la temperatura es constante (circuito cerrado); 0 si se toma agua de red (circuito abierto con reposicion)
     
     #Renombramos variables y las transformamos para trabajar mas comodo
-    month=output[:,0]
-    day_month=output[:,1]
-    hour_day=output[:,2]
-    hour_year= output[:,3]
-    #W=output[:,4]
+#    month=output[:,0]
+#    day_month=output[:,1]
+#    hour_day=output[:,2]
+#    hour_year= output[:,3]
+#    W=output[:,4]
     SUN_ELV=output[:,5] #rad
     SUN_AZ=output[:,6] #rad
     #DECL=output[:,7] - #rad
     #SUN_ZEN=output[:,8] #rad
     DNI=output[:,9] *mofDNI # W/m2
-    DNI_positive_hours=(0 < DNI).sum()
+#    DNI_positive_hours=(0 < DNI).sum()
     temp=output[:,10]+273 #K Ambient temperature
     step_sim=output [:,11]   
     steps_sim=len(output) #Numero de steps en la simulacion
@@ -322,7 +320,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         T_out_HX_K=(T_in_process_K+(T_out_K-T_in_process_K)*heatFactor)
         T_out_HX_C=T_out_HX_K-273
         outputHXState=IAPWS97(P=P_op_Mpa, T=T_out_HX_K)
-        outHX_s=outputHXState.s #Not used?
+#        outHX_s=outputHXState.s #Not used?
         hHX_out=outputHXState.h
         
         #Our design point will be heat the fluid at x%
@@ -353,7 +351,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
         if fluidInput!="oil":
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_process_K)
-            sProcess_in=inputState.s
+#            sProcess_in=inputState.s
             hProcess_in=inputState.h  
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273    
@@ -781,14 +779,14 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
     totalDischarged=(sum(Q_discharg))
-    totalCharged=(sum(Q_charg))
+#    totalCharged=(sum(Q_charg))
     Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
     improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
     solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
-    Energy_module_max=Production_max/num_modulos_tot
-    operation_hours=np.nonzero(Q_prod)
+#    Energy_module_max=Production_max/num_modulos_tot
+#    operation_hours=np.nonzero(Q_prod)
     DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
-    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
+#    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
     Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
     
     annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
@@ -837,9 +835,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             Selling_price = (BM_cost/(1 - margin))*num_modulos_tot
             OM_cost_year=OM_cost*num_modulos_tot
             
-            
-        #OM_cost_year=4000 #Cost of O&M/year in € #Para fijar un coste de operación
-        Selling_price_module=Selling_price/(num_loops*n_coll_loop)
       
         Selling_price=Selling_price*mofINV
         OM_cost_year=OM_cost_year*1
@@ -892,11 +887,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             Energy_savingsList.append(round(Net_anual_savings[i]))
     
             fuelPrizeArrayList.append(fuelPrizeArray[i])
-        
-        energy_bill=Demand_anual*Fuel_price
-        Solar_savings_lim=Production_lim*Fuel_price
-        Solar_savings_max=Production_max*Fuel_price
-        
+               
         finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
                  'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
                  'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
@@ -1052,8 +1043,8 @@ mes_ini_sim=1
 dia_ini_sim=1
 hora_ini_sim=1
 
-mes_fin_sim=12
-dia_fin_sim=31
+mes_fin_sim=1
+dia_fin_sim=1
 hora_fin_sim=24
 
 
@@ -1087,12 +1078,16 @@ simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim
 
 ressspiReg=0 #0 if new record; -2 if it comes from www.ressspi.com
 
+
+
+
+
 if ressspiReg==0:
     #To perform simulations from command line using hardcoded inputs
     inputsDjango={}
     last_reg=666
 else:
-    #To perform simulations from command line using inputs from django
+    #To perform simulations from command line using inputs like if they were from django
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
    
