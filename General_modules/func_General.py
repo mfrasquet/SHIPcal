@@ -205,6 +205,7 @@ def thermalOil(T): #Function to derive the properties of thermal oil from the Th
     thermalDiff=8.20353*np.exp(-0.00135*T)*1e-8
     #PrantNumber
     Prant=177506.92794*T**(-1.68808)
+<<<<<<< HEAD
     return(rho,Cp,k,Dv,Kv,thermalDiff,Prant)
     
 def reportOutputOffline(reportsVar):
@@ -223,3 +224,6 @@ def reportOutputOffline(reportsVar):
     print("Investment: "+str(int(reportsVar['Selling_price']))+" €")
     print("Savings 1st year: "+str(int(reportsVar['Energy_savingsList'][1]))+" € with ModfInv: "+str(reportsVar['mofINV'])+"")
     print("Payback period: "+str(int(reportsVar['AmortYear']))+" years")
+=======
+    return(rho,Cp,k,Dv,Kv,thermalDiff,Prant)
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86

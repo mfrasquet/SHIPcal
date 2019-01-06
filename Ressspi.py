@@ -3,6 +3,7 @@
 """
 Created on Wed Oct 12 19:54:51 2016
 
+<<<<<<< HEAD
 Version record:
     - (1.1.1) Significant change in IAM function to allow Pitch/Azimuth/Roll
     - (1.1.5) OperationOilSimple included
@@ -76,12 +77,115 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     dia_ini_sim=simControl['dia_ini_sim']
     hora_ini_sim=simControl['hora_ini_sim']
         #Final step of the simulation
+=======
+@author: Miguel Frasquet
+"""
+import sys
+import os
+
+#Import public paths
+#sys.path.append('Solar_modules')
+#sys.path.append('General_modules')
+#sys.path.append('Integration_modules')
+#sys.path.append('Plot_modules')
+
+#sys.path.append('../TEMPLATE/Modules')
+#sys.path.append('../Solatom_modules')
+
+sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/')
+#import time
+
+from tkinter import Tk, messagebox
+import numpy as np
+import pandas as pd
+import datetime
+
+
+from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,check_overwrite,DemandData,waterFromGrid,thermalOil
+
+from Solar_modules.EQSolares import SolarData
+from Solar_modules.EQSolares import theta_IAMs
+from Solar_modules.EQSolares import IAM_calc
+
+from General_modules.demandCreator_v1 import demandCreator
+
+from iapws import IAPWS97
+
+from Solatom_modules.solatom_param import solatom_param
+
+from Integration_modules.integrations import *
+
+from General_modules.fromDjangotoRessspi import djangoReport
+from Solatom_modules.Solatom_finance import Turn_key,ESCO
+from Solatom_modules.Solatom_finance import SP_plant_bymargin,SP_plant_bymargin2
+
+from Solar_modules.iteration_process import flow_calc, flow_calcOil
+from Solar_modules.iteration_process import IT_temp,IT_tempOil
+from Plot_modules.plottingRessspi import *
+
+from Solatom_modules.report import ressspiReport
+from Solatom_modules.templateSolatom import reportOutput
+
+def callDB(path):
+   #Data base import
+    columns=['version','date','name','mail','lang','industry','industrial_sector','fuel','business_model','fuel_price','fuel_unit','surface','distance','location','terrain','orientation','inclination','shadow','fluid','pression','pression_unit','process','Temp_out','Temp_in','scheme','consumption','unit_consumption','process_type','daily_consumpt','ini_hour','end_hour','batch_process','num_batch','dura_batch','week_consumpt','annual_consumpt','Mond','Tue','Wen','Thu','Fri','Sat','Sun','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic','rebaja','correccionDNI','FS','num_loops','n_coll_loop','type_integration','almVolumen']
+    data=pd.read_csv(path,sep=',',encoding = "ISO-8859-1")
+    data= data.drop('Unnamed: 0', 1)
+    return columns,data
+
+def ressspiSIM(ressspiReg,data_reg,inputsDjango,inputFile,printReport,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
+    #%%
+
+    version="1.0.5" #Ressspi version
+    type_coll=20 #Solatom 20" fresnel collector - Change if other collector is used
+    
+    pathRoot=os.path.dirname(os.path.dirname(__file__))  
+#    Path(pathRoot).parent    
+    
+    path=os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/database.csv' #DataBase SOLATOM 
+    #path='DataBase/database.csv' #DataBase Genérica
+    
+    #pathFiles='/home/miguel/Desktop/Python_files/ressspiOffline/ressspiFiles/' #Files path SOLATOM
+    pathFiles='ressspiFiles/' #FilePath genérico
+    
+    plotPath=pathRoot+'/ressspi/ressspiForm/static/results/' #FilePath genérico para imagenes
+    
+    
+    columns,data=callDB(path)
+
+    lang=confReport['lang']
+    sender=confReport['sender']
+    cabecera=confReport['cabecera']
+    mapama=confReport['mapama']
+    
+    
+    #Input Control ---------------------------------------
+    
+    mofINV=modificators['mofINV']
+    mofDNI=modificators['mofDNI']
+    mofProd=modificators['mofProd']
+    
+
+    num_loops=desginDict['num_loops']
+    n_coll_loop=desginDict['n_coll_loop']
+    type_integration=desginDict['type_integration']
+    almVolumen=desginDict['almVolumen']
+    
+    #Simulation Control ---------------------------------------
+    finance_study=simControl['finance_study']
+    
+    mes_ini_sim=simControl['mes_ini_sim']
+    dia_ini_sim=simControl['dia_ini_sim']
+    hora_ini_sim=simControl['hora_ini_sim']
+    
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     mes_fin_sim=simControl['mes_fin_sim'] 
     dia_fin_sim=simControl['dia_fin_sim']
     hora_fin_sim=simControl['hora_fin_sim']
     
    
     #%%
+<<<<<<< HEAD
     # ------------------------------------- INPUTS --------------------------------
     
     if ressspiReg==-2: #Simulation called from frontend -> www.ressspi.com
@@ -90,10 +194,25 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
         file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
        
+=======
+    # ---------------------------------------------------------------------------------
+    
+    if ressspiReg==-2:
+        
+        co2factor=1 #CAMBIAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
+        
+        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        
+        fileName="results"+str(reg)
+        
+        
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         annualConsumptionkWh=annualConsumptionkWh
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
         
+<<<<<<< HEAD
         ## PROCESS
         fluidInput=inputs['fluid'] #Type of fluid 
         T_out_C=inputs['outletTemp'] #High temperature [ºC]
@@ -109,12 +228,37 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
          
         ## METEO
         meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
+=======
+              
+        fluidInput=inputs['fluid'] #Type of fluid 
+        T_in_C=inputs['inletTemp'] #Temperatura baja
+        T_out_C=inputs['outletTemp'] #Temperatura alta
+        P_op_bar=P_op_bar
+        
+        typeScheme=inputs['connectProcess'] #Tipo de integración
+    
+        
+        #I get the price and I adjust it depending the unit
+        fuelPriceUnit=inputs['priceUnit']
+        co2TonPrice=inputs['co2TonPrice']
+        fuel=inputs['currentFuel']
+         
+        Fuel_price=inputs['fuelPrice']   #Price of fossil fuel in €/kWh
+        
+        
+        businessModel=inputs['businessModel']      #Modelo de negocio seleccionado                               
+         
+        #Meteo
+        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
+        
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         locationFromRessspi=inputs['location']
         localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0]
         file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo 
         Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0]
         Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0]
         
+<<<<<<< HEAD
                   
     if ressspiReg==0:  #Simulation called from Python file
 
@@ -218,6 +362,244 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     lim_inf_DNI=200 #Minimum temperature to start production [W/m²]
     m_dot_min_kgs=0.08 #Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=2 #Multiplier for flowrate when recirculating [-]
+=======
+        
+
+    if ressspiReg==-1:
+         [inputs,file_demand,annualConsumptionkWh,last_reg]=ressspiReport(1,inputFile,path,pathFiles,version)
+         ressspiReg=1
+         columns,data=callDB(path)
+         data_reg=len(data)-1
+
+            
+    if ressspiReg==0:  
+        # --------------------------DATA ORIGIN FROM SPECIFIC SIMULATION
+        company="Almendra"
+        nameUser="UNEX"
+        emailUser=""
+        sectorUser="Almendra"
+        localInput="Badajoz" #Tiene que corresponder a la columna Provincia de meteoDB
+        surfaceAvailable=1000
+        orientation="NE-SO"
+        inclination="plano"
+        shadowInput="Sin sombra"
+        distanceInput=15
+        terreno="Terreno"
+        mainProcessInput="Desconocido"
+        perfilDiarioTipo="continuo"
+        perfilDiario="continuo"
+        ini_hour=0
+        end_hour=0
+        batch_process='sin_datos'
+        num_batch='nan'
+        dura_batch='nan'
+        perfilSemanal="Toda la semana"
+        perfilAnual="continuo"    
+    #    dayArray=[0.0400,0.0464,0.0480,0.0480,0.0480,0.0520,0.0560,0.0650,0.0840,0.0654,0.0456,0.0340,0.0260,0.0180,0.0180,0.0190,0.0240,0.0280,0.0374,0.0452,0.0470,0.0374,0.0336,0.0340] #hotel
+    #    dayArray=[0,0,0,0,0,0,0,0,1/8,1/8,1/8,1/8,1/8,1/8,1/8,1/8,0,0,0,0,0,0,0,0] #Constante 8 h day
+        dayArray=[0,0,0,0,0,0,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,0,0,0,0,0,0] #Constante 12 h day
+    #    dayArray=[0,0,0,0,0,0,1/7,1/7,1/7,1/7,1/7,1/7,1/7,0,0,0,0,0,0,0,0,0,0,0] #Constante 6 h day
+    #    dayArray=[0,0,0,0,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,1/18,0,0]
+    #    dayArray=[0,0,0,0,1/16,1/16,1/16,1/16,1/16,1/16,1/16,1/16,1/16,1/16,1/16,1/16,1/16,1/16,1/16,1/16,0,0,0,0] #Constante 8 h day
+    #    dayArray=[1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24] #Constante 
+    #    dayArray=[0,0,0,0,0,0,0,0,0,0,0.25,0.25,0.25,0.25,0,0,0,0,0,0,0,0,0,0] #Constante 4 h day
+        weekArray=[0.2,0.2,0.2,0.2,0.2,0,0] #Sin findes
+    #    weekArray=[1/6,1/6,1/6,1/6,1/6,1/6,0] #Sin un día
+    #    weekArray=[1/7,1/7,1/7,1/7,1/7,1/7,1/7] #Constante
+    #    weekArray=[0.12,0.12,0.12,0.12,0.12,0.2,0.2]
+    
+    #    weekArray=[0.0989404709,0.1685324774,0.1334964808	,0.1486023508,0.1484373844,0.1447645084,0.1572263273]
+        
+    #    monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Constante
+        monthArray=[0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10] #Almendra
+    #    monthArray=[0.0848,0.0925,0.0838,0.0780,0.1080,0.0750,0.0599,0.0752,0.0780,0.0873,0.0925,0.0848] #Chemical factory
+    #    monthArray=[0.05,0.05,0.05,0.0875,0.0875,0.1125,0.1125,0.1125,0.1125,0.0875,0.0875,0.05] #Laundry
+    #    monthArray=[0.1889825061,0.1380203965,0.1184212922,0.0627569903,0.0532994342,0.0367279314,0.030371343,0.0260940786,0.0386296228,0.0487369151,0.1126647324,0.1452947574]
+    #    monthArray=[0.0748913733,0.0784088129,0.0891306615,0.0831238069,0.0821990364,0.0806866629,0.0894832435,0.0949372728,0.0852327818,0.0849441664,0.0794752549,0.0774869267]
+    #    monthArray=[0.0476047652,0.0694529061,0.0638385618,0.0505572166,0.0481952555,0.1324291646,0.1579514673,0.1679241923,0.1425237368,0.0439118576,0.033911014,0.0416998622]
+    #    monthArray=[0.077938362,0.0669174421,0.1026199432,0.0837457929,0.0787302844,0.1045337557,0.0886953079,0.0917310104,0.0910050815,0.0692272157,0.0669174421,0.077938362]
+    #    monthArray=[0.09433962264,0.09433962264,0.09433962264,0.09433962264,0.09433962264,0.07547169811,0.07547169811,0.07547169811,0.07547169811,0.07547169811,0.07547169811,0.07547169811]
+        totalConsumption=190000 #kWh
+        energyConsumptionUnits='kWh'
+        
+        fluidInput="vapor" #"Agua sobrecalentada" "vapor" "Aceite térmico" 
+        typeScheme="directo" #"directo" "acum" #Solo texto No vinculante
+        T_out_C=180 #Temperatura alta
+        T_in_C=90 #Temperatura baja
+        P_op_bar=8 #bar 
+        pressureUnit='bar'
+        
+    
+        
+        fileName="results_"+company 
+        businessModel="Llave en mano"
+        fuel="Gasoil" #Gas Natural, GNL, Gasoil, Electricidad
+        Fuel_price=0.05 #Price of fossil fuel in €/kWh
+        co2TonPrice=7.5 #(€/TonCo2 emitida)
+        priceUnit='€/kWh'
+        #Localizacion
+         #Meteo
+        localMeteo="Badajoz.dat"
+        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
+        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo   
+       
+        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+    
+        # -------------------------------------------------
+        #Obtencion de archivos demand   
+        #La demanda se mete con un csv horario anual en kW 
+        file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
+    #    file_demand="/home/miguel/Desktop/Python_files/PLAT_VIRT/fresnel/Demand_files/T3Hospitality.csv"
+        
+        if fuel=="Gas Natural" or fuel=="GNL" or fuel=="Natural gas" or fuel=="LNG":
+            co2factor=.2016/1000 #TonCo2/kWh
+        if fuel=="Gasoil" or fuel=="Fueloil":
+            co2factor=.27/1000 #TonCo2/kWh
+        if fuel=="Electricidad" or fuel=="Electricity":
+            co2factor=.385/1000 #TonCo2/kWh
+          
+    
+        new_data={len(data) : [version,datetime.datetime.now().strftime("%d-%m-%y"),nameUser,emailUser,'Spanish',company,sectorUser,fuel,businessModel,Fuel_price,'eur/kWh',surfaceAvailable,distanceInput,localInput,terreno,orientation,inclination,shadowInput,fluidInput,P_op_bar,'bar',mainProcessInput,T_out_C,T_in_C,typeScheme,totalConsumption,'kWh',perfilDiarioTipo,dayArray,ini_hour,end_hour,batch_process,num_batch,dura_batch,perfilSemanal,perfilAnual,weekArray[0],weekArray[1],weekArray[2],weekArray[3],weekArray[4],weekArray[5],weekArray[6],monthArray[0],monthArray[1],monthArray[2],monthArray[3],monthArray[4],monthArray[5],monthArray[6],monthArray[7],monthArray[8],monthArray[9],monthArray[10],monthArray[11],1.0001,1,1.001,1,1,'SL_L_P',0]}
+        new_data = pd.DataFrame.from_dict(new_data, orient='index')
+        new_data.columns = columns
+        data=data.append(new_data, ignore_index=True)
+        data.to_csv(path, sep=',',encoding = "ISO-8859-1")
+        reg=len(data)-1
+        
+        inputs = {"date":datetime.datetime.now().strftime("%d-%m-%y"), "nameUser" :nameUser,"companyName": company,
+            "emailUser" :emailUser,"sectorUser":sectorUser,"currentFuel":fuel,"fuelPrice":Fuel_price,"co2TonPrice":co2TonPrice,"priceUnit":priceUnit,"businessModel":businessModel, "location":localMeteo,
+            "surfaceAvailable":surfaceAvailable,"terrainType": terreno,"orientation":orientation,"inclination":inclination,  "shadow":shadowInput,   "distance":distanceInput, "mainProcess":mainProcessInput,
+            "fluid":fluidInput, "pressure":P_op_bar,"pressureUnit":pressureUnit,  "connectProcess":typeScheme,  "outletTemp":T_out_C,  "inletTemp":T_in_C,
+            "energyConsumption":totalConsumption,"energyConsumptionUnits":energyConsumptionUnits,"typeProcessDay":perfilDiarioTipo,"dayProfile":perfilDiario,  "weekProfile":perfilSemanal,         
+            "annualProfile":perfilAnual,'localInput':localInput,'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
+            
+
+
+    # --------------------------------------------------------------------------------------
+    if ressspiReg==1:        
+        new=0
+        reg=data_reg
+        flags=['rebaja','num_loops','n_coll_loop','type_integration','almVolumen','correccionDNI','FS']
+        flagsValue=[mofINV,num_loops,n_coll_loop,type_integration,almVolumen,mofDNI,mofProd]
+        flagsValuesOld=[data.at[reg,'rebaja'],data.at[reg,'num_loops'],data.at[reg,'n_coll_loop'] ,data.at[reg,'type_integration'],data.at[reg,'almVolumen'],data.at[reg,'correccionDNI'],data.at[reg,'FS']]
+        flagOverwrite=check_overwrite(data,reg,mofINV,num_loops,n_coll_loop,type_integration,almVolumen,mofDNI,mofProd)
+        if any(t==True for t in flagOverwrite):
+            root = Tk()
+            result=messagebox.askyesno("Vas a sobre-escribir un registro de la base de datos","Estas simulando el fichero "+str(reg)+" de "+str(data['industry'][reg])+". Vas a sobrescribir estos parámetros: "+str(np.array(flags)[np.array(flagOverwrite)])+", con valor "+str(np.array(flagsValuesOld)[np.array(flagOverwrite)])+" por los nuevos valores "+str(np.array(flagsValue)[np.array(flagOverwrite)])+". Quieres continuar?")
+            
+            if result==False:
+                root.destroy()
+                sys.exit()
+            else:
+                pass
+            root.destroy()
+            
+        fileName="results"+str(reg)
+        
+        inputs = {"date":data['date'][reg], "nameUser" :data['name'][reg],"companyName": data['industry'][reg],
+            "emailUser" :data['mail'][reg],"sectorUser":data['industrial_sector'][reg],"currentFuel":data['fuel'][reg],"fuelPrice":data['fuel_price'][reg],"priceUnit":data['fuel_unit'][reg],"businessModel":data['business_model'][reg], "location":data['location'][reg],
+            "surfaceAvailable":data['surface'][reg],"terrainType": data['terrain'][reg],"orientation":data['orientation'][reg],"inclination":data['inclination'][reg],  "shadow":data['shadow'][reg],"distance":data['distance'][reg],"mainProcess":data['process'][reg],
+            "fluid":data['fluid'][reg], "pressure":data['pression'][reg],"pressureUnit":data['pression_unit'][reg],  "connectProcess":data['scheme'][reg],  "outletTemp":data['Temp_out'][reg],  "inletTemp":data['Temp_in'][reg],
+            "energyConsumption":data['consumption'][reg],"energyConsumptionUnits":data['unit_consumption'][reg],"typeProcessDay":data['process_type'][reg],"dayProfile":data['daily_consumpt'][reg],  "weekProfile":data['week_consumpt'][reg],         
+            "annualProfile":data['annual_consumpt'][reg],'localInput':data['location'][reg]}
+            
+        
+        annualConsumptionkWh=data['consumption'][reg]
+        dayArray=[float(s) for s in data['daily_consumpt'][reg][1:-1].split(',')]
+        weekArray=[float(data['Mond'][reg]),float(data['Tue'][reg]),float(data['Wen'][reg]),float(data['Thu'][reg]),float(data['Fri'][reg]),float(data['Sat'][reg]),float(data['Sun'][reg])]
+        monthArray=[float(data['Ene'][reg]),float(data['Feb'][reg]),float(data['Mar'][reg]),float(data['Abr'][reg]),float(data['May'][reg]),float(data['Jun'][reg]),float(data['Jul'][reg]),float(data['Ago'][reg]),float(data['Sep'][reg]),float(data['Oct'][reg]),float(data['Nov'][reg]),float(data['Dic'][reg])]
+        arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
+        inputs.update(arraysConsumption)
+        
+        
+        
+        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        
+        fluidInput=data['fluid'][reg] #Type of fluid 
+        T_in_C=data['Temp_in'][reg] #Temperatura baja
+        T_out_C=data['Temp_out'][reg] #Temperatura alta
+        P_op_bar=data['pression'][reg]
+        
+        typeScheme=data['scheme'][reg] #Tipo de integración
+    
+        
+        #I get the price and I adjust it depending the unit
+        fuelPriceUnit=data['fuel_unit'][reg]
+        fuel=data['fuel'][reg]
+         
+        priceFactor=1
+        if fuel=="Gas Natural" or fuel=="GNL" or fuel=="Natural gas" or fuel=="LNG":
+            co2factor=.2016/1000 #TonCo2/kWh     
+            if fuelPriceUnit=="eur/m3":
+                priceFactor=1/9.02 #http://petromercado.com/blog/37-articulos/182-poder-calorifico-en-kw-del-gasoleo-c-butano-y-pellet.html
+        
+        if fuel=="Gasoil" or fuel=="Fueloil":
+            co2factor=.27/1000 #TonCo2/kWh          
+            if fuelPriceUnit=="eur/litro":
+                priceFactor=1/10.18 #http://petromercado.com/blog/37-articulos/182-poder-calorifico-en-kw-del-gasoleo-c-butano-y-pellet.html
+        
+        if fuel=="Electricidad" or fuel=="Electricity":
+            co2factor=.385/1000 #TonCo2/kWh  
+        
+        if fuel=="Otro" or fuel=="Other":
+            co2factor=.385/1000 #TonCo2/kWh
+            if fuelPriceUnit=="eur/litro":
+                priceFactor=1/10.18 #http://petromercado.com/blog/37-articulos/182-poder-calorifico-en-kw-del-gasoleo-c-butano-y-pellet.html
+    
+        
+        businessModel=data['business_model'][reg]      #Modelo de negocio seleccionado                               
+        Fuel_price=data['fuel_price'][reg]*priceFactor   #Price of fossil fuel in €/kWh
+        co2TonPrice=0 #(€/TonCo2 emitida)
+         
+        #Meteo
+        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
+        
+        locationFromRessspi=data['location'][reg]
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0]
+        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo  
+        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0]
+        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0]
+    
+         #%%
+    
+    
+    
+    if ressspiReg>-2:
+        data.at[reg,'num_loops'] = num_loops
+        data.at[reg,'n_coll_loop'] = n_coll_loop
+        data.at[reg,'type_integration'] = type_integration
+        data.at[reg,'almVolumen'] = almVolumen
+        data.at[reg,'rebaja'] = mofINV
+        data.at[reg,'correccionDNI'] = mofDNI
+        data.at[reg,'FS'] = mofProd
+        
+        
+        data.to_csv(path, sep=',',encoding = "ISO-8859-1")
+        
+    # -----------------------------------------------
+    
+    #Colector
+    beta=0
+    orient_az_rad=0
+    IAM_file='Solatom.csv'
+    IAM_folder=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/IAM_files/"  
+    IAMfile_loc=IAM_folder+IAM_file
+    
+    
+    REC_type=1
+    D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
+    Area=Area_coll*n_coll_loop #Area de loop
+    Area_total=Area*num_loops #Area total de apertura
+    
+    #Process control
+    T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #Array con las temperaturas mensuales de agua de red
+    T_in_C_AR=waterFromGrid(T_in_C_AR_mes)
+    #Process parameters
+    lim_inf_DNI=200
+    m_dot_min_kgs=0.08
+    coef_flow_rec=2
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     
     
     
@@ -228,7 +610,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
     num_modulos_tot=n_coll_loop*num_loops
     
+<<<<<<< HEAD
     #Solar Data
+=======
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim)
     """
     Output key:
@@ -249,6 +634,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     T_in_flag=1 #Flag 1 si la temperatura es constante (circuito cerrado); 0 si se toma agua de red (circuito abierto con reposicion)
     
     #Renombramos variables y las transformamos para trabajar mas comodo
+<<<<<<< HEAD
 #    month=output[:,0]
 #    day_month=output[:,1]
 #    hour_day=output[:,2]
@@ -261,6 +647,20 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     DNI=output[:,9] *mofDNI # [W/m²]
 #    DNI_positive_hours=(0 < DNI).sum()
     temp=output[:,10]+273 #[K] Ambient temperature
+=======
+    month=output[:,0]
+    day_month=output[:,1]
+    hour_day=output[:,2]
+    hour_year= output[:,3]
+    #W=output[:,4]
+    SUN_ELV=output[:,5] #rad
+    SUN_AZ=output[:,6] #rad
+    #DECL=output[:,7] - #rad
+    #SUN_ZEN=output[:,8] #rad
+    DNI=output[:,9] *mofDNI # W/m2
+    DNI_positive_hours=(0 < DNI).sum()
+    temp=output[:,10]+273 #K
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     step_sim=output [:,11]   
     steps_sim=len(output) #Numero de steps en la simulacion
     
@@ -269,6 +669,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     Demand=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
     #Preparation of variables depending on the scheme selected
     
+<<<<<<< HEAD
     
     #Variable init
     sat_liq=0 #Not used
@@ -290,6 +691,18 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     h_out=0
     
     if type_integration=="SL_L_RF":    
+=======
+    if type_integration=="SL_L_RF":
+        sat_liq=0 #Not used
+        sat_vap=0 #Not used
+        x_design=0 #Not used
+        outProcess_h=0 #Not used
+        almVolumen=0 #litros Not used
+        energStorageMax=0 #kWh
+        energyStored=0 #kWh
+        porctSensible=0 #Not used
+        
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         
         heatFactor=.5 #Proportion of temperature
         DELTA_T_HX=5 #Degrees for DELTA in the heat Exchanger
@@ -320,7 +733,11 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         T_out_HX_K=(T_in_process_K+(T_out_K-T_in_process_K)*heatFactor)
         T_out_HX_C=T_out_HX_K-273
         outputHXState=IAPWS97(P=P_op_Mpa, T=T_out_HX_K)
+<<<<<<< HEAD
 #        outHX_s=outputHXState.s #Not used?
+=======
+        outHX_s=outputHXState.s #Not used?
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         hHX_out=outputHXState.h
         
         #Our design point will be heat the fluid at x%
@@ -336,10 +753,26 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         h_out=outputState.h                                                                                                                                                                                  
         T_av_process_K=(T_in_process_K+T_out_process_K)/2
         
+<<<<<<< HEAD
     if type_integration=="SL_L_P" or type_integration=="PL_E_PM":   
         
         P_op_Mpa=P_op_bar/10
 
+=======
+    if type_integration=="SL_L_P" or type_integration=="PL_E_PM":
+        sat_liq=0 #Not used
+        sat_vap=0 #Not used
+        x_design=0 #Not used
+        outProcess_h=0 #Not used
+        porctSensible=0 #Not used
+        T_out_HX_C=0 #ot used
+    
+        
+        P_op_Mpa=P_op_bar/10
+        almVolumen=0 #litros
+        energStorageMax=0 #kWh
+        energyStored=0 #kWh
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         
         T_in_K=T_in_C+273
         T_in_process_C=T_in_C
@@ -347,18 +780,27 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
             
         
+<<<<<<< HEAD
 
         
         if fluidInput!="oil":
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_process_K)
 #            sProcess_in=inputState.s
             hProcess_in=inputState.h  
+=======
+        inputState=IAPWS97(P=P_op_Mpa, T=T_in_process_K)
+        sProcess_in=inputState.s
+        hProcess_in=inputState.h  
+        
+        if fluidInput!="oil":
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273    
     
         T_out_K=T_out_C+273
         T_out_process_K=T_out_K
         T_out_process_C=T_out_C
+<<<<<<< HEAD
         if fluidInput!="oil":
             outputProcessState=IAPWS97(P=P_op_Mpa, T=T_out_process_K)
             outProcess_s=outputProcessState.s
@@ -377,6 +819,34 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
 
+=======
+        outputProcessState=IAPWS97(P=P_op_Mpa, T=T_out_process_K)
+        outProcess_s=outputProcessState.s
+        hProcess_out=outputProcessState.h    
+        
+        
+        
+        inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
+        h_in=inputState.h    
+        in_s=inputState.s
+        in_x=inputState.x
+        outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
+        out_s=outputState.s
+        h_out=outputState.h
+        
+    
+    if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+        sat_liq=0 #Not used
+        sat_vap=0 #Not used
+        x_design=0 #Not used
+        outProcess_h=0 #Not used
+        porctSensible=0 #Not used
+        T_out_HX_C=0 #ot used
+        T_out_process_C=0 #Not used
+        T_in_process_C=0 #Not used
+        outProcess_s=0 #Not used
+        hProcess_out=0 #Not used
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         
         T_max_storage=95+273 #MAx temperature storage
         T_min_storage=80+273 #MIN temperature storage to supply to the process
@@ -415,6 +885,19 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         energStorageMax=storage_max_energy-storage_ini_energy
         
     if type_integration=="SL_L_PS":
+<<<<<<< HEAD
+=======
+        sat_liq=0 #Not used
+        sat_vap=0 #Not used
+        x_design=0 #Not used
+        outProcess_h=0 #Not used
+        porctSensible=0 #Not used
+        T_out_process_C=0 #Not used
+        T_in_process_C=0 #Not used
+        T_out_HX_C=0 #ot used
+        outProcess_s=0 #Not used
+        hProcess_out=0 #Not used
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         
         P_op_Mpa=P_op_bar/10
         
@@ -450,10 +933,23 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             
     
     if type_integration=="SL_S_FW":
+<<<<<<< HEAD
  
         
         P_op_Mpa=P_op_bar/10
 
+=======
+        x_design=0 #Not used
+        outProcess_h=0 #Not used
+        T_out_process_C=0 #Not used
+        T_in_process_C=0 #Not used
+        T_out_HX_C=0 #Not used
+        outProcess_s=0 #Not used
+        hProcess_out=0 #Not used
+        
+        P_op_Mpa=P_op_bar/10
+        almVolumen=0 #litros
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         energStorageMax=0 #kWh
         energyStored=0 #kWh
         T_in_K=T_in_C+273
@@ -480,7 +976,17 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         h_out=outputState.h
     
     if type_integration=="SL_S_FWS":
+<<<<<<< HEAD
 
+=======
+        T_out_process_C=0 #Not used
+        T_in_process_C=0 #Not used
+        T_out_HX_C=0 #Not used
+        x_design=0 #Not used
+        outProcess_h=0 #Not used
+        outProcess_s=0 #Not used
+        hProcess_out=0 #Not used
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         
         P_op_Mpa=P_op_bar/10
         
@@ -595,6 +1101,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     storage_energy=np.zeros(steps_sim)
     
     for i in range(0,steps_sim):
+<<<<<<< HEAD
    
         theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
         theta_i_deg[i]=abs(theta_i_deg[i])
@@ -617,6 +1124,24 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
 
         
       
+=======
+    
+        theta_transv_rad[i],theta_i_rad[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad)
+    
+        #Cálculo del IAM long y transv
+        theta_i_deg[i]=theta_i_rad[i]*180/np.pi
+        theta_transv_deg[i]=theta_transv_rad[i]*180/np.pi
+        
+        [IAM_long[i]]=IAM_calc(theta_i_deg[i],0,IAMfile_loc) #Longitudinal
+        [IAM_t[i]]=IAM_calc(theta_transv_deg[i],1,IAMfile_loc) #Transversal
+        
+    #        if IAM_long[i]>1:
+    #            IAM_long[i]=1
+    #        if IAM_t[i]>1:
+    #            IAM_t[i]=1
+                
+        IAM[i]=IAM_long[i]*IAM_t[i]
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         
     
         if i==0:    #Condiciones iniciales
@@ -641,7 +1166,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                         [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageWaterSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
                     else:
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                 
+<<<<<<< HEAD
                         
+=======
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
                         [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageOilSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
      
                 if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
@@ -669,7 +1197,11 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                         T_av_process_K=(T_out_process_K+T_in_process_K)/2
                         [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
                         flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K))      
+<<<<<<< HEAD
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                                                                                                          
+=======
+                        [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                 
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
                         [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageOilSimple(Q_prod[i],Demand[i])
     
                 if type_integration=="SL_L_RF":
@@ -704,7 +1236,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                         [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
                         flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K))      
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                 
+<<<<<<< HEAD
                         
+=======
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
                         if newBypass=="REC":
                             flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating                         
                         else:
@@ -779,6 +1314,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
     totalDischarged=(sum(Q_discharg))
+<<<<<<< HEAD
 #    totalCharged=(sum(Q_charg))
     Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
     improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
@@ -787,6 +1323,16 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
 #    operation_hours=np.nonzero(Q_prod)
     DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
 #    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
+=======
+    totalCharged=(sum(Q_charg))
+    Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
+    improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
+    solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
+    Energy_module_max=Production_max/num_modulos_tot
+    operation_hours=np.nonzero(Q_prod)
+    DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
+    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
     
     annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
@@ -798,6 +1344,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     if finance_study==1 and steps_sim==8759:
         #---- FINANCIAL SIMULATION INPUTS ---------------------------------
     
+<<<<<<< HEAD
         #Fixed parameters
         IPC=2.5 # Annual increase of the price of money in %
         fuelIncremento=3.5 # Annual increase of fuel price in %
@@ -809,11 +1356,29 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         incremento=IPC/100+fuelIncremento/100
     
 
+=======
+        #Variable generation para estudio sensibilidad
+    #    Tramos=25
+    #    IRR=np.zeros(Tramos)
+    #    Amort=np.zeros(Tramos)
+    #    Fuel_array=np.zeros(Tramos)
+    
+    
+
+        IPC=2.5 #%
+        fuelIncremento=3.5 #% Incremento anual precio fuel
+        
+        incremento=IPC/100+fuelIncremento/100
+    
+        Boiler_eff=0.8 #Boiler efficiency to take into account the excess of fuel consumed
+        n_years_sim=25 #Number of years for the simulation
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         if co2TonPrice>0:
             CO2=1 #Flag to take into account co2 savings in terms of cost per ton emitted
         else:
             CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
         
+<<<<<<< HEAD
 
         if sender=='solatom': #Use Solatom propietary cost functions
             from Solatom_modules.Solatom_finance import SP_plant_bymargin,SP_plant_bymargin2
@@ -835,6 +1400,17 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             Selling_price = (BM_cost/(1 - margin))*num_modulos_tot
             OM_cost_year=OM_cost*num_modulos_tot
             
+=======
+        margin=0.20 #Margen sobre el precio de venta
+        distance=400
+        [Selling_price,BM_cost,OM_cost_year]=SP_plant_bymargin(num_modulos_tot,num_loops,margin,type_coll)
+        [Selling_price2,BM_cost2,OM_cost_year2]=SP_plant_bymargin2(num_modulos_tot,margin,type_coll,distance)
+        #Selling_price=370000 #Selling_price of the plant in €. This value overrides the one calculate by the margin function
+        #margin=1-(BM_cost/Selling_price) #This value overrides the one calculate by the margin function
+        
+        #OM_cost_year=4000 #Cost of O&M/year in € #Para fijar un coste de operación
+        Selling_price_module=Selling_price/(num_loops*n_coll_loop)
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
       
         Selling_price=Selling_price*mofINV
         OM_cost_year=OM_cost_year*1
@@ -854,7 +1430,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             if lang=="eng":
                 TIRscript="IRR for the client"
                 Amortscript="<b>Payback: </b> Year "+ str(AmortYear)
+<<<<<<< HEAD
                 TIRscript10="IRR for the client 10 years"
+=======
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     
         
         #Modelo tipo ESE    
@@ -887,7 +1466,15 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             Energy_savingsList.append(round(Net_anual_savings[i]))
     
             fuelPrizeArrayList.append(fuelPrizeArray[i])
+<<<<<<< HEAD
                
+=======
+        
+        energy_bill=Demand_anual*Fuel_price
+        Solar_savings_lim=Production_lim*Fuel_price
+        Solar_savings_max=Production_max*Fuel_price
+        
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
                  'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
                  'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
@@ -921,6 +1508,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     # Annual simulations
     if steps_sim==8759:
         if plots[0]==1: #(0) Sankey plot
+<<<<<<< HEAD
             image_base64,sankeyDict=SankeyPlot(sender,ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
         if plots[0]==0: #(0) Sankey plot -> no plotting
             sankeyDict={'Production':0,'raw_potential':0,'Thermal_loss':0,'Utilization':0}
@@ -934,10 +1522,26 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             storageSummer(sender,ressspiReg,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
         if plots[4]==1: #(4) Plot Prod months
             output_excel=prodMonths(sender,ressspiReg,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
+=======
+            image_base64,sankeyDict=SankeyPlot(ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
+        if plots[0]==0: #(0) Sankey plot -> no plotting
+            sankeyDict={'Production':0,'raw_potential':0,'Thermal_loss':0,'Utilization':0}
+        if plots[1]==1: #(1) Production week Winter & Summer
+            prodWinterPlot(ressspiReg,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)   
+            prodSummerPlot(ressspiReg,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)  
+        if plots[2]==1 and finance_study==1: #(2) Plot Finance
+            financePlot(ressspiReg,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty)
+        if plots[3]==1: #(3)Plot of Storage first week winter & summer 
+            storageWinter(ressspiReg,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
+            storageSummer(ressspiReg,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
+        if plots[4]==1: #(4) Plot Prod months
+            output_excel=prodMonths(ressspiReg,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     
     # Non-annual simulatios (With annual simuations you cannot see anything)
     if steps_sim!=8759:
         if plots[5]==1: #(5) Theta angle Plot
+<<<<<<< HEAD
             thetaAnglesPlot(sender,ressspiReg,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
         if plots[6]==1: #(6) IAM angles Plot
             IAMAnglesPlot(sender,ressspiReg,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty) 
@@ -947,10 +1551,22 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             flowRatesPlot(sender,ressspiReg,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
         if plots[9]==1: #(9)Plot Storage non-annual simulation  
             storageAnnual(sender,ressspiReg,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
+=======
+            thetaAnglesPlot(ressspiReg,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
+        if plots[6]==1: #(6) IAM angles Plot
+            IAMAnglesPlot(ressspiReg,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty) 
+        if plots[7]==1: #(7) Plot Overview (Demand vs Solar Radiation) 
+            demandVsRadiation(ressspiReg,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty)
+        if plots[8]==1: #(8) Plot flowrates  & Temp & Prod
+            flowRatesPlot(ressspiReg,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
+        if plots[9]==1: #(9)Plot Storage non-annual simulation  
+            storageAnnual(ressspiReg,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
              
     # Property plots
     if fluidInput!="oil": #WATER
         if plots[10]==1: #(10) Mollier Plot for s-t for Water
+<<<<<<< HEAD
             mollierPlotST(sender,ressspiReg,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)              
         if plots[11]==1: #(11) Mollier Plot for s-h for Water 
             mollierPlotSH(sender,ressspiReg,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)  
@@ -1004,6 +1620,42 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             reportsVar.update(annualProdDict)
             reportsVar.update(modificators)
             reportOutputOffline(reportsVar)
+=======
+            mollierPlotST(ressspiReg,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)              
+        if plots[11]==1: #(11) Mollier Plot for s-h for Water 
+            mollierPlotSH(ressspiReg,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)  
+    if fluidInput=="oil": 
+        if plots[12]==1:
+            rhoTempPlotOil(ressspiReg,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
+        if plots[13]==1:
+            viscTempPlotOil(ressspiReg,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
+    
+    # Other plots
+    if plots[14]==1: #(14) Plot Production
+        productionSolar(ressspiReg,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty)
+    
+    
+    #%% 
+    if steps_sim==8759:
+        template_vars={}
+        reportsVar={'date':inputs['date'],'type_integration':type_integration,
+                    'fileName':fileName,'reg':reg,
+                    'Area_total':Area_total,'n_coll_loop':n_coll_loop,
+                    'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs}
+        
+        reportsVar.update(inputs)
+        reportsVar.update(finance)
+        reportsVar.update(confReport)
+        reportsVar.update(annualProdDict)
+        reportsVar.update(sankeyDict)
+        reportsVar.update(meteoDict)
+        reportsVar.update(processDict)
+        reportsVar.update(integrationDesign)
+
+        if ressspiReg==-2: 
+            data=""
+        template_vars=reportOutput(ressspiReg,reg,reportsVar,inputs,data,printReport,pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)))
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     else:
         template_vars={}
         reportsVar={}
@@ -1013,8 +1665,22 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
 # ----------------------------------- END RESSSPI -------------------------
 # -------------------------------------------------------------------------
     #%% 
+<<<<<<< HEAD
        
 
+=======
+    
+    
+#lang="spa"
+lang="spa"
+#sender="generico"
+sender="solatom"
+#sender="ressspi"
+#cabecera="Estudio preliminar"
+cabecera="Resultados de la <br> simulación"
+#cabecera="Simulation results"
+mapama=0 #mapama=1 generates a mapama image
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     
     
 #Plot Control ---------------------------------------
@@ -1043,12 +1709,18 @@ mes_ini_sim=1
 dia_ini_sim=1
 hora_ini_sim=1
 
+<<<<<<< HEAD
 mes_fin_sim=1
 dia_fin_sim=1
+=======
+mes_fin_sim=12  
+dia_fin_sim=31
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
 hora_fin_sim=24
 
 
 
+<<<<<<< HEAD
 # -------------------- FINE TUNNING CONTROL ---------
 mofINV=1 #Sobre el coste de inversion
 mofDNI=1  #Corrección a fichero Meteonorm
@@ -1057,6 +1729,24 @@ mofProd=1 #Factor de seguridad a la producción de los módulos
 # -------------------- SIZE OF THE PLANT ---------
 num_loops=2 
 n_coll_loop=10
+=======
+data_reg=74
+inputsDjango={}
+inputFile=1 #For reading directly from file
+ressspiReg=-2 #0 if new record #1 if it's already in the database #-1 if it comes from a text file #-2 if it comes from django
+
+printReport=1
+
+
+# -------------------- FINE TUNNING CONTROL ---------
+mofINV=1.6 #Sobre el coste de inversion
+mofDNI=1  #Corrección a fichero Meteonorm
+mofProd=.9 #Factor de seguridad a la producción de los módulos
+
+# -------------------- TAMAÑO INSTALACION ---------
+num_loops=6   
+n_coll_loop=8
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1066,16 +1756,25 @@ n_coll_loop=10
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
+<<<<<<< HEAD
 type_integration="SL_L_PS"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
 confReport={'lang':'spa','sender':'solatom1','cabecera':'Resultados de la <br> simulación','mapama':0}
+=======
+type_integration="SL_S_PD"
+almVolumen=5000 #litros
+
+# --------------------------------------------------
+confReport={'lang':lang,'sender':sender,'cabecera':cabecera,'mapama':mapama}
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
 # ---------------------------------------------------
 
+<<<<<<< HEAD
 ressspiReg=0 #0 if new record; -2 if it comes from www.ressspi.com
 
 
@@ -1093,3 +1792,9 @@ else:
    
 #[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
+=======
+inputsDjango={'date': '2018-08-06', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'Deretil 2', 'sectorIndustry': 'Chemical', 'fuel': 'NG', 'fuelPrice': 0.03, 'co2TonPrice': 0.0, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Almeria', 'location_aux': '', 'surface': 400, 'terrain': 'rooftop_sandwich', 'distance': 400, 'orientation': 'NS', 'inclination': 'soft-tilt', 'shadows': 'free', 'fluid': 'steam', 'pressure': 7.5, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 125.0, 'connection': 'process', 'process': '', 'demand': 78699261.0, 'demandUnit': 'kWh', 'hourINI': '1', 'hourEND': '24', 'Mond': 0.14285714285714285, 'Tues': 0.14285714285714285, 'Wend': 0.14285714285714285, 'Thur': 0.14285714285714285, 'Fri': 0.14285714285714285, 'Sat': 0.14285714285714285, 'Sun': 0.14285714285714285, 'Jan': 0.08333333333333333, 'Feb': 0.08333333333333333, 'Mar': 0.08333333333333333, 'Apr': 0.08333333333333333, 'May': 0.08333333333333333, 'Jun': 0.08333333333333333, 'Jul': 0.08333333333333333, 'Aug': 0.08333333333333333, 'Sep': 0.08333333333333333, 'Oct': 0.08333333333333333, 'Nov': 0.08333333333333333, 'Dec': 0.08333333333333333, 'last_reg': 81}
+
+
+#[template_vars,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,data_reg,inputsDjango,inputFile,printReport,plots,imageQlty,confReport,modificators,desginDict,simControl,inputsDjango['last_reg'])
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86

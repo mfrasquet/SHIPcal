@@ -83,6 +83,7 @@ def theta_IAMs(SUN_AZ_DP,SUN_ELV_DP,beta,orient_az_rad):
     #theta_transv_deg=theta_transv_rad*180/np.pi
     # -----------------------------------------------------
     return [theta_transv_rad,theta_i_rad]
+<<<<<<< HEAD
 
 def theta_IAMs_v2(SUN_AZ,SUN_ELV,LONG_INCL,HEAD,ROLL):
    
@@ -128,6 +129,11 @@ def theta_IAMs_v2(SUN_AZ,SUN_ELV,LONG_INCL,HEAD,ROLL):
     
 def IAM_calc(ang_target,IAM_type,file_loc):
     ang_target=abs(ang_target)
+=======
+    
+def IAM_calc(ang_target,IAM_type,file_loc):
+
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     IAM_raw = np.loadtxt(file_loc, delimiter=",")
     
     

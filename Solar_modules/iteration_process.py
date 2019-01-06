@@ -5,7 +5,11 @@ Archivo que contiene las funciones de ITERACION
 
 @author: Miguel Frasquet
 """
+<<<<<<< HEAD
 from Collector_modules.receivers import Rec_loss
+=======
+from Solatom_modules.solatom_param import Rec_loss
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
 from General_modules.func_General import thermalOil
 from iapws import IAPWS97
 
@@ -111,9 +115,13 @@ def flow_calcOil (T_out_K,T_in_K,Cp_av,temp_amb_K,REC_type,theta_i_rad,DNI,Long,
     [Q_loss_rec]=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI) #W/m
     flow_rate_kgs=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/((T_out_K-T_in_K)*Cp_av*1000)
 
+<<<<<<< HEAD
     Perd_termicas=Q_loss_rec*n_coll_loop*Long
     if flow_rate_kgs<=0:
         flow_rate_kgs=0
         Perd_termicas=0
         
+=======
+    Perd_termicas=Q_loss_rec*n_coll_loop*Long    
+>>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     return [flow_rate_kgs,Perd_termicas]
