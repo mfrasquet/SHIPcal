@@ -205,25 +205,4 @@ def thermalOil(T): #Function to derive the properties of thermal oil from the Th
     thermalDiff=8.20353*np.exp(-0.00135*T)*1e-8
     #PrantNumber
     Prant=177506.92794*T**(-1.68808)
-<<<<<<< HEAD
     return(rho,Cp,k,Dv,Kv,thermalDiff,Prant)
-    
-def reportOutputOffline(reportsVar):
-    print("")
-    print("////////////////// Results from Ressspi v."+reportsVar['version']+" ///////////////////")
-    print("Location: "+reportsVar['location']+" ("+str(round(reportsVar['DNI_anual_irradiation'],2))+" kWh with ModfDNI: "+str(reportsVar['mofDNI'])+")")
-    print("Solar plant: "+str(int(reportsVar['Area_total']*1.5))+" m2 with "+str(reportsVar['n_coll_loop'])+" collectors per loop, in "+str(reportsVar['num_loops'])+" loops")
-    print("Storage: "+str(int(reportsVar['energyStored']))+" kWh")
-    print("Integration scheme: "+reportsVar['type_integration'])
-    print("/// SOLAR PRODUCTION:")
-    print("Energy demand of the industry "+str(round(reportsVar['Demand_anual'],2))+" kWh")
-    print("Gross solar production: "+str(round(reportsVar['Production_max'],2))+" kWh with ModfProd: "+str(reportsVar['mofProd'])+"  ("+str(int(reportsVar['solar_fraction_max']))+" %)")
-    print("Net solar production: "+str(round(reportsVar['Production_lim'],2))+" kWh with ModfProd: "+str(reportsVar['mofProd'])+" ("+str(int(reportsVar['solar_fraction_lim']))+" %)")
-    print("Utilization ratio: "+str(round(reportsVar['Utilitation_ratio'],2))+" %")
-    print("/// FINANCE:")
-    print("Investment: "+str(int(reportsVar['Selling_price']))+" €")
-    print("Savings 1st year: "+str(int(reportsVar['Energy_savingsList'][1]))+" € with ModfInv: "+str(reportsVar['mofINV'])+"")
-    print("Payback period: "+str(int(reportsVar['AmortYear']))+" years")
-=======
-    return(rho,Cp,k,Dv,Kv,thermalDiff,Prant)
->>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
