@@ -40,11 +40,7 @@ def djangoReport(inputsDjango):
         factor_uni_consum=1000/1000
     if inputsDjango['demandUnit']=='GWh':
         factor_uni_consum=1000000/1000
-<<<<<<< HEAD
     if inputsDjango['demandUnit']=='KJ':
-=======
-    if inputsDjango['demandUnit']=='kJ':
->>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
         factor_uni_consum=0.000278/1000
     if inputsDjango['demandUnit']=='BTU':
         factor_uni_consum=0.000293/1000
@@ -54,35 +50,7 @@ def djangoReport(inputsDjango):
     annualConsumption=annualConsumption*factor_uni_consum
     annualConsumptionkWh=annualConsumption*1000
     
-<<<<<<< HEAD
    
-=======
-#    #Month consumption evaluation
-#    
-#    activeMonthsArray_aux=[inputsDjango['Jan'],inputsDjango['Feb'],inputsDjango['Mar'],inputsDjango['Apr'],inputsDjango['May'],inputsDjango['Jun'],inputsDjango['Jul'],inputsDjango['Aug'],inputsDjango['Sep'],inputsDjango['Oct'],inputsDjango['Nov'],inputsDjango['Dec']]
-#    activeMonthsArray=[1 if x == 'on' else 0 for x in activeMonthsArray_aux]
-#    
-#    if sum(activeMonthsArray)==0:
-#        monthlyConsump=0
-#    else:
-#        monthlyConsump=round((annualConsumption/sum(activeMonthsArray)),2) #MWh
-#    
-#    energyMonthArray = [x * monthlyConsump for x in activeMonthsArray]
-#    
-#    weekConsump=int(monthlyConsump/4) #MWh assuming 4 weeks/month
-#    activeWeekArray_aux=[inputsDjango['Mond'],inputsDjango['Tues'],inputsDjango['Wend'],inputsDjango['Thur'],inputsDjango['Fri'],inputsDjango['Sat'],inputsDjango['Sun']]
-#    activeWeekArray=[1 if x == 'on' else 0 for x in activeWeekArray_aux]
-#    
-#    if sum(activeWeekArray)==0:
-#        dailyConsump=0
-#    else:
-#        dailyConsump=round((weekConsump/sum(activeWeekArray)),2) #MWh
-#    
-#    energyWeekArray = [x * dailyConsump for x in activeWeekArray]
-#    
-#    
-#    
->>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
     dayArray=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     activeHours=int(inputsDjango['hourEND'])-int(inputsDjango['hourINI'])
     porctDay=1/activeHours
@@ -97,10 +65,7 @@ def djangoReport(inputsDjango):
             "emailUser" :inputsDjango['email'],"sectorUser":inputsDjango['sectorIndustry'],
             "currentFuel":inputsDjango['fuel'],"fuelPrice":inputsDjango['fuelPrice'],
             "co2TonPrice":inputsDjango['co2TonPrice'],
-<<<<<<< HEAD
             "co2factor":inputsDjango['co2factor'],
-=======
->>>>>>> 19ae9050f848f1dde737ccb42c959db1d7bcbf86
             "priceUnit":inputsDjango['fuelUnit'],
             "businessModel":inputsDjango['businessModel'],
             "location":inputsDjango['location'],"surfaceAvailable":inputsDjango['surface'],
