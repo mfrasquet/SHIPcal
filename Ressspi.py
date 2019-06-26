@@ -919,7 +919,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
               'Q_useful':Q_useful.tolist(),'Q_defocus':Q_defocus.tolist(),'T_alm_K':T_alm_K.tolist(),
               'n_years_sim':n_years_sim,'Acum_FCF':Acum_FCF.tolist(),'FCF':FCF.tolist(),'m_dot_min_kgs':m_dot_min_kgs,
               'steps_sim':steps_sim,'AmortYear':AmortYear,'Selling_price':Selling_price,
-              'in_s':in_s,'out_s':out_s,'T_in_flag':T_in_flag,
+              'in_s':in_s,'out_s':out_s,'T_in_flag':T_in_flag,'Fuel_price':Fuel_price,'Boiler_eff':Boiler_eff,
               'T_in_C':T_in_C,'T_in_C_AR':T_in_C_AR.tolist(),'T_out_C':T_out_C,
               'outProcess_s':outProcess_s,'T_out_process_C':T_out_process_C,'P_op_bar':P_op_bar,
               'x_design':x_design,'h_in':h_in,'h_out':h_out,'hProcess_out':hProcess_out,'outProcess_h':outProcess_h}
