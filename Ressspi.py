@@ -9,6 +9,9 @@ Version record:
     - (1.1.8) 5/1/2019 Modify code to allow offline simulations with other collectors,
     a very simple cost model has been included, this simplistic model will change
     in future versions, thanks to Jose Escamilla for his comments.
+    - (1.1.9) 26/6/2019 Included savings Graph. Corrected savingsFraction = solarNetFraction. 
+    Included boiler_eff for tacking care of energy before boiler (Energy_bill), which is different
+    to energy after the boiler (Demand)
 
 @author: Miguel Frasquet
 """
@@ -45,7 +48,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     if sender=='solatom':
         sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/') #SOLATOM
     
-    version="1.1.8" #Ressspi version
+    version="1.1.9" #Ressspi version
     lang=confReport['lang'] #Language
         
     #Paths
@@ -266,7 +269,12 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     meteoDict={'DNI':DNI.tolist(),'localMeteo':localMeteo}
     
-    Demand=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
+    Boiler_eff=0.8 #Boiler efficiency to take into account the excess of fuel consumed
+    
+    #Demand of energy before the boiler
+    Energy_Bill=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
+    #Demand of energy after the boiler
+    Demand=Boiler_eff*DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
     #Preparation of variables depending on the scheme selected
     
     
@@ -800,7 +808,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         #Fixed parameters
         IPC=2.5 # Annual increase of the price of money in %
         fuelIncremento=3.5 # Annual increase of fuel price in %
-        Boiler_eff=0.8 #Boiler efficiency to take into account the excess of fuel consumed
         n_years_sim=25 #Number of years for the simulation
         margin=0.20 #Margen sobre el precio de venta
         
@@ -933,6 +940,9 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             storageSummer(sender,ressspiReg,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
         if plots[4]==1: #(4) Plot Prod months
             output_excel=prodMonths(sender,ressspiReg,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
+        if plots[15]==1: #(14) Plot Month savings
+            output_excel2=savingsMonths(sender,ressspiReg,Q_prod_lim,Energy_Bill,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
+
     
     # Non-annual simulatios (With annual simuations you cannot see anything)
     if steps_sim!=8759:
@@ -962,7 +972,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     # Other plots
     if plots[14]==1: #(14) Plot Production
         productionSolar(sender,ressspiReg,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty)
-    
+       
     
     #%% 
     
@@ -1019,7 +1029,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,0]
+plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1]
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -1035,6 +1045,8 @@ plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,0]
 #(12) P- Plot thermal oil properties Rho & Cp vs Temp
 #(13) P- Plot thermal oil properties Viscosities vs Temp 
 #(14) Plot Production 
+#(15) A- Plot Month savings 
+
 
 finance_study=1
 
@@ -1042,8 +1054,8 @@ mes_ini_sim=1
 dia_ini_sim=1
 hora_ini_sim=1
 
-mes_fin_sim=1
-dia_fin_sim=1
+mes_fin_sim=12
+dia_fin_sim=31
 hora_fin_sim=24
 
 
