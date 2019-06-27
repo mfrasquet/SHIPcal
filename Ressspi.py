@@ -10,7 +10,7 @@ Version record:
     a very simple cost model has been included, this simplistic model will change
     in future versions, thanks to Jose Escamilla for his comments.
     - (1.1.9) 26/6/2019 Included savings Graph. Corrected savingsFraction = solarNetFraction. 
-    Included boiler_eff for tacking care of energy before boiler (Energy_bill), which is different
+    Included boiler_eff for tacking care of energy before boiler (Energy_Before), which is different
     to energy after the boiler (Demand)
 
 @author: Miguel Frasquet
@@ -272,7 +272,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     Boiler_eff=0.8 #Boiler efficiency to take into account the excess of fuel consumed
     
     #Demand of energy before the boiler
-    Energy_Bill=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
+    Energy_Before=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
+    Energy_Before_annual=sum(Energy_Before)
     #Demand of energy after the boiler
     Demand=Boiler_eff*DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
     #Preparation of variables depending on the scheme selected
@@ -941,7 +942,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         if plots[4]==1: #(4) Plot Prod months
             output_excel=prodMonths(sender,ressspiReg,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
         if plots[15]==1: #(14) Plot Month savings
-            output_excel2=savingsMonths(sender,ressspiReg,Q_prod_lim,Energy_Bill,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
+            output_excel2=savingsMonths(sender,ressspiReg,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
 
     
     # Non-annual simulatios (With annual simuations you cannot see anything)
@@ -997,7 +998,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             reportsVar.update(meteoDict)
             reportsVar.update(processDict)
             reportsVar.update(integrationDesign)   
-            template_vars=reportOutput(ressspiReg,reportsVar,-1,"",pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)))
+            template_vars=reportOutput(ressspiReg,reportsVar,-1,"",pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)),Energy_Before_annual)
         
         else:
             template_vars={} 
