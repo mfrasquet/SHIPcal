@@ -887,9 +887,9 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         Acum_FCFList=[]
         for i in range(0,len(Acum_FCF)):
             if Acum_FCF[i]<0:
-                Acum_FCFList.append("("+str(round(abs(Acum_FCF[i])))+")")
+                Acum_FCFList.append("("+str(int(abs(Acum_FCF[i])))+")")
             else:
-                Acum_FCFList.append(str(round(Acum_FCF[i])))
+                Acum_FCFList.append(str(int(Acum_FCF[i])))
         
         for i in range(0,len(fuelPrizeArray)):
             Energy_savingsList.append(round(Net_anual_savings[i]))
