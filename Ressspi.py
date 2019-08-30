@@ -882,6 +882,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             FCF[0]=0
             
         Energy_savingsList=[]
+        OMList=[]
         fuelPrizeArrayList=[]
         Acum_FCFList=[]
         for i in range(0,len(Acum_FCF)):
@@ -892,14 +893,14 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
         for i in range(0,len(fuelPrizeArray)):
             Energy_savingsList.append(round(Net_anual_savings[i]))
-    
+            OMList.append(OM_cost[i])
             fuelPrizeArrayList.append(fuelPrizeArray[i])
                
         finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
                  'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
                  'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
                  'co2TonPrice':co2TonPrice,'fuelIncremento':fuelIncremento,'IPC':IPC,'Selling_price':Selling_price,
-                 'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OM_cost_year}
+                 'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList}
     
     else:
         n_years_sim=0 #No finance simulation
