@@ -1384,39 +1384,36 @@ def savingsMonths(sender,ressspiReg,Q_prod_lim,Demand,fuel_cost,boiler_eff,lang,
     output_excel=pd.concat([output3,output4], axis=1)
     
 
-    meses=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec"]
+    meses=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
     meses_index=np.arange(0,12)
-    fig,ax = plt.subplots()
-    
+    fig = plt.figure(figsize=(10, 5))
+#    fig = plt.figure()
+#    fig,ax = plt.subplots()
+
+    ax = fig.add_subplot(111) 
     if ressspiReg==-2:
         fig.patch.set_alpha(0)
     if lang=="spa":
         meses=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec"]
         fig.suptitle('Ahorro solar', fontsize=14, fontweight='bold')
-        ax.set_ylabel('Ahorro solar en €',color = 'blue') 
-        ax.bar(meses_index, output3['Demanda'], width=0.8, color='#362510',label="Demanda")
+        ax.set_ylabel('Ahorro solar / Factura actual €') 
+        ax.bar(meses_index, output3['Demanda'], width=0.8, color='#362510',label="Factura mensual")
         ax.bar(meses_index, output4['Ahorro mensual'], width=0.8, color='blue',label="Ahorro solar")
-        plt.legend(loc=9, bbox_to_anchor=(0.5, -0.05), ncol=3)     
-        ax2 = ax.twinx()          
-        ax2 .plot([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5], output2['Fraccion'],'-',color = 'red',label="% Ahorro",linewidth=2.0)
-        ax2.set_ylabel('% de Ahorro',color = 'red')    
-        ax.set_xticks(meses_index+.4)  # set the x ticks to be at the middle of each bar since the width of each bar is 0.8
+        ax.set_xticks(meses_index) 
         ax.set_xticklabels(meses)  #replace the name of the x ticks with your Groups name 
-        plt.legend(loc='upper right', borderaxespad=0.,frameon=True)
+        L=plt.legend(loc=9, bbox_to_anchor=(0.5, -0.05), ncol=3) 
 
+        
     if lang=="eng":
-        meses=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec"]
-        fig.suptitle('Ahorro solar', fontsize=14, fontweight='bold')
-    
-        ax.bar(meses_index, output3['Demanda'], width=0.8, color='#362510',label="Demanda")
-        ax.bar(meses_index, output4['Ahorro mensual'], width=0.8, color='blue',label="Ahorro solar")
-        plt.legend(loc=9, bbox_to_anchor=(0.5, -0.05), ncol=3)     
-        ax2 = ax.twinx()          
-        ax2 .plot([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5], output2['Fraccion'],'-',color = 'red',label="% Ahorro",linewidth=2.0)
-        ax2.set_ylabel('% de Ahorro',color = 'red')    
-        ax.set_xticks(meses_index+.4)  # set the x ticks to be at the middle of each bar since the width of each bar is 0.8
+        meses=["Jan","Feb","Mar","Abr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+        fig.suptitle('Solar savings', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Solar savings / Monthly energy cost €') 
+        ax.bar(meses_index, output3['Demanda'], width=0.8, color='#362510',label="Monthly energy cost")
+        ax.bar(meses_index, output4['Ahorro mensual'], width=0.8, color='blue',label="Solar savings")
+        ax.set_xticks(meses_index)  
         ax.set_xticklabels(meses)  #replace the name of the x ticks with your Groups name 
-        plt.legend(loc='upper right', borderaxespad=0.,frameon=True)
+        L=plt.legend(loc=9, bbox_to_anchor=(0.5, -0.05), ncol=3) 
+
       
     
     if ressspiReg==-2:
