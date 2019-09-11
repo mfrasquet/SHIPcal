@@ -7,6 +7,53 @@ Created on Sat Jan  5 17:49:37 2019
 """
 import numpy as np
 
+
+def SP_plant_costFunctions(n_coll,integration,alm,fluid):  
+    #This function calculates the cost of 
+
+
+    #MODULE [cost/module]
+    module_cost=6410*(n_coll/4)**(-0.0401) #Including direct cost, transport, installaltion
+    
+    module_cost=module_cost*n_coll
+        
+    #POWER BLOCK [cost/module]
+    if integration =="SL_L_P":
+        cost_power_block=7170*(n_coll/4)**(-0.804) #In €
+    elif integration =="SL_L_RF":
+        cost_power_block=7170*(n_coll/4)**(-0.804) #In €
+    elif integration =="SL_S_FW":
+        cost_power_block=7170*(n_coll/4)**(-0.804) #In €
+    elif integration =="SL_S_PD":
+        cost_power_block=12573*(n_coll/4)**(-0.804) #In €
+    elif integration =="SL_L_S":
+        cost_power_block=7170*(n_coll/4)**(-0.804) #In €
+    else:
+        cost_power_block=0
+        
+    cost_power_block=cost_power_block*n_coll
+        
+        
+    #THERMAL STORAGE [cost/liter storage]
+    if alm !=0:
+        if fluid == "water":
+            cost_storage=alm*(2.1*(alm/1000)**(-0.5))
+        elif fluid == "oil":
+            cost_storage=alm*(6.4*(alm/1000)**(-0.5))
+        else:
+            cost_storage=0
+    else:
+        cost_storage=0
+        
+
+    plantCost=module_cost+cost_power_block+cost_storage
+    breakdownCost=[module_cost,cost_power_block,cost_storage]
+    
+    OM_cost_year=70*n_coll
+  
+    return [plantCost,breakdownCost,OM_cost_year]
+
+
 def Turn_key(Energy_anual,Fuel_price,Boiler_eff,n_years_sim,Investment,OM_cost_year,incremento,Co2_savings):    
     #Inputs
 #    Energy_anual=636632 #Energy produced annualy by the solar plant in kWh 

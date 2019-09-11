@@ -12,6 +12,7 @@ Version record:
     - (1.1.9) 26/6/2019 Included savings Graph. Corrected savingsFraction = solarNetFraction. 
     Included boiler_eff for tacking care of energy before boiler (Energy_Before), which is different
     to energy after the boiler (Demand)
+    - (1.1.10) 9/9/2019 New finance functions
 
 @author: Miguel Frasquet
 """
@@ -35,7 +36,7 @@ from Solar_modules.iteration_process import flow_calc, flow_calcOil
 from Solar_modules.iteration_process import IT_temp,IT_tempOil
 from Integration_modules.integrations import *
 from Plot_modules.plottingRessspi import *
-from Finance_modules.FinanceModels import Turn_key,ESCO
+from Finance_modules.FinanceModels import Turn_key,ESCO,SP_plant_costFunctions
 
 
 def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
@@ -45,10 +46,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     #Sender identity. Needed for use customized modules or generic modules (Solar collectors, finance, etc.)
     sender=confReport['sender']
     
-    if sender=='solatom':
+    if sender=='solatom': #The request come from Solatom's front-end www.ressspi.com
         sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/') #SOLATOM
     
-    version="1.1.9" #Ressspi version
+    version="1.1.10" #Ressspi version
     lang=confReport['lang'] #Language
         
     #Paths
@@ -87,7 +88,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     #%%
     # ------------------------------------- INPUTS --------------------------------
     
-    if ressspiReg==-2: #Simulation called from frontend -> www.ressspi.com
+    if ressspiReg==-2: #Simulation called from front-end -> www.ressspi.com
              
         ## ENERGY DEMAND
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
@@ -199,7 +200,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         IAM_file='defaultCollector.csv'
         IAM_folder=os.path.dirname(__file__)+"/Collector_modules/"
         REC_type=1 #Type of receiver used (1 -> Schott receiver tube)
-        Area_coll=26.4 #Aperture area of collector module [m²]
+        Area_coll=26.4 #Aperture area of collector per module [m²]
         rho_optic_0=0.75583 #Optical eff. at incidence angle=0 [º]
         Long=5.28 #Longitude of each module [m]
         
@@ -822,29 +823,17 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
         
 
-        if sender=='solatom': #Use Solatom propietary cost functions
-            from Solatom_modules.Solatom_finance import SP_plant_bymargin,SP_plant_bymargin2
-            distance=400 #Average distance of the project to calculate the cost of transport
-            [Selling_price,BM_cost,OM_cost_year]=SP_plant_bymargin(num_modulos_tot,num_loops,margin,type_coll)
-            [Selling_price2,BM_cost2,OM_cost_year2]=SP_plant_bymargin2(num_modulos_tot,margin,type_coll,distance)
-            #Selling_price=370000 #Selling_price of the plant in €. This value overrides the one calculate by the margin function
-            #margin=1-(BM_cost/Selling_price) #This value overrides the one calculate by the margin function
+        if sender=='solatom': #If collector = solatom, use Solatom propietary cost functions
+            from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
+            [Selling_price,BM_cost,OM_cost_year]=SP_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
             
-        else: #Use Default cost functions
+        else: #If othe collector is selected, it uses default cost functions
             
-            Legal_fees=430 #Cost of legal fees per module in €
-            Due_dilligence=825 #Cost of eng. per module in €
-            costs_power_block=575 #Cost of powerBlock (SL_L_P) per module in €
-            total_I_modules=4200 #Cost of construction of 1 module in €
-            OM_cost=290 #Cost of annual O&M per module in €
-            
-            BM_cost = total_I_modules + costs_power_block + Due_dilligence + Legal_fees #Before margin cost in €
-            Selling_price = (BM_cost/(1 - margin))*num_modulos_tot
-            OM_cost_year=OM_cost*num_modulos_tot
+            #This function calls the standard cost functions, if necessary, please modify them within the function
+            [Selling_price,BM_cost,OM_cost_year]=SP_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
             
       
         Selling_price=Selling_price*mofINV
-        OM_cost_year=OM_cost_year*1
         
         #---- FINANCE ---------------------------------------------------------
         
