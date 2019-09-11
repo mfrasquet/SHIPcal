@@ -825,7 +825,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
 
         if sender=='solatom': #If collector = solatom, use Solatom propietary cost functions
             from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
-            [Selling_price,BM_cost,OM_cost_year]=SP_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
+            [Selling_price,BM_cost,OM_cost_year]=SOL_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
             
         else: #If othe collector is selected, it uses default cost functions
             
