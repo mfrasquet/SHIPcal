@@ -811,7 +811,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         IPC=2.5 # Annual increase of the price of money in %
         fuelIncremento=3.5 # Annual increase of fuel price in %
         n_years_sim=25 #Number of years for the simulation
-        margin=0.20 #Margen sobre el precio de venta
         
         
         incremento=IPC/100+fuelIncremento/100
@@ -823,7 +822,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
         
 
-        if sender=='solatom': #If collector = solatom, use Solatom propietary cost functions
+        if ressspiReg==-2: #If solatom front-end is calling, then it uses Solatom propietary cost functions
             from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
             [Selling_price,Break_cost,OM_cost_year]=SOL_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
             
