@@ -1080,10 +1080,6 @@ simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim
 
 ressspiReg=0 #0 if new record; -2 if it comes from www.ressspi.com
 
-
-
-
-
 if ressspiReg==0:
     #To perform simulations from command line using hardcoded inputs
     inputsDjango={}
