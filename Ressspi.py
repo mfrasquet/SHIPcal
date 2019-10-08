@@ -1091,4 +1091,4 @@ else:
    
 #[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
-
+#Esto esta en la rama implementacion CIMAV?
