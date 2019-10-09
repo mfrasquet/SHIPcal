@@ -13,11 +13,11 @@ from General_modules.func_General import annualConsumpFromRessspi
 
 
 def djangoReport(inputsDjango):
-    if inputsDjango['location']=="" and inputsDjango['location']!="":
-        inputsDjango['location']=inputsDjango['location']
-    
-    if inputsDjango['location']!="" and inputsDjango['location']!="":
-        inputsDjango['location']=inputsDjango['location']
+#    if inputsDjango['location']=="" and inputsDjango['location']!="":
+#        inputsDjango['location']=inputsDjango['location']
+#    
+#    if inputsDjango['location']!="" and inputsDjango['location']!="":
+#        inputsDjango['location']=inputsDjango['location']
     
     if inputsDjango['pressureUnit']=='bar':
         factor_uni_pressure=1
