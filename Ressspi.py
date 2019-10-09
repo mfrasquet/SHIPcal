@@ -158,8 +158,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         else:
-            meteoDB = pd.read_csv(os.path.dirname(os.path.realpath(__file__))+"/Meteo_modules/meteoDB.csv", sep=',') 
-            file_loc=os.path.dirname(os.path.realpath(__file__))+"/Meteo_modules/"+localMeteo       
+            meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+            file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
      
@@ -198,7 +198,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     else: #Using other collectors (to be filled with customized data)
 
         IAM_file='defaultCollector.csv'
-        IAM_folder=os.path.dirname(os.path.realpath(__file__))+"/Collector_modules/"
+        IAM_folder=os.path.dirname(__file__)+"/Collector_modules/" 
         REC_type=1 #Type of receiver used (1 -> Schott receiver tube)
         Area_coll=26.4 #Aperture area of collector per module [m²]
         rho_optic_0=0.75583 #Optical eff. at incidence angle=0 [º]
