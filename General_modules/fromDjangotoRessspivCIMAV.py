@@ -54,7 +54,7 @@ def djangoReport(inputsDjango):
     
     annualConsumptionkWh=float(inputsDjango['demand'])*float(inputsDjango['demandUnit']) #Correction to the yearly demands units, to work with kWh
     
-   
+    #Generation of the day,week,month arrays for their demand percentages
     dayArray=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     activeHours=int(inputsDjango['hourEND'])-int(inputsDjango['hourINI'])
     porctDay=1/activeHours

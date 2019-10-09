@@ -23,20 +23,31 @@ import pandas as pd
 
 def demandCreator(totalConsumption,dayArray,weekArray,monthArray):
     #monthConsumption=totalConsumption*monthArray
-    monthConsumption = [x * totalConsumption for x in monthArray]
+    #monthConsumption = [x * totalConsumption for x in monthArray]
+    
+    monthConsumption = np.multiply(totalConsumption,monthArray) #This gives how much enery is used per month deending of its weight vector monthArray
+    days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31] #days_in_the_month[monthnumber]=daysinthat month
+    
+    weekYear=np.zeros((12,7)) #Here I'll store the weekconsumption  (column=day_number) array characteristic of the month (rows=month_number)
+    
+    for month_number in range(len(monthConsumption)):
+        for day_number in range(len(weekArray)):
+            #                                    Weight vector for a regular week times the (consumption of the month times the porcentage of th month per week)
+            weekYear[month_number][day_number] = weekArray[day_number]*(monthConsumption[month_number]*(7/days_in_the_month[month_number]))
+            
     #Porcentaje de cada dia de la semana*(Lo que se consume en un mes multiplicado por Cuantos meses caben en una semana)
-    weekJan=[x * (monthConsumption[0]*28/31/4) for x in weekArray]
-    weekFeb=[x * (monthConsumption[1]*28/28/4)  for x in weekArray]
-    weekMar=[x * (monthConsumption[2]*28/31/4)  for x in weekArray]
-    weekApr=[x * (monthConsumption[3]*28/30/4)  for x in weekArray]
-    weekMay=[x * (monthConsumption[4]*28/31/4)  for x in weekArray]
-    weekJun=[x * (monthConsumption[5]*28/30/4)  for x in weekArray]
-    weekJul=[x * (monthConsumption[6]*28/31/4)  for x in weekArray]
-    weekAgo=[x * (monthConsumption[7]*28/31/4)  for x in weekArray]
-    weekSep=[x * (monthConsumption[8]*28/30/4)  for x in weekArray]
-    weekOct=[x * (monthConsumption[9]*28/31/4)  for x in weekArray]
-    weekNov=[x * (monthConsumption[10]*28/30/4)  for x in weekArray]
-    weekDec=[x * (monthConsumption[11]*28/31/4)  for x in weekArray]
+    #weekJan=[x * (monthConsumption[0]*28/31/4) for x in weekArray]
+    #weekFeb=[x * (monthConsumption[1]*28/28/4)  for x in weekArray]
+    #weekMar=[x * (monthConsumption[2]*28/31/4)  for x in weekArray]
+    #weekApr=[x * (monthConsumption[3]*28/30/4)  for x in weekArray]
+    #weekMay=[x * (monthConsumption[4]*28/31/4)  for x in weekArray]
+    #weekJun=[x * (monthConsumption[5]*28/30/4)  for x in weekArray]
+    #weekJul=[x * (monthConsumption[6]*28/31/4)  for x in weekArray]
+    #weekAgo=[x * (monthConsumption[7]*28/31/4)  for x in weekArray]
+    #weekSep=[x * (monthConsumption[8]*28/30/4)  for x in weekArray]
+    #weekOct=[x * (monthConsumption[9]*28/31/4)  for x in weekArray]
+    #weekNov=[x * (monthConsumption[10]*28/30/4)  for x in weekArray]
+    #weekDec=[x * (monthConsumption[11]*28/31/4)  for x in weekArray]
     
     weekYear=[weekJan,weekFeb,weekMar,weekApr,weekMay,weekJun,weekJul,weekAgo,weekSep,weekOct,weekNov,weekDec]
     #Una vez tengo los arrays lo convierto en horario
