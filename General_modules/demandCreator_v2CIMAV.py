@@ -22,38 +22,31 @@ import pandas as pd
 
 
 def demandCreator(totalConsumption,dayArray,weekArray,monthArray):
-    #monthConsumption=totalConsumption*monthArray
-    #monthConsumption = [x * totalConsumption for x in monthArray]
-    
-    monthConsumption = np.multiply(totalConsumption,monthArray) #This gives how much enery is used per month deending of its weight vector monthArray
-    days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31] #days_in_the_month[monthnumber]=daysinthat month
-    
-    weekYear=np.zeros((12,7)) #Here I'll store the weekconsumption  (column=day_number) array characteristic of the month (rows=month_number)
-    
-    for month_number in range(len(monthConsumption)):
-        for day_number in range(len(weekArray)):
-            #                                    Weight vector for a regular week times the (consumption of the month times the porcentage of th month per week)
-            weekYear[month_number][day_number] = weekArray[day_number]*(monthConsumption[month_number]*(7/days_in_the_month[month_number]))
-            
+    """#monthConsumption=totalConsumption*monthArray
+    monthConsumption = [x * totalConsumption for x in monthArray]
     #Porcentaje de cada dia de la semana*(Lo que se consume en un mes multiplicado por Cuantos meses caben en una semana)
-    #weekJan=[x * (monthConsumption[0]*28/31/4) for x in weekArray]
-    #weekFeb=[x * (monthConsumption[1]*28/28/4)  for x in weekArray]
-    #weekMar=[x * (monthConsumption[2]*28/31/4)  for x in weekArray]
-    #weekApr=[x * (monthConsumption[3]*28/30/4)  for x in weekArray]
-    #weekMay=[x * (monthConsumption[4]*28/31/4)  for x in weekArray]
-    #weekJun=[x * (monthConsumption[5]*28/30/4)  for x in weekArray]
-    #weekJul=[x * (monthConsumption[6]*28/31/4)  for x in weekArray]
-    #weekAgo=[x * (monthConsumption[7]*28/31/4)  for x in weekArray]
-    #weekSep=[x * (monthConsumption[8]*28/30/4)  for x in weekArray]
-    #weekOct=[x * (monthConsumption[9]*28/31/4)  for x in weekArray]
-    #weekNov=[x * (monthConsumption[10]*28/30/4)  for x in weekArray]
-    #weekDec=[x * (monthConsumption[11]*28/31/4)  for x in weekArray]
+    weekJan=[x * (monthConsumption[0]*28/31/4) for x in weekArray]
+    weekFeb=[x * (monthConsumption[1]*28/28/4)  for x in weekArray]
+    weekMar=[x * (monthConsumption[2]*28/31/4)  for x in weekArray]
+    weekApr=[x * (monthConsumption[3]*28/30/4)  for x in weekArray]
+    weekMay=[x * (monthConsumption[4]*28/31/4)  for x in weekArray]
+    weekJun=[x * (monthConsumption[5]*28/30/4)  for x in weekArray]
+    weekJul=[x * (monthConsumption[6]*28/31/4)  for x in weekArray]
+    weekAgo=[x * (monthConsumption[7]*28/31/4)  for x in weekArray]
+    weekSep=[x * (monthConsumption[8]*28/30/4)  for x in weekArray]
+    weekOct=[x * (monthConsumption[9]*28/31/4)  for x in weekArray]
+    weekNov=[x * (monthConsumption[10]*28/30/4)  for x in weekArray]
+    weekDec=[x * (monthConsumption[11]*28/31/4)  for x in weekArray]
     
     weekYear=[weekJan,weekFeb,weekMar,weekApr,weekMay,weekJun,weekJul,weekAgo,weekSep,weekOct,weekNov,weekDec]
+        
     #Una vez tengo los arrays lo convierto en horario
+    
+    #This is the array of how many more days has each month than 28
     findes_array=[3,0,3,2,3,2,3,3,2,3,2,3] #Vector findes es 28-el numero de días de cada mes, suponemos 28=4 semanas
     
-    i=0
+    
+   i=0
     #January
     Mon=[x * weekJan[0] for x in dayArray]
     Tue=[x * weekJan[1] for x in dayArray]
@@ -300,7 +293,27 @@ def demandCreator(totalConsumption,dayArray,weekArray,monthArray):
         annualHourly=result  
     else:
         result = [x * (sum(annualHourly)/totalConsumption) for x in annualHourly]
-        annualHourly=result 
+        annualHourly=result"""
+
+    days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31] #days_in_the_month[month_number]=how many days are in the month number "month_number"
+    
+    start_week_day=0 #Asume the first day starts in monday. I could make it variable with the datetime python module but I dont know the conequences in a server
+    
+    weight_of_hours_in_month=[] #Create the auxiliar list where I'll store the porcentage(weight) of use of every hour for the current month in the loop
+    weight_of_hours_in_year=[] #Create the auxiliar list where I'll store the porcentage(weight) of use of every hour of one year
+    
+    for month_number in range(12): #For each month (12) in the year
+        for day_of_the_month in range(days_in_the_month[month_number]): #Calculates the porcentage of use every hour for the whole month
+            day=(start_week_day+day_of_the_month)%7 #Calculate wich day it is (Mon=0,Tues=1, ...) using the module 7, so day is which day in the week correspond to each day number in the month
+            weight_of_hours_in_month += np.multiply(weekArray[day],dayArray).tolist() #Builts the array of use of every hour in the month, multiplying the porcentage of use of that specific day to the porcentage of use of each hour and then appends it to the end of the list (".tolist() method used to append as a list and do not sum as an array) as the next day.
+        start_week_day=(day+1)%7 #pulls out which was the last day in the previus month to use it in the next day in the beginning of the next month
+        weight_of_hours_in_year += np.multiply(monthArray[month_number],weight_of_hours_in_month).tolist() #Multiplies the hours of use of the month to the porcentage of use of the month in the year, then appends the list to the end of the weight_of_hours_in_year list
+        weight_of_hours_in_month=[] #Restarts the weight_of_hours_in_month list to be used again for the next month data
+       
+    renormalization_factor=sum(weight_of_hours_in_year) #calculates the renormalization factor of the list in order to get "1" when summing all the 8760 elements.
+    totalConsumption_normailized=totalConsumption/renormalization_factor #Renormalices the totalConsumption
+    
+    annualHourly=np.multiply(totalConsumption_normailized,weight_of_hours_in_year) #Obtains the energy required for every hour in the year.
         
     return (annualHourly)
 
@@ -322,6 +335,13 @@ monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12]
 #monthArray=[0.1889825,0.1380204,0.1184213,0.0627570,0.0532994,0.0367279,0.0303713,0.0260941,0.0386296,0.0487369,0.1126647,0.1452948]
 
 #annualHourly=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
+#print(annualHourly)
+#print(len(annualHourly))
+#print(sum(annualHourly))
+#print(type(annualHourly))
+#print(totalConsumption)
+
+
 #
 #fig = plt.figure()
 #fig.suptitle('Anual', fontsize=14, fontweight='bold')

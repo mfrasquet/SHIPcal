@@ -311,6 +311,12 @@ monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12]
 #monthArray=[0.1889825,0.1380204,0.1184213,0.0627570,0.0532994,0.0367279,0.0303713,0.0260941,0.0386296,0.0487369,0.1126647,0.1452948]
 
 #annualHourly=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
+#print(annualHourly)
+#print(len(annualHourly))
+#print(sum(annualHourly))
+#print(totalConsumption)
+#print(type(annualHourly))
+
 #
 #fig = plt.figure()
 #fig.suptitle('Anual', fontsize=14, fontweight='bold')
