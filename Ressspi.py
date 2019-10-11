@@ -49,12 +49,17 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     if sender=='solatom': #The request come from Solatom's front-end www.ressspi.com
         sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/') #SOLATOM
     
+    elif sender=='CIMAV': #The request comes from CIMAV front-end
+        sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/CIMAV/') #CIMAV collectors information databases and TMYs
+
     version="1.1.10" #Ressspi version
     lang=confReport['lang'] #Language
         
     #Paths
     if ressspiReg==-2:
         plotPath=os.path.dirname(os.path.dirname(__file__))+'/ressspi/ressspiForm/static/results/' #FilePath for images when called by www.ressspi.com
+    elif ressspiReg==-3:
+        plotPath=os.path.dirname(os.path.realpath(__file__))+'/CIMAV/results' #FilePath for images when called cimav
     if ressspiReg==0:
         plotPath=""
     
@@ -112,14 +117,55 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         co2factor=inputs['co2factor'] #[-]
          
         ## METEO
-        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
-        locationFromRessspi=inputs['location']
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0]
-        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo 
-        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0]
-        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0]
+        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
+        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
+        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
+        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
+        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
+    
+    elif ressspiReg==-3:
+    #--->ENERGY DEMAND
+        from General_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
+        from General_modules.demandCreator_v2CIMAV import demandCreator as demandCreatorCIMAV
         
-                  
+        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
+        file_demand=demandCreatorCIMAV(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        
+        #annualConsumptionkWh=annualConsumptionkWh
+        #inputs.update({'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray})
+       
+    #-->PROCESS
+        fluidInput=inputsDjango['fluid'] #Type of fluid 
+        T_out_C=inputsDjango['tempOUT'] #High temperature [ºC]
+        T_in_C=inputsDjango['tempIN'] #Low temperature [ºC]
+        #P_op_bar=P_op_bar #[bar]
+        
+    #-->## FINANCE
+        businessModel=inputsDjango['businessModel'] #Type of business model
+        fuel=inputsDjango['fuel'] #Type of fuel used
+        Fuel_price=inputsDjango['fuelPrice'] #Price of fossil fuel [variableunits]
+        co2TonPrice= inputsDjango['co2TonPrice'] #[mxn/ton]
+        co2factor=inputsDjango['co2factor'] #[-]
+        
+    #-->METEO
+        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/CIMAV/meteorologic_database/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMYs is.
+        locationFromRessspi=inputsDjango['location'] #Extracts which place was selected from the form 
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
+        file_loc=os.path.dirname(os.path.dirname(__file__))+"/CIMAV/meteorologic_database/"+localMeteo #Stablishes the path to the TMY file
+        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
+        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
+
+        """
+        ## TO BE IMPLEMENTED Not used for the moment, it will change in future versions
+        surfaceAvailable=500 #Surface available for the solar plant
+        orientation="NS"
+        inclination="flat" 
+        shadowInput="free"
+        distanceInput=15 #From the solar plant to the network integration point [m]
+        terreno="clean_ground"
+        """
+
     if ressspiReg==0:  #Simulation called from Python file
 
         ## TO BE IMPLEMENTED Not used for the moment, it will change in future versions
@@ -194,7 +240,15 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         IAM_folder=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/IAM_files/"
         REC_type=1
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
-        
+    
+    elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
+        from CIMAV_modules.CIMAV_collectors_param import CIMAV_collectors_param #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
+        type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
+        IAM_file=inputsDjango['collector_type']+'.csv' #IAM_file of each collector will have the same name as the collector_type
+        IAM_folder=os.path.dirname(os.path.realpath(__file__))+"/CIMAV/IAM_files/"
+        REC_type,Area_coll,rho_optic_0,Long=CIMAV_collectors_param(type_coll)
+        ressspiReg=0 #BORRAR DESPUPÉS!!!!!!!
+    
     else: #Using other collectors (to be filled with customized data)
 
         IAM_file='defaultCollector.csv'
@@ -212,8 +266,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
        
     
     
-    Area=Area_coll*n_coll_loop #Area of aperture per loop [m²]
-    Area_total=Area*num_loops #Total area of aperture [m²]
+    Area=Area_coll*n_coll_loop #Area of aperture per loop [m²] Used later
+    Area_total=Area*num_loops #Total area of aperture [m²] Used later
     
     #Process control
     T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid

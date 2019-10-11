@@ -28,7 +28,7 @@ def djangoReport(inputsDjango):
     
 #    P_op_bar=inputsDjango['pressure']*factor_uni_pressure #Correcion de presion por unidades
     
-    P_op_bar=inputsDjango['pressure']*inputsDjango['pressureUnit'] #Correction to the pressure units, working with bar
+    P_op_bar=inputsDjango['pressure']*float(inputsDjango['pressureUnit']) #Correction to the pressure units, working with bar
     
     
     #Energy calculations for graphs

@@ -185,6 +185,13 @@ def waterFromGrid(T_in_C_AR_mes):
             T_in_C_AR[ii]=T_in_C_AR_mes[11]
     return (T_in_C_AR)
 
+def waterFromGrid_v2(T_in_C_AR_mes):
+    days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31] #days_in_the_month[month_number]=how many days are in the month number "month_number"
+    T_in_C_AR=[] #Creates an empty list where I'll store the temperatures per hour along the year.
+    for month in range(12): #For eacho month
+        T_in_C_AR+=[T_in_C_AR_mes[month]]*(days_in_the_month[month]*24) #Append the average temperature from the grid number_of_days_in_the_month*24 times
+    return(np.array(T_in_C_AR)) #Returns the list transformed to an array.
+
 def thermalOil(T): #Function to derive the properties of thermal oil from the Thermal oil DB
     T=T-273 #To transform K to C
     if T==0:
