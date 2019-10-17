@@ -150,6 +150,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
     #-->METEO
         from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso
+        localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
         file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
         file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
         Lat,Huso=Lat_Huso(file_loc) #Calls a function wich reads only the line where the Lat and Timezone is and gives back theit values for the right city
@@ -239,10 +240,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
-        from CIMAV_modules.CIMAV_collectors_param import CIMAV_collectors_param #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
+        from CIMAV.CIMAV_modules.CIMAV_collectors_param import CIMAV_collectors_param #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
-        IAM_file=inputsDjango['collector_type']+'.csv' #IAM_file of each collector will have the same name as the collector_type
-        IAM_folder=os.path.dirname(os.path.realpath(__file__))+"/CIMAV/IAM_files/"
+        IAM_file=inputsDjango['collector_type']#IAM_file of each collector will have the same name as the collector_type
+        IAM_folder=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/CIMAV/IAM_files/"
         REC_type,Area_coll,rho_optic_0,Long=CIMAV_collectors_param(type_coll)
         ressspiReg=0 #BORRAR DESPUPÉS!!!!!!!
     
@@ -284,8 +285,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     num_modulos_tot=n_coll_loop*num_loops
     
     #Solar Data
-    if sender == CIMAV :
-        output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim)
+    if sender == 'CIMAV' :
+        output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender)
     else:
         output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim)
     """
