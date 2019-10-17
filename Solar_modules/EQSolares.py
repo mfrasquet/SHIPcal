@@ -7,7 +7,7 @@ import numpy as np
 from General_modules.func_General import calc_hour_year
 import os
 
-def SolarEQ_simple (Month,Day,Hour,Lat,Huso):
+def SolarEQ_simple (Month,Day,Hour,Lat,Huso): #Returns the hour angle (W) [rad], sun elevation angle[rad], azimuth angle[rad], declination [rad] and zenithal angle [rad] of the sun for each the specified hour, latitude[°], anf time zone given in the inputs.
 
     gr=np.pi/180; #Just to convert RAD-DEG 
     
@@ -101,7 +101,7 @@ def theta_IAMs_v2(SUN_AZ,SUN_ELV,LONG_INCL,HEAD,ROLL):
 
 
 
-   elevacion_local_trans=np.arctan(sunZl/sunXl)
+   elevacion_local_trans=np.arctan(sunZl/sunXl) #Where is the sun in an angle measured from south (0) to north (180)?
 
    if elevacion_local_trans<0 and sunZl>0:
        elevacion_local_trans=elevacion_local_trans+np.pi # adjuste arc tangente para tener elevaccion es siempre positiva
@@ -110,7 +110,7 @@ def theta_IAMs_v2(SUN_AZ,SUN_ELV,LONG_INCL,HEAD,ROLL):
        elevacion_local_trans=elevacion_local_trans-np.pi #elevaccion relativa negativa, en el (imposible?) caso que el sol sea por debajo del plano base del contenedor
 
 
-   elevacion_local_long=np.arctan(sunZl/sunYl)
+   elevacion_local_long=np.arctan(sunZl/sunYl) #Where is the sun in an angle measured from east (0) to west (180)?
 
    if elevacion_local_long<0 and sunZl>0:
        elevacion_local_long=elevacion_local_long+np.pi #adjuste arc tangente para tener elevaccion es siempre positiva
@@ -163,7 +163,7 @@ def IAM_calc(ang_target,IAM_type,file_loc):
             IAM=IAMdata1+incre_IAM_target
     return [IAM]
 
-def Meteo_data (file_meteo):
+def Meteo_data (file_meteo): #This function exports the TMY file to 'data', the DNI and temperature array of values for  each hour in the year from the file_meteo path to file
     data = np.loadtxt(file_meteo, delimiter="\t")
     DNI=data[:,8]
     temp=data[:,9]
@@ -186,24 +186,25 @@ def Meteo_data (file_meteo):
 #dia_fin_sim=22
 #hora_fin_sim=24
 
-def SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim):
+def SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim): #This function returns an "output" array with the month, day of the month, hour of the day, hour of the year hour angle,SUN_ELVevation, suN_AZimuth,DECLINATION, SUN_ZENITHAL, DNI,temp_sim,step_sim for every hour between the starting and ending hours in the year.  It also returns the starting and ending hour in the year.
 
-    hour_year_ini=calc_hour_year(mes_ini_sim,dia_ini_sim,hora_ini_sim)
+    hour_year_ini=calc_hour_year(mes_ini_sim,dia_ini_sim,hora_ini_sim)#Calls a function within this same script yo calculate the corresponding hout in the year for the day/month/hour of start and end
     hour_year_fin=calc_hour_year(mes_fin_sim,dia_fin_sim,hora_fin_sim)
     
-    if hour_year_ini <= hour_year_fin:
-        sim_steps=hour_year_fin-hour_year_ini
+    if hour_year_ini <= hour_year_fin: #Checks that the starting hour is before than the enfing hour
+        sim_steps=hour_year_fin-hour_year_ini #Stablishes the number of steps as the hours between the starting and ending hours
     else:
         raise ValueError('End time is smaller than start time') 
     
     
     #Llamada al archivo de meteo completo
-    (data,DNI,temp)=Meteo_data(file_loc)
-    data=np.array(data)
-    DNI=np.array(DNI)
-    temp=np.array(temp)
+    (data,DNI,temp)=Meteo_data(file_loc)#Calls another function within this same script that reads the TMY.dat file 
+    data=np.array(data) #Array where every row is an hour and the columns are month,day in the month, hour of the month, hour of the year, ..., DNI, Temp
+    DNI=np.array(DNI) #Vector with DNI values for every hour in the year
+    temp=np.array(temp) #Vector with the temperature for every hour in the year
     
     #Bucle de simulacion
+    #Starts the vectors of sim_steps length to store date in them
     
     W_sim=np.zeros (sim_steps)
     SUN_ELV_sim=np.zeros (sim_steps)
@@ -234,7 +235,7 @@ def SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim
         temp_sim[step]=data[hour_year_ini+step-1,9]
     
         #Posicion solar
-        W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN=SolarEQ_simple (month_sim[step],day_sim[step] ,hour_sim[step],Lat,Huso)
+        W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN=SolarEQ_simple (month_sim[step],day_sim[step] ,hour_sim[step],Lat,Huso) #calls another unction in within this script that calculates the solar positional angles for the specfied hour of the day and month
         W_sim[step]=W
         SUN_ELV_sim[step]=SUN_ELV   #rad
         SUN_AZ_sim[step]=SUN_AZ     #rad
@@ -244,7 +245,7 @@ def SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim
         
         step+=1
     
-    output=np.column_stack((month_sim,day_sim,hour_sim,hour_year_sim,W_sim,SUN_ELV_sim,SUN_AZ_sim,DECL_sim,SUN_ZEN_sim,DNI_sim,temp_sim,step_sim))  
+    output=np.column_stack((month_sim,day_sim,hour_sim,hour_year_sim,W_sim,SUN_ELV_sim,SUN_AZ_sim,DECL_sim,SUN_ZEN_sim,DNI_sim,temp_sim,step_sim)) #Arranges the calculated data in a massive array with the previusly calculated vector as columns
         
 #    if plot_Optics==1:    
 #        fig = plt.figure(1)

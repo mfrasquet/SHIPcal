@@ -52,32 +52,32 @@ def check_overwrite(data,reg,rebaja,num_loops,n_coll_loop,type_integration,almVo
     return flagOverwrite
     
 
-def calc_hour_year(mes,dia,hora):
-    mes_string=("Ene","Feb","Mar","Apr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec")
+def calc_hour_year(mes,dia,hora): #This function calculates what is the correspondign hour of the year for an specific date and time.
+    mes_string=("Ene","Feb","Mar","Apr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec") #Not in use!!! remove
     mes_days=(31,28,31,30,31,30,31,31,30,31,30,31)
     
-    num_days=0
+    num_days=0 #Initializate the variables
     cont_mes=mes-1
-    if mes<=12:
+    if mes<=12: #Check that the month input is reliable
         while (cont_mes >0):
-            cont_mes=cont_mes-1
-            num_days=num_days+mes_days[cont_mes]
-        if dia<=mes_days[mes-1]:
-            num_days=num_days+dia
+            cont_mes=cont_mes-1 #Counts backwards from the introduced month to the first month in the year(January)
+            num_days=num_days+mes_days[cont_mes] #Adds all the days in the months previous to the introduced one
+        if dia<=mes_days[mes-1]: #Checks that the introduced dau number is smaller than the number of days in that month
+            num_days=num_days+dia #Adds the quantity of days passed so far in the introduced month
         else:
             raise ValueError('Day should be <=days_month')    
     else:
         raise ValueError('Month should be <=12')
     
-    if hora<=24:
-        hour_year=(num_days-1)*24+hora
+    if hora<=24: #Checks that the hour number is less than 24
+        hour_year=(num_days-1)*24+hora #Calculates the current year hour
     else:
        raise ValueError('Hour should be <=24') 
     return hour_year
 
    
     
-def DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim):
+def DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim): #Returns the only the entries of the demand vector (consumtpion for every hour along the year) that corresponds to the hours between the the starting and ending hours of the simulation
     
 #    Demand = np.loadtxt(file_demand, delimiter=",")
     Demand=np.array(file_demand)

@@ -149,13 +149,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         co2factor=inputsDjango['co2factor'] #[-]
         
     #-->METEO
-        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/CIMAV/meteorologic_database/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMYs is.
-        locationFromRessspi=inputsDjango['location'] #Extracts which place was selected from the form 
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
-        file_loc=os.path.dirname(os.path.dirname(__file__))+"/CIMAV/meteorologic_database/"+localMeteo #Stablishes the path to the TMY file
-        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
-        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
-
+        from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso
+        file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
+        file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
+        Lat,Huso=Lat_Huso(file_loc) #Calls a function wich reads only the line where the Lat and Timezone is and gives back theit values for the right city
         """
         ## TO BE IMPLEMENTED Not used for the moment, it will change in future versions
         surfaceAvailable=500 #Surface available for the solar plant
@@ -287,7 +284,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     num_modulos_tot=n_coll_loop*num_loops
     
     #Solar Data
-    output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim)
+    if sender == CIMAV :
+        output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim)
+    else:
+        output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim)
     """
     Output key:
     output[0]->month of year
@@ -328,7 +328,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     #Demand of energy before the boiler
     Energy_Before=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
-    Energy_Before_annual=sum(Energy_Before)
+    Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh
     #Demand of energy after the boiler
     Demand=Boiler_eff*DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
     #Preparation of variables depending on the scheme selected
