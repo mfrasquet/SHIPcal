@@ -127,10 +127,9 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     elif ressspiReg==-3:
     #--->ENERGY DEMAND
         from General_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
-        from General_modules.demandCreator_v2CIMAV import demandCreator as demandCreatorCIMAV
         
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
-        file_demand=demandCreatorCIMAV(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
         
         #annualConsumptionkWh=annualConsumptionkWh
         #inputs.update({'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray})
