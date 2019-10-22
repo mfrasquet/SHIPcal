@@ -266,9 +266,13 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     Area=Area_coll*n_coll_loop #Area of aperture per loop [m²] Used later
     Area_total=Area*num_loops #Total area of aperture [m²] Used later
     
-    #Process control
-    T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid
-    T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
+    if sender=='CIMAV':
+        from CIMAV.CIMAV_modules.func_General import mainswatertemperature
+        T_in_C_AR=mainswatertemperature(file_loc)
+    else:    
+        #Process control
+        T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid
+        T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
     #Process parameters
     lim_inf_DNI=200 #Minimum temperature to start production [W/m²]
     m_dot_min_kgs=0.08 #Minimum flowrate before re-circulation [kg/s]

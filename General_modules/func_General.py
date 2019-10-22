@@ -227,6 +227,6 @@ def reportOutputOffline(reportsVar):
     print("Net solar production: "+str(round(reportsVar['Production_lim'],2))+" kWh with ModfProd: "+str(reportsVar['mofProd'])+" ("+str(int(reportsVar['solar_fraction_lim']))+" %)")
     print("Utilization ratio: "+str(round(reportsVar['Utilitation_ratio'],2))+" %")
     print("/// FINANCE:")
-    print("Investment: "+str(int(reportsVar['Selling_price']))+" €")
-    print("Savings 1st year: "+str(int(reportsVar['Energy_savingsList'][1]))+" € with ModfInv: "+str(reportsVar['mofINV'])+"")
+    print("Investment: "+str(int(reportsVar['Selling_price']))+" $")
+    print("Savings 1st year: "+str(int(reportsVar['Energy_savingsList'][1]))+" $ with ModfInv: "+str(reportsVar['mofINV'])+"")
     print("Payback period: "+str(int(reportsVar['AmortYear']))+" years")
