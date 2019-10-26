@@ -53,9 +53,11 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     lang=confReport['lang'] #Language
         
     #Paths
-    if ressspiReg==-2:
+    if ressspiReg==-2: #Simulation called from ReSSSPI front-end
         plotPath=os.path.dirname(os.path.dirname(__file__))+'/ressspi/ressspiForm/static/results/' #FilePath for images when called by www.ressspi.com
-    if ressspiReg==0:
+    if ressspiReg==0: #Simulation called from terminal
+        plotPath=""
+    if ressspiReg==1: #Simulation called from other front-ends (use positive integers)
         plotPath=""
     
     
@@ -118,6 +120,38 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo 
         Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0]
         Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0]
+        
+    if ressspiReg==1: #Simulation called from external front-end (not ReSSSPI). Available from 1 to inf+
+             
+        ## ENERGY DEMAND
+        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
+        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+       
+        annualConsumptionkWh=annualConsumptionkWh
+        arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
+        inputs.update(arraysConsumption)
+        
+        ## PROCESS
+        fluidInput=inputs['fluid'] #Type of fluid 
+        T_out_C=inputs['outletTemp'] #High temperature [ºC]
+        T_in_C=inputs['inletTemp'] #Low temperature [ºC]
+        P_op_bar=P_op_bar #[bar]
+            
+        ## FINANCE
+        businessModel=inputs['businessModel'] #Type of business model
+        fuel=inputs['currentFuel'] #Type of fuel used
+        Fuel_price=inputs['fuelPrice']   #Price of fossil fuel [€/kWh]
+        co2TonPrice=inputs['co2TonPrice'] #[€/ton]
+        co2factor=inputs['co2factor'] #[-]
+         
+        ## METEO (free available meteo sets)
+        locationFromFrontEnd=inputs['location']
+        
+        meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
+        file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
+        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         
                   
     if ressspiReg==0:  #Simulation called from Python file
@@ -822,7 +856,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
         
 
-        if ressspiReg==-2: #If solatom front-end is calling, then it uses Solatom propietary cost functions
+        if ressspiReg==-2: #If ReSSSPI front-end is calling, then it uses Solatom propietary cost functions
             from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
             [Selling_price,Break_cost,OM_cost_year]=SOL_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
             
@@ -992,7 +1026,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
         else:
             template_vars={} 
-            reportsVar={'logo_output':'no_logo','version':version,'type_integration':type_integration,
+            reportsVar={'version':version,'logo_output':'no_logo','version':version,'type_integration':type_integration,
                         'energyStored':energyStored,"location":localMeteo,
                         'Area_total':Area_total,'n_coll_loop':n_coll_loop,
                         'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
@@ -1003,7 +1037,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             reportsVar.update(confReport)
             reportsVar.update(annualProdDict)
             reportsVar.update(modificators)
-            reportOutputOffline(reportsVar)
+            if ressspiReg==0:
+                reportOutputOffline(reportsVar)
     else:
         template_vars={}
         reportsVar={}
