@@ -26,14 +26,14 @@ from iapws import IAPWS97
 
 #Place to import Ressspi Libs
 
-from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,DemandData,waterFromGrid,thermalOil,reportOutputOffline 
+from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline 
 from General_modules.demandCreator_v1 import demandCreator
 from General_modules.fromDjangotoRessspi import djangoReport
 from Solar_modules.EQSolares import SolarData
 from Solar_modules.EQSolares import theta_IAMs_v2
 from Solar_modules.EQSolares import IAM_calc
-from Solar_modules.iteration_process import flow_calc, flow_calcOil
-from Solar_modules.iteration_process import IT_temp,IT_tempOil
+#from Solar_modules.iteration_process import flow_calc, flow_calcOil
+#from Solar_modules.iteration_process import IT_temp,IT_tempOil
 from Integration_modules.integrations import *
 from Plot_modules.plottingRessspi import *
 from Finance_modules.FinanceModels import Turn_key,ESCO,SP_plant_costFunctions
@@ -96,7 +96,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
         file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
        
-        annualConsumptionkWh=annualConsumptionkWh
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
         
@@ -127,7 +126,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
         file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
        
-        annualConsumptionkWh=annualConsumptionkWh
+
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
         
@@ -310,7 +309,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     Energy_Before=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
     Energy_Before_annual=sum(Energy_Before)
     #Demand of energy after the boiler
-    Demand=Boiler_eff*DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
+    Demand=Boiler_eff*Energy_Before #kWh
     #Preparation of variables depending on the scheme selected
     
     
