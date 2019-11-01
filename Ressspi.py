@@ -1021,7 +1021,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             reportsVar.update(meteoDict)
             reportsVar.update(processDict)
             reportsVar.update(integrationDesign)   
-            template_vars=reportOutput(ressspiReg,reportsVar,-1,"",pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)),Energy_Before_annual)
+            template_vars=reportOutput(ressspiReg,reportsVar,-1,"",pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)),Energy_Before_annual,sankeyDict)
         
         else:
             template_vars={} 
