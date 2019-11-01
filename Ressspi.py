@@ -26,14 +26,14 @@ from iapws import IAPWS97
 
 #Place to import Ressspi Libs
 
-from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,DemandData,waterFromGrid,thermalOil,reportOutputOffline 
+from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline 
 from General_modules.demandCreator_v1 import demandCreator
 from General_modules.fromDjangotoRessspi import djangoReport
 from Solar_modules.EQSolares import SolarData
 from Solar_modules.EQSolares import theta_IAMs_v2
 from Solar_modules.EQSolares import IAM_calc
-from Solar_modules.iteration_process import flow_calc, flow_calcOil
-from Solar_modules.iteration_process import IT_temp,IT_tempOil
+#from Solar_modules.iteration_process import flow_calc, flow_calcOil
+#from Solar_modules.iteration_process import IT_temp,IT_tempOil
 from Integration_modules.integrations import *
 from Plot_modules.plottingRessspi import *
 from Finance_modules.FinanceModels import Turn_key,ESCO,SP_plant_costFunctions
@@ -124,15 +124,12 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
         Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
     
-    elif ressspiReg==-3:
+    elif ressspiReg==-3: #Simulation called from CIMAV's front end
     #--->ENERGY DEMAND
         from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
         
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
         file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
-        
-        #annualConsumptionkWh=annualConsumptionkWh
-        #inputs.update({'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray})
        
     #-->PROCESS
         fluidInput=inputsDjango['fluid'] #Type of fluid 
@@ -239,11 +236,9 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
-        from CIMAV.CIMAV_modules.CIMAV_collectors_param import CIMAV_collectors_param #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
+        from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
-        IAM_file=inputsDjango['collector_type']#IAM_file of each collector will have the same name as the collector_type
-        IAM_folder=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/CIMAV/IAM_files/"
-        REC_type,Area_coll,rho_optic_0,Long=CIMAV_collectors_param(type_coll)
+        REC_type,Area_coll,rho_optic_0,Long=CIMAV_collectors(type_coll)
         ressspiReg=0 #BORRAR DESPUPÉS!!!!!!!
     
     else: #Using other collectors (to be filled with customized data)
@@ -255,8 +250,9 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         rho_optic_0=0.75583 #Optical eff. at incidence angle=0 [º]
         Long=5.28 #Longitude of each module [m]
         
-        
-    IAMfile_loc=IAM_folder+IAM_file
+    if sender != 'CIMAV':    
+        IAMfile_loc=IAM_folder+IAM_file
+    
     beta=0 #Inclination not implemented [-]
     orient_az_rad=0 #Orientation not implemented [-]
     roll=0 #Roll not implemented [-]
@@ -288,10 +284,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     num_modulos_tot=n_coll_loop*num_loops
     
     #Solar Data
-    if sender == 'CIMAV' :
-        output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender)
-    else:
-        output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim)
+    output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender)
+
     """
     Output key:
     output[0]->month of year
@@ -334,7 +328,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     Energy_Before=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
     Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh
     #Demand of energy after the boiler
-    Demand=Boiler_eff*DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
+    Demand=Boiler_eff*Energy_Before #kWh
     #Preparation of variables depending on the scheme selected
     
     
@@ -661,6 +655,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     T_alm_K=np.zeros(steps_sim)
     storage_energy=np.zeros(steps_sim)
     
+    if sender=='CIMAV':
+        blong,nlong = IAM_fiteq(type_coll,1)
+        btrans,ntrans = IAM_fiteq(type_coll,2)
+    
     for i in range(0,steps_sim):
    
         theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
@@ -671,6 +669,17 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             IAM[i]=optic_efficiency_N(theta_transv_deg[i],theta_i_deg[i],n_coll_loop) #(theta_transv_deg[i],theta_i_deg[i],n_coll_loop):
             IAM_long[i]=0
             IAM_t[i]=0
+            
+        elif sender=='CIMAV':
+            if SUN_ELV[i]>0:
+                IAM_long[i]=IAM_calculator(blong,nlong,theta_i_deg[i]) #Longitudinal
+                IAM_t[i]=IAM_calculator(btrans,ntrans,theta_transv_deg[i]) #Transversal
+                IAM[i]=IAM_long[i]*IAM_t[i]
+            else:
+                IAM_long[i]=0
+                IAM_t[i]=0
+                IAM[i]=IAM_long[i]*IAM_t[i]
+            
         else:
                 #Cálculo del IAM long y transv
             if SUN_ELV[i]>0:
