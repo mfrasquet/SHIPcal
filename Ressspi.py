@@ -238,8 +238,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
-        IAM_file=inputsDjango['collector_type']#IAM_file of each collector will have the same name as the collector_type
-        IAM_folder=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/CIMAV/IAM_files/"
         REC_type,Area_coll,rho_optic_0,Long=CIMAV_collectors(type_coll)
         ressspiReg=0 #BORRAR DESPUPÉS!!!!!!!
         IAM_file='defaultCollector.csv'
@@ -253,9 +251,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         Area_coll=26.4 #Aperture area of collector per module [m²]
         rho_optic_0=0.75583 #Optical eff. at incidence angle=0 [º]
         Long=5.28 #Longitude of each module [m]
-    
-    #if sender != 'CIMAV':
-    IAMfile_loc=IAM_folder+IAM_file
+        
+    if sender != 'CIMAV':    
+        IAMfile_loc=IAM_folder+IAM_file
+
     beta=0 #Inclination not implemented [-]
     orient_az_rad=0 #Orientation not implemented [-]
     roll=0 #Roll not implemented [-]
@@ -265,7 +264,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     Area=Area_coll*n_coll_loop #Area of aperture per loop [m²] Used later
     Area_total=Area*num_loops #Total area of aperture [m²] Used later
     
-<<<<<<< HEAD
     if sender=='CIMAV':
         from CIMAV.CIMAV_modules.func_General import mainswatertemperature
         T_in_C_AR=mainswatertemperature(file_loc)
@@ -273,12 +271,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         #Process control
         T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid
         T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
-        
-=======
-    #Process control
-    T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid
-    T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
->>>>>>> parent of df911e1... Changed € to $ and add a function to calculate the mains water temperature from the TMY
+
     #Process parameters
     lim_inf_DNI=200 #Minimum temperature to start production [W/m²]
     m_dot_min_kgs=0.08 #Minimum flowrate before re-circulation [kg/s]
@@ -295,7 +288,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     #Solar Data
     output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender)
-    
+
     """
     Output key:
     output[0]->month of year
@@ -668,7 +661,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     if sender=='CIMAV':
         blong,nlong = IAM_fiteq(type_coll,1)
         btrans,ntrans = IAM_fiteq(type_coll,2)
-        
     
     for i in range(0,steps_sim):
     
@@ -680,17 +672,17 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             IAM[i]=optic_efficiency_N(theta_transv_deg[i],theta_i_deg[i],n_coll_loop) #(theta_transv_deg[i],theta_i_deg[i],n_coll_loop):
             IAM_long[i]=0
             IAM_t[i]=0
-        
-        #elif sender=='CIMAV':
-            #if SUN_ELV[i]>0:
-                #IAM_long[i]=IAM_calculator(blong,nlong,theta_i_deg[i]) #Longitudinal
-                #IAM_t[i]=IAM_calculator(btrans,ntrans,theta_transv_deg[i]) #Transversal
-                #IAM[i]=IAM_long[i]*IAM_t[i]
-            #else:
-                #IAM_long[i]=0
-                #IAM_t[i]=0
-                #IAM[i]=IAM_long[i]*IAM_t[i]
-                
+            
+        elif sender=='CIMAV':
+            if SUN_ELV[i]>0:
+                IAM_long[i]=IAM_calculator(blong,nlong,theta_i_deg[i]) #Longitudinal
+                IAM_t[i]=IAM_calculator(btrans,ntrans,theta_transv_deg[i]) #Transversal
+                IAM[i]=IAM_long[i]*IAM_t[i]
+            else:
+                IAM_long[i]=0
+                IAM_t[i]=0
+                IAM[i]=IAM_long[i]*IAM_t[i]
+            
         else:
             #Cálculo del IAM long y transv
             if SUN_ELV[i]>0:
