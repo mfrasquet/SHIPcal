@@ -661,11 +661,13 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     if sender=='CIMAV':
         blong,nlong = IAM_fiteq(type_coll,1)
         btrans,ntrans = IAM_fiteq(type_coll,2)
+        from CIMAV.CIMAV_modules.incidence_angle import theta_IAMs_v2 as theta_IAMs_CIMAV
     
     for i in range(0,steps_sim):
-    
-        theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
-        theta_i_deg[i]=abs(theta_i_deg[i])
+        
+        if sender != 'CIMAV':
+            theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+            theta_i_deg[i]=abs(theta_i_deg[i])
 
         if sender=='solatom': #Using Solatom IAMs 
             from Solatom_modules.solatom_param import optic_efficiency_N
@@ -674,14 +676,16 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             IAM_t[i]=0
             
         elif sender=='CIMAV':
-            if SUN_ELV[i]>0:
-                IAM_long[i]=IAM_calculator(blong,nlong,theta_i_deg[i]) #Longitudinal
-                IAM_t[i]=IAM_calculator(btrans,ntrans,theta_transv_deg[i]) #Transversal
-                IAM[i]=IAM_long[i]*IAM_t[i]
+            if SUN_ELV[i]>0 and SUN_ELV[i]<180:
+                #calcula el angulo de incidencia transversal y longitudinal. Es decir el ángulo entre la proyeccion longitudina/tranversal y el vector area del colector
+                theta_transv_deg[i],theta_i_deg[i] = theta_IAMs_CIMAV(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+                #Dado el angulo de incidencia longitudina/transversal se calcula el IAM correspondiente con los parametros correspondientes
+                IAM_long[i] = IAM_calculator(blong,nlong,theta_i_deg[i])
+                IAM_t[i] = IAM_calculator(btrans,ntrans,theta_transv_deg[i])
             else:
-                IAM_long[i]=0
-                IAM_t[i]=0
-                IAM[i]=IAM_long[i]*IAM_t[i]
+                IAM_long[i],IAM_t[i]=0,0
+            
+            IAM[i]=IAM_long[i]*IAM_t[i]
             
         else:
             #Cálculo del IAM long y transv
