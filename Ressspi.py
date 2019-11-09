@@ -239,9 +239,9 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
         
     IAMfile_loc=IAM_folder+IAM_file
-    beta=0 #Inclination not implemented [-]
-    orient_az_rad=0 #Orientation not implemented [-]
-    roll=0 #Roll not implemented [-]
+    beta=0 #Inclination not implemented [deg]
+    orient_az_rad=0 #Orientation not implemented [deg]
+    roll=0 #Roll not implemented [deg]
        
     
     
