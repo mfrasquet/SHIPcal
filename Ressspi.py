@@ -329,7 +329,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     #Demand of energy before the boiler
     Energy_Before=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
-    Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh
+    Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
     #Demand of energy after the boiler
     Demand=Boiler_eff*Energy_Before #kWh
     #Preparation of variables depending on the scheme selected
@@ -343,8 +343,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     energStorageMax=0 #kWh
     energyStored=0 #kWh
     porctSensible=0 #Not used
-    T_out_HX_C=0 #ot used 
-    energStorageMax=0 #kWh  
+    T_out_HX_C=0 #Not used 
     T_out_process_C=0 #Not used
     T_in_process_C=0 #Not used
     outProcess_s=0 #Not used
