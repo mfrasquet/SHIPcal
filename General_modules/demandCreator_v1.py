@@ -43,6 +43,7 @@ def demandCreator(totalConsumption,dayArray,weekArray,monthArray):
     annualHourly=np.multiply(totalConsumption_normailized,weight_of_hours_in_year) #Obtains the energy required for every hour in the year.
         
     return (annualHourly)
+
 """
 
 
@@ -100,3 +101,5 @@ monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12]
 #
 #else:
 #    print ('WARNING: This file already exists!')
+
+"""
