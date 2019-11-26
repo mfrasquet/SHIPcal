@@ -46,10 +46,10 @@ def SP_plant_costFunctions(n_coll,integration,alm,fluid):
         cost_storage=0
         
 
-    plantCost=module_cost+cost_power_block+cost_storage
-    breakdownCost=[module_cost,cost_power_block,cost_storage]
+    plantCost=module_cost+cost_power_block+cost_storage #Total cost without maintenance
+    breakdownCost=[module_cost,cost_power_block,cost_storage] #The cost separated by modules, power blocks, and storage
     
-    OM_cost_year=70*n_coll
+    OM_cost_year=70*n_coll #Mainteinance cost per year
   
     return [plantCost,breakdownCost,OM_cost_year]
 

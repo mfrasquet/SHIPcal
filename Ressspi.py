@@ -140,7 +140,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     #-->## FINANCE
         businessModel=inputsDjango['businessModel'] #Type of business model
         fuel=inputsDjango['fuel'] #Type of fuel used
-        Fuel_price=inputsDjango['fuelPrice'] #Price of fossil fuel [variableunits]
+        Fuel_price=inputsDjango['fuelPrice'] #Price of fossil fuel [mxn/kWh] transformed the units in the views.py
         co2TonPrice= inputsDjango['co2TonPrice'] #[mxn/ton]
         co2factor=inputsDjango['co2factor'] #[-]
         
@@ -877,11 +877,11 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                     'flow_rate_kgs':flow_rate_kgs.tolist()}
     
     
-    if finance_study==1 and steps_sim==8759:
+    if finance_study==1 and steps_sim==8759:#This eneters only for yearly simulations with the flag finance_study = 1
         #---- FINANCIAL SIMULATION INPUTS ---------------------------------
     
         #Fixed parameters
-        IPC=5 #Para México # Annual increase of the price of money in %
+        IPC=5 #Para México infalción ~ 5% # Annual increase of the price of money in %
         fuelIncremento=3.5 # Annual increase of fuel price in %
         n_years_sim=25 #Number of years for the simulation
         
