@@ -915,7 +915,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         #---- FINANCIAL SIMULATION INPUTS ---------------------------------
     
         #Fixed parameters
-        IPC=5 #Para México # Annual increase of the price of money in %
+        IPC=5 #5 Para México #2.5 Spain # Annual increase of the price of money in %
         fuelIncremento=3.5 # Annual increase of fuel price in %
         n_years_sim=25 #Number of years for the simulation
         
