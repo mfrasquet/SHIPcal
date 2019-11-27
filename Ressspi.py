@@ -239,7 +239,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
         REC_type,Area_coll,rho_optic_0,Long=CIMAV_collectors(type_coll)
-        ressspiReg=0 #BORRAR DESPUPÉS!!!!!!!
         IAM_file='defaultCollector.csv'
         IAM_folder=os.path.dirname(os.path.realpath(__file__))+"/Collector_modules/"
     
@@ -888,7 +887,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
         incremento=IPC/100+fuelIncremento/100
     
-
         if co2TonPrice>0:
             CO2=1 #Flag to take into account co2 savings in terms of cost per ton emitted
         else:
@@ -898,7 +896,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         if ressspiReg==-2: #If solatom front-end is calling, then it uses Solatom propietary cost functions
             from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
             [Selling_price,Break_cost,OM_cost_year]=SOL_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
-            
+
+        elif ressspiReg==-3: #Use the CIMAV's costs functions
+            from CIMAV.CIMAV_modules.CIMAV_financeModels import CIMAV_plant_costFunctions
+            [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput,type_coll) #Returns all the prices in mxn
         else: #If othe collector is selected, it uses default cost functions
             
             #This function calls the standard cost functions, if necessary, please modify them within the function
@@ -925,9 +926,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                 TIRscript10="IRR for the client 10 years"
     
         
-        #Modelo tipo ESE    
+        #Modelo tipo ESCO    
         if businessModel=="Compra de energia" or businessModel=="ESCO" or businessModel=="Renting":
-            priceReduction=0.8
              #From financing institution poit of view        
             [IRR,IRR10,AmortYear,Acum_FCF,FCF,BenefitESCO,OM_cost,fuelPrizeArray,Energy_savings,Net_anual_savings]=ESCO(priceReduction,Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,incremento,co2Savings)
             if lang=="spa":    
@@ -989,6 +989,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
               'Break_cost':Break_cost}
     
     # Annual simulations
+    ressspiReg=0#BORRAR DESPUÉS!!!!!!
+    
     if steps_sim==8759:
         if plots[0]==1: #(0) Sankey plot
             image_base64,sankeyDict=SankeyPlot(sender,ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
