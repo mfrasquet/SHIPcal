@@ -20,22 +20,16 @@ SHIPcal is an open-source code to simulate solar heat applications for industria
 
 #All prev. contributors (from bitbucket) will received an email with instructions
 
-Installation instructions
+Installation instructions (Please check the pdf "SHIPcal Installation Manual" for further information)
 From anaconda (on windows):
 create a new environment and install the following libraries:
 django, numpy, scipy, pandas, pillow and matplotlib.
-it is also necessary the iapws. Since it is not included in anaconda, install manually:
+it is also necessary the iapws. Since it is not included in anaconda, install manually in the terminal:
 pip install iapws
-Now create and navegate to a folder for your project, ej:
-cd prueba
-copy the cloned folder frontendRessspi.
-From prueba folder, type:
-django-admin startproject frontendRessspi
-now get into the folder frontendRessspi and type:
-python manage.py runserver 0.0.0.0:8000
-if an error appears is because still is not copied the offline project. So, clone a copy in "prueba" ressspi_offline.
-dentro de la carpeta
-it is no necessary to type python manage.py startapp FE1. Instead, copy the original content of the cloned folder FE1 and overwrite that in "prueba".
+Now create and navigate to the folder of your project, example /Desktop/SHIPcal:
+clone this repository in the folder: git clone https://github.com/mfrasquet/SHIPcal.git
+clone the frontend repository in the same folder: git clone https://github.com/mfrasquet/SHIPcal_frontend.git
+Access the SHIPcal_frontend folder created after the clonning process (cd SHIPcal)
 Now type again:
 python manage.py runserver 0.0.0.0:8000
 and that's it!
