@@ -49,13 +49,18 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     if sender=='solatom': #The request come from Solatom's front-end www.ressspi.com
         sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/') #SOLATOM
     
+    elif sender=='CIMAV': #The request comes from CIMAV front-end
+        sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/CIMAV/') #CIMAV collectors information databases and TMYs
+
     version="1.1.10" #Ressspi version
     lang=confReport['lang'] #Language
         
     #Paths
     if ressspiReg==-2: #Simulation called from ReSSSPI front-end
         plotPath=os.path.dirname(os.path.dirname(__file__))+'/ressspi/ressspiForm/static/results/' #FilePath for images when called by www.ressspi.com
-    if ressspiReg==0: #Simulation called from terminal
+    elif ressspiReg==-3:
+        plotPath=os.path.dirname(os.path.realpath(__file__))+'/CIMAV/results' #FilePath for images when called cimav
+    if ressspiReg==0:
         plotPath=""
     if ressspiReg==1: #Simulation called from other front-ends (use positive integers)
         plotPath=""
@@ -113,13 +118,49 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         co2factor=inputs['co2factor'] #[-]
          
         ## METEO
-        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
-        locationFromRessspi=inputs['location']
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0]
-        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo 
-        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0]
-        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0]
+        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
+        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
+        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
+        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
+        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
+    
+    elif ressspiReg==-3: #Simulation called from CIMAV's front end
+    #--->ENERGY DEMAND
+        from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
         
+        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
+        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+       
+    #-->PROCESS
+        fluidInput=inputsDjango['fluid'] #Type of fluid 
+        T_out_C=inputsDjango['tempOUT'] #High temperature [ºC]
+        T_in_C=inputsDjango['tempIN'] #Low temperature [ºC]
+        #P_op_bar=P_op_bar #[bar]
+        
+    #-->## FINANCE
+        businessModel=inputsDjango['businessModel'] #Type of business model
+        fuel=inputsDjango['fuel'] #Type of fuel used
+        Fuel_price=inputsDjango['fuelPrice'] #Price of fossil fuel [mxn/kWh] transformed the units in the views.py
+        co2TonPrice= inputsDjango['co2TonPrice'] #[mxn/ton]
+        co2factor=inputsDjango['co2factor'] #[-]
+        
+    #-->METEO
+        from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso
+        localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
+        file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
+        file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
+        Lat,Huso=Lat_Huso(file_loc) #Calls a function wich reads only the line where the Lat and Timezone is and gives back theit values for the right city
+        """
+        ## TO BE IMPLEMENTED Not used for the moment, it will change in future versions
+        surfaceAvailable=500 #Surface available for the solar plant
+        orientation="NS"
+        inclination="flat" 
+        shadowInput="free"
+        distanceInput=15 #From the solar plant to the network integration point [m]
+        terreno="clean_ground"
+        """
+
     if ressspiReg==1: #Simulation called from external front-end (not ReSSSPI). Available from 1 to inf+
              
         ## ENERGY DEMAND
@@ -227,7 +268,14 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         IAM_folder=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/IAM_files/"
         REC_type=1
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
-        
+    
+    elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
+        from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
+        type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
+        REC_type,Area_coll,rho_optic_0,Long=CIMAV_collectors(type_coll)
+        IAM_file='defaultCollector.csv'
+        IAM_folder=os.path.dirname(os.path.realpath(__file__))+"/Collector_modules/"
+    
     else: #Using other collectors (to be filled with customized data)
 
         IAM_file='defaultCollector.csv'
@@ -237,20 +285,26 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         rho_optic_0=0.75583 #Optical eff. at incidence angle=0 [º]
         Long=5.28 #Longitude of each module [m]
         
-        
-    IAMfile_loc=IAM_folder+IAM_file
-    beta=0 #Inclination not implemented [deg]
-    orient_az_rad=0 #Orientation not implemented [deg]
-    roll=0 #Roll not implemented [deg]
+    if sender != 'CIMAV':    
+        IAMfile_loc=IAM_folder+IAM_file
+
+    beta=0 #Inclination not implemented [-]
+    orient_az_rad=0 #Orientation not implemented [-]
+    roll=0 #Roll not implemented [-]
        
     
     
-    Area=Area_coll*n_coll_loop #Area of aperture per loop [m²]
-    Area_total=Area*num_loops #Total area of aperture [m²]
+    Area=Area_coll*n_coll_loop #Area of aperture per loop [m²] Used later
+    Area_total=Area*num_loops #Total area of aperture [m²] Used later
     
-    #Process control
-    T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid
-    T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
+    if sender=='CIMAV':
+        from CIMAV.CIMAV_modules.func_General import mainswatertemperature
+        T_in_C_AR=mainswatertemperature(file_loc)
+    else:    
+        #Process control
+        T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid
+        T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
+
     #Process parameters
     lim_inf_DNI=200 #Minimum temperature to start production [W/m²]
     m_dot_min_kgs=0.08 #Minimum flowrate before re-circulation [kg/s]
@@ -266,7 +320,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     num_modulos_tot=n_coll_loop*num_loops
     
     #Solar Data
-    output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim)
+    output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender)
+
     """
     Output key:
     output[0]->month of year
@@ -307,7 +362,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     #Demand of energy before the boiler
     Energy_Before=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
-    Energy_Before_annual=sum(Energy_Before)
+    Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
     #Demand of energy after the boiler
     Demand=Boiler_eff*Energy_Before #kWh
     #Preparation of variables depending on the scheme selected
@@ -321,8 +376,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     energStorageMax=0 #kWh
     energyStored=0 #kWh
     porctSensible=0 #Not used
-    T_out_HX_C=0 #ot used 
-    energStorageMax=0 #kWh  
+    T_out_HX_C=0 #Not used 
     T_out_process_C=0 #Not used
     T_in_process_C=0 #Not used
     outProcess_s=0 #Not used
@@ -636,18 +690,37 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     T_alm_K=np.zeros(steps_sim)
     storage_energy=np.zeros(steps_sim)
     
+    if sender=='CIMAV':
+        blong,nlong = IAM_fiteq(type_coll,1)
+        btrans,ntrans = IAM_fiteq(type_coll,2)
+        from CIMAV.CIMAV_modules.incidence_angle import theta_IAMs_v2 as theta_IAMs_CIMAV
+    
     for i in range(0,steps_sim):
-   
-        theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
-        theta_i_deg[i]=abs(theta_i_deg[i])
+        
+        if sender != 'CIMAV':
+            theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+            theta_i_deg[i]=abs(theta_i_deg[i])
 
         if sender=='solatom': #Using Solatom IAMs 
             from Solatom_modules.solatom_param import optic_efficiency_N
             IAM[i]=optic_efficiency_N(theta_transv_deg[i],theta_i_deg[i],n_coll_loop) #(theta_transv_deg[i],theta_i_deg[i],n_coll_loop):
             IAM_long[i]=0
             IAM_t[i]=0
+            
+        elif sender=='CIMAV':
+            if SUN_ELV[i]>0 and SUN_ELV[i]<180:
+                #calcula el angulo de incidencia transversal y longitudinal. Es decir el ángulo entre la proyeccion longitudina/tranversal y el vector area del colector
+                theta_transv_deg[i],theta_i_deg[i] = theta_IAMs_CIMAV(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+                #Dado el angulo de incidencia longitudina/transversal se calcula el IAM correspondiente con los parametros correspondientes
+                IAM_long[i] = IAM_calculator(blong,nlong,theta_i_deg[i])
+                IAM_t[i] = IAM_calculator(btrans,ntrans,theta_transv_deg[i])
+            else:
+                IAM_long[i],IAM_t[i]=0,0
+            
+            IAM[i]=IAM_long[i]*IAM_t[i]
+            
         else:
-                #Cálculo del IAM long y transv
+            #Cálculo del IAM long y transv
             if SUN_ELV[i]>0:
                 [IAM_long[i]]=IAM_calc(theta_i_deg[i],0,IAMfile_loc) #Longitudinal
                 [IAM_t[i]]=IAM_calc(theta_transv_deg[i],1,IAMfile_loc) #Transversal
@@ -837,18 +910,17 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                     'flow_rate_kgs':flow_rate_kgs.tolist()}
     
     
-    if finance_study==1 and steps_sim==8759:
+    if finance_study==1 and steps_sim==8759:#This eneters only for yearly simulations with the flag finance_study = 1
         #---- FINANCIAL SIMULATION INPUTS ---------------------------------
     
         #Fixed parameters
-        IPC=2.5 # Annual increase of the price of money in %
+        IPC=5 #5 Para México #2.5 Spain # Annual increase of the price of money in %
         fuelIncremento=3.5 # Annual increase of fuel price in %
         n_years_sim=25 #Number of years for the simulation
         
         
         incremento=IPC/100+fuelIncremento/100
     
-
         if co2TonPrice>0:
             CO2=1 #Flag to take into account co2 savings in terms of cost per ton emitted
         else:
@@ -858,7 +930,10 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         if ressspiReg==-2: #If ReSSSPI front-end is calling, then it uses Solatom propietary cost functions
             from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
             [Selling_price,Break_cost,OM_cost_year]=SOL_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
-            
+
+        elif ressspiReg==-3: #Use the CIMAV's costs functions
+            from CIMAV.CIMAV_modules.CIMAV_financeModels import CIMAV_plant_costFunctions
+            [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput,type_coll) #Returns all the prices in mxn
         else: #If othe collector is selected, it uses default cost functions
             
             #This function calls the standard cost functions, if necessary, please modify them within the function
@@ -885,9 +960,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
                 TIRscript10="IRR for the client 10 years"
     
         
-        #Modelo tipo ESE    
+        #Modelo tipo ESCO    
         if businessModel=="Compra de energia" or businessModel=="ESCO" or businessModel=="Renting":
-            priceReduction=0.8
              #From financing institution poit of view        
             [IRR,IRR10,AmortYear,Acum_FCF,FCF,BenefitESCO,OM_cost,fuelPrizeArray,Energy_savings,Net_anual_savings]=ESCO(priceReduction,Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,incremento,co2Savings)
             if lang=="spa":    
@@ -949,6 +1023,8 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
               'Break_cost':Break_cost}
     
     # Annual simulations
+    ressspiReg=0#BORRAR DESPUÉS!!!!!!
+    
     if steps_sim==8759:
         if plots[0]==1: #(0) Sankey plot
             image_base64,sankeyDict=SankeyPlot(sender,ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
@@ -1125,4 +1201,4 @@ else:
    
 #[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
-
+#Esto esta en la rama implementacion CIMAV?

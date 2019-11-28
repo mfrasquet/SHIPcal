@@ -52,32 +52,32 @@ def check_overwrite(data,reg,rebaja,num_loops,n_coll_loop,type_integration,almVo
     return flagOverwrite
     
 
-def calc_hour_year(mes,dia,hora):
-    mes_string=("Ene","Feb","Mar","Apr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec")
+def calc_hour_year(mes,dia,hora): #This function calculates what is the correspondign hour of the year for an specific date and time.
+    mes_string=("Ene","Feb","Mar","Apr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec") #Not in use!!! remove
     mes_days=(31,28,31,30,31,30,31,31,30,31,30,31)
     
-    num_days=0
+    num_days=0 #Initializate the variables
     cont_mes=mes-1
-    if mes<=12:
+    if mes<=12: #Check that the month input is reliable
         while (cont_mes >0):
-            cont_mes=cont_mes-1
-            num_days=num_days+mes_days[cont_mes]
-        if dia<=mes_days[mes-1]:
-            num_days=num_days+dia
+            cont_mes=cont_mes-1 #Counts backwards from the introduced month to the first month in the year(January)
+            num_days=num_days+mes_days[cont_mes] #Adds all the days in the months previous to the introduced one
+        if dia<=mes_days[mes-1]: #Checks that the introduced dau number is smaller than the number of days in that month
+            num_days=num_days+dia #Adds the quantity of days passed so far in the introduced month
         else:
             raise ValueError('Day should be <=days_month')    
     else:
         raise ValueError('Month should be <=12')
     
-    if hora<=24:
-        hour_year=(num_days-1)*24+hora
+    if hora<=24: #Checks that the hour number is less than 24
+        hour_year=(num_days-1)*24+hora #Calculates the current year hour
     else:
        raise ValueError('Hour should be <=24') 
     return hour_year
 
    
     
-def DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim):
+def DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim): #Returns the only the entries of the demand vector (consumtpion for every hour along the year) that corresponds to the hours between the the starting and ending hours of the simulation
     
 #    Demand = np.loadtxt(file_demand, delimiter=",")
     Demand=np.array(file_demand)
@@ -185,6 +185,13 @@ def waterFromGrid(T_in_C_AR_mes):
             T_in_C_AR[ii]=T_in_C_AR_mes[11]
     return (T_in_C_AR)
 
+def waterFromGrid_v2(T_in_C_AR_mes):
+    days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31] #days_in_the_month[month_number]=how many days are in the month number "month_number"
+    T_in_C_AR=[] #Creates an empty list where I'll store the temperatures per hour along the year.
+    for month in range(12): #For eacho month
+        T_in_C_AR+=[T_in_C_AR_mes[month]]*(days_in_the_month[month]*24) #Append the average temperature from the grid number_of_days_in_the_month*24 times
+    return(np.array(T_in_C_AR)) #Returns the list transformed to an array.
+
 def thermalOil(T): #Function to derive the properties of thermal oil from the Thermal oil DB
     T=T-273 #To transform K to C
     if T==0:
@@ -220,6 +227,6 @@ def reportOutputOffline(reportsVar):
     print("Net solar production: "+str(round(reportsVar['Production_lim'],2))+" kWh with ModfProd: "+str(reportsVar['mofProd'])+" ("+str(int(reportsVar['solar_fraction_lim']))+" %)")
     print("Utilization ratio: "+str(round(reportsVar['Utilitation_ratio'],2))+" %")
     print("/// FINANCE:")
-    print("Investment: "+str(int(reportsVar['Selling_price']))+" €")
-    print("Savings 1st year: "+str(int(reportsVar['Energy_savingsList'][1]))+" € with ModfInv: "+str(reportsVar['mofINV'])+"")
+    print("Investment: "+str(int(reportsVar['Selling_price']))+" $")
+    print("Savings 1st year: "+str(int(reportsVar['Energy_savingsList'][1]))+" $ with ModfInv: "+str(reportsVar['mofINV'])+"")
     print("Payback period: "+str(int(reportsVar['AmortYear']))+" years")

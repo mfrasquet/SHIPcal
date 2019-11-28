@@ -46,10 +46,10 @@ def SP_plant_costFunctions(n_coll,integration,alm,fluid):
         cost_storage=0
         
 
-    plantCost=module_cost+cost_power_block+cost_storage
-    breakdownCost=[module_cost,cost_power_block,cost_storage]
+    plantCost=module_cost+cost_power_block+cost_storage #Total cost without maintenance
+    breakdownCost=[module_cost,cost_power_block,cost_storage] #The cost separated by modules, power blocks, and storage
     
-    OM_cost_year=70*n_coll
+    OM_cost_year=70*n_coll #Mainteinance cost per year
   
     return [plantCost,breakdownCost,OM_cost_year]
 
@@ -85,15 +85,15 @@ def Turn_key(Energy_anual,Fuel_price,Boiler_eff,n_years_sim,Investment,OM_cost_y
             Net_anual_savings[i]=0
             Accumulated_savings[i]=0
             Acum_FCF[i]=-Investment
-            FCF[i]=-Investment
+            FCF[i]=-Investment#Free cash flow
             fuelPrizeArray[i]=Fuel_price
             num_LCOE[i]=Investment/((1+r)**i)
             denom_LCOE[i]=0
         else:
             
             Energy_produced[i]=Energy_anual
-            Energy_savings[i]=Energy_anual*(Fuel_price*(1+incremento*(i-1)))/Boiler_eff + Co2_savings#€
-            if i<=4:
+            Energy_savings[i]=Energy_anual*(Fuel_price*(1+incremento)**(i-1))/Boiler_eff + Co2_savings#€
+            if i<=4:#Pensar si cambiar o no, se incluyen 4 años de mantenimiento
                 OM_cost[i]=0
             else:
                 OM_cost[i]=OM_cost_year 
@@ -103,10 +103,10 @@ def Turn_key(Energy_anual,Fuel_price,Boiler_eff,n_years_sim,Investment,OM_cost_y
             Accumulated_savings[i]=Accumulated_savings[i-1]+Net_anual_savings[i]
             Acum_FCF[i]=Acum_FCF[i-1]+Net_anual_savings[i]
             FCF[i]=Net_anual_savings[i]
-            fuelPrizeArray[i]=(Fuel_price*(1+incremento*(i-1)))
+            fuelPrizeArray[i]=(Fuel_price*(1+incremento)**(i-1))
 
-    LCOE=sum(num_LCOE)/sum(denom_LCOE)
-    IRR10=100*np.irr(FCF[:10])
+    LCOE=sum(num_LCOE)/sum(denom_LCOE)#Funcion objetivo
+    IRR10=100*np.irr(FCF[:10])#Internal rate of return
     IRR=100*np.irr(FCF)
     Amort_year=(Acum_FCF <= 0).sum()
     return [LCOE,IRR,IRR10,Amort_year,Acum_FCF,FCF,Energy_savings,OM_cost,fuelPrizeArray,Net_anual_savings]
@@ -144,14 +144,14 @@ def ESCO(priceReduction,Energy_anual,Fuel_price,Boiler_eff,n_years_sim,Investmen
             fuelPrizeArray[i]=Fuel_price
         else:
             Energy_produced[i]=Energy_anual
-            BenefitESCO[i]=priceReduction*(Energy_anual*(Fuel_price*(1+incremento*(i-1)))/Boiler_eff) #€ benefit for the ESCO
-            Energy_savings[i]=(1-priceReduction)*(Energy_anual*(Fuel_price*(1+incremento*(i-1)))/Boiler_eff) + Co2_savings #€ benefit for the industry           
+            BenefitESCO[i]=priceReduction*(Energy_anual*(Fuel_price*(1+incremento)**(i-1))/Boiler_eff) #€ benefit for the ESCO
+            Energy_savings[i]=(1-priceReduction)*(Energy_anual*(Fuel_price*(1+incremento)**(i-1))/Boiler_eff) + Co2_savings #€ benefit for the industry           
             OM_cost[i]=OM_cost_year
             Net_anual_savings[i]=BenefitESCO[i]-OM_cost[i]
             Accumulated_savings[i]=Accumulated_savings[i-1]+Net_anual_savings[i]
             Acum_FCF[i]=Acum_FCF[i-1]+Net_anual_savings[i]
             FCF[i]=Net_anual_savings[i]
-            fuelPrizeArray[i]=(Fuel_price*(1+incremento*(i-1)))
+            fuelPrizeArray[i]=(Fuel_price*(1+incremento)**(i-1))
 
     IRR10=100*np.irr(FCF[:10])
     IRR=100*np.irr(FCF)
