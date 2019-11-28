@@ -19,7 +19,7 @@ import PIL
 from PIL import Image
 
 
-def SankeyPlot(sender,ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath):
+def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath):
 
     #Proportions for Sankey
     
@@ -38,7 +38,7 @@ def SankeyPlot(sender,ressspiReg,lang,Production_max,Production_lim,Perd_term_an
 
 
     fig = plt.figure(figsize=(8, 8))
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
         
     if lang=="spa":
@@ -87,20 +87,20 @@ def SankeyPlot(sender,ressspiReg,lang,Production_max,Production_lim,Perd_term_an
     plt.tight_layout()
        
 
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64,sankeyDict
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'Sankey.png', format='png', dpi=imageQlty)              
         return 0,sankeyDict
-    if ressspiReg==0:
+    if origin==0:
         return 0,sankeyDict 
     
-def mollierPlotST(sender,ressspiReg,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty):
+def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty):
     P_op_Mpa=P_op_bar/10
     sat_liq=IAPWS97(P=P_op_Mpa, x=0)
     sat_vap=IAPWS97(P=P_op_Mpa, x=1)
@@ -159,7 +159,7 @@ def mollierPlotST(sender,ressspiReg,lang,type_integration,in_s,out_s,T_in_flag,T
        s=s+s_step
        i=i+1
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     plt.text(7.5, 350, str(int(P_isobar))+"bar", size=10, color='k', ha='center', va='center', horizontalalignment='center', verticalalignment='center', rotation= 0)   
     if lang=="spa":    
@@ -233,18 +233,18 @@ def mollierPlotST(sender,ressspiReg,lang,type_integration,in_s,out_s,T_in_flag,T
     axes.set_ylim([0,400])
     axes.set_xlim([-3,11])
         
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg== -1:
+    if origin== -1:
         fig.savefig(str(plotPath)+'Mollier.png', format='png', dpi=imageQlty) #Save image for the report for the report
        
 
-def  mollierPlotSH(sender,ressspiReg,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty):    
+def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty):    
     mollier=pd.read_csv(os.path.dirname(__file__)+'/mollierWater.csv',sep=',',encoding = "ISO-8859-1",header=None)  
 
     P_op_Mpa=P_op_bar/10
@@ -301,7 +301,7 @@ def  mollierPlotSH(sender,ressspiReg,lang,type_integration,h_in,h_out,hProcess_o
        s=s+s_step
        i=i+1
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     plt.text(5, IAPWS97(P=bar_MPa(P_isobar),s=5).h-500, str(int(P_isobar))+"bar", size=10, color='k', ha='center', va='center', horizontalalignment='center', verticalalignment='center', rotation= 0)   
     if lang=="spa":        
@@ -370,20 +370,20 @@ def  mollierPlotSH(sender,ressspiReg,lang,type_integration,h_in,h_out,hProcess_o
     axes.set_ylim([0,3000])
     axes.set_xlim([-3,11])
    
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'Mollier2.png', format='png', dpi=imageQlty) #Save for the report
         
     
-def thetaAnglesPlot(sender,ressspiReg,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty):
+def thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty):
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     fig.suptitle('Ángulos theta', fontsize=14, fontweight='bold')
     ax1 = fig.add_subplot(111)  
@@ -394,19 +394,19 @@ def thetaAnglesPlot(sender,ressspiReg,step_sim,steps_sim,theta_i_deg,theta_trans
     ax1.set_ylabel('Grados')
     plt.legend( loc='upper left', borderaxespad=0.)
     
-    if ressspiReg==-2:     
+    if origin==-2:     
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'tetha.png', format='png', dpi=imageQlty)
 
-def IAMAnglesPlot(sender,ressspiReg,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty):    
+def IAMAnglesPlot(sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty):    
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     fig.suptitle('IAMs', fontsize=14, fontweight='bold')
     ax2 = fig.add_subplot(111)         
@@ -417,19 +417,19 @@ def IAMAnglesPlot(sender,ressspiReg,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQl
     ax2.set_ylabel('Grados')
     plt.legend(loc='upper left', borderaxespad=0.)
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'IAM.png', format='png', dpi=imageQlty)
     
-def demandVsRadiation(sender,ressspiReg,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty):
+def demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty):
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     if lang=="spa": 
         fig.suptitle('Demanda vs Radiación solar', fontsize=14, fontweight='bold')
@@ -464,18 +464,18 @@ def demandVsRadiation(sender,ressspiReg,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q
         ax2.set_ylabel('Solar Radiaton - W/m2',color='red')
         plt.legend(loc='upper right', borderaxespad=0.)
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'demandProduction.png', format='png', dpi=imageQlty)
     
 
-def rhoTempPlotOil(sender,ressspiReg,lang,T_out_C,plotPath,imageQlty):    
+def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):    
     rhoList=[]
     CpList=[]
     T_step=[]
@@ -486,7 +486,7 @@ def rhoTempPlotOil(sender,ressspiReg,lang,T_out_C,plotPath,imageQlty):
         CpList.append(Cp)
     
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     if lang=="spa":     
         fig.suptitle('Propiedades del Aceite térmico', fontsize=14, fontweight='bold')
@@ -518,17 +518,17 @@ def rhoTempPlotOil(sender,ressspiReg,lang,T_out_C,plotPath,imageQlty):
         plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'Oil.png', format='png', dpi=imageQlty)
 
-def viscTempPlotOil(sender,ressspiReg,lang,T_out_C,plotPath,imageQlty): 
+def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty): 
     DvList=[]
     KvList=[]
     T_step=[]
@@ -541,7 +541,7 @@ def viscTempPlotOil(sender,ressspiReg,lang,T_out_C,plotPath,imageQlty):
     DvList=DvList[4:]
     KvList=KvList[4:]
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     if lang=="spa":    
         fig.suptitle('Viscosidad del Aceite térmico', fontsize=14, fontweight='bold')
@@ -581,19 +581,19 @@ def viscTempPlotOil(sender,ressspiReg,lang,T_out_C,plotPath,imageQlty):
         plt .hlines(y=Kv*1e6,xmin=min(range(len(DvList)), key=lambda i: abs(DvList[i]-Dv*1e3))+4,xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'Oil2.png', format='png', dpi=imageQlty)
         
-def flowRatesPlot(sender,ressspiReg,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty):
+def flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty):
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     fig.suptitle('Caudales & temperaturas', fontsize=14, fontweight='bold')
     ax1 = fig.add_subplot(111)  
@@ -625,19 +625,19 @@ def flowRatesPlot(sender,ressspiReg,step_sim,steps_sim,flow_rate_kgs,flow_rate_r
 #    output3.columns=['T_out_K']
 #    output_excel_FlowratesTemps=pd.concat([output1,output2,output3], axis=1)
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'flowrates.png', format='png', dpi=imageQlty)
     
-def prodWinterPlot(sender,ressspiReg,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty):
+def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty):
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
         
     if lang=="spa": 
@@ -689,19 +689,19 @@ def prodWinterPlot(sender,ressspiReg,lang,Demand,Q_prod,Q_prod_lim,type_integrat
 #    output6.columns=['Q_prod']
 #    output_excel_Prod_wee_Jan=pd.concat([output1,output2,output3,output4,output5,output6], axis=1)
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'produccion_solar1weekWinter.png', format='png', dpi=imageQlty)
  
-def prodSummerPlot(sender,ressspiReg,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty):  
+def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty):  
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
         
     if lang=="spa":         
@@ -755,20 +755,20 @@ def prodSummerPlot(sender,ressspiReg,lang,Demand,Q_prod,Q_prod_lim,type_integrat
 #    
 #    output_excel_Prod_week_Jun=pd.concat([output1,output2,output3,output4,output5,output6], axis=1)
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'produccion_solar1weekSummer.png', format='png', dpi=imageQlty)
  
     
-def productionSolar(sender,ressspiReg,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty):
+def productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty):
     fig = plt.figure(figsize=(14, 3.5))
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     if lang=="spa": 
         fig.suptitle('Producción anual', fontsize=14, fontweight='bold',y=1)
@@ -824,20 +824,20 @@ def productionSolar(sender,ressspiReg,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,
     #    output_excel_Prod_annual=pd.concat([output1,output2,output3,output4,output5,output6], axis=1)
     #    fig.savefig('/home/miguel/Desktop/Python_files/PLAT_VIRT/fresnel/Report/images/produccion_solar.png', format='png', dpi=imageQlty)
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'produccion_solar.png', format='png', dpi=imageQlty)
        
     
-def storageWinter(sender,ressspiReg,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty):
+def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty):
     fig = plt.figure(figsize=(14, 3.5))
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     if lang=="spa":
         fig.suptitle('Almacenamiento primera semana Enero', fontsize=14, fontweight='bold',y=1)
@@ -903,20 +903,20 @@ def storageWinter(sender,ressspiReg,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Dema
     plt.tight_layout()
     
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'almacenamiento_Enero.png', format='png', dpi=imageQlty)
 
-def storageSummer(sender,ressspiReg,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty):
+def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty):
     fig = plt.figure(figsize=(14, 3.5))
     #np.array(in list) is because Django need it since Q_prod, Q_prod_lim,.. are passed as lists
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     if lang=="spa":
         fig.suptitle('Almacenamiento primera semana Junio', fontsize=14, fontweight='bold',y=1)
@@ -981,19 +981,19 @@ def storageSummer(sender,ressspiReg,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Dema
     plt.tight_layout()
     
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'almacenamiento_Junio.png', format='png', dpi=imageQlty)
 
-def storageAnnual(sender,ressspiReg,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty):
+def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty):
     fig = plt.figure(figsize=(14, 3.5))
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     fig.suptitle('Almacenamiento', fontsize=14, fontweight='bold',y=1)
     ax1 = fig.add_subplot(111)  
@@ -1024,19 +1024,19 @@ def storageAnnual(sender,ressspiReg,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_
     plt.tight_layout()
     
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'almacenamiento_Anual.png', format='png', dpi=imageQlty)
 
-def financePlot(sender,ressspiReg,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty):
+def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty):
     fig = plt.figure()
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     if lang=="spa":
         fig.suptitle('Estudio financiero', fontsize=14, fontweight='bold')
@@ -1074,14 +1074,14 @@ def financePlot(sender,ressspiReg,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,st
         
     plt.legend(bbox_to_anchor=(0, 1), loc=2, borderaxespad=0.)
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'finance.png', format='png', dpi=imageQlty)
         
 
@@ -1205,7 +1205,7 @@ def arraysMonth(Q_prod,Q_prod_lim,DNI,Demand):
 
     return array_de_meses,array_de_meses_lim,array_de_DNI,array_de_demd,array_de_fraction
 
-def prodMonths(sender,ressspiReg,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty):    
+def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty):    
     array_de_meses,array_de_meses_lim,array_de_DNI,array_de_demd,array_de_fraction=arraysMonth(Q_prod,Q_prod_lim,DNI,Demand)
     for m in range(0,12):
         if array_de_demd[m]==0:
@@ -1228,7 +1228,7 @@ def prodMonths(sender,ressspiReg,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imag
     meses_index=np.arange(0,12)
     fig,ax = plt.subplots()
     
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     if lang=="spa":
         meses=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec"]
@@ -1262,16 +1262,16 @@ def prodMonths(sender,ressspiReg,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imag
         plt.legend(loc='upper right', borderaxespad=0.,frameon=True)        
       
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'prodMonths.png', format='png', dpi=imageQlty)  
-    if ressspiReg==0:
+    if origin==0:
         plt.show()
         return output_excel
 
@@ -1372,7 +1372,7 @@ def arrays_Savings_Month(Q_prod_lim,Demand,fuel_cost,boiler_eff):
     return array_de_meses_lim,array_de_demd,array_de_fraction
 
     
-def savingsMonths(sender,ressspiReg,Q_prod_lim,Demand,fuel_cost,boiler_eff,lang,plotPath,imageQlty):    
+def savingsMonths(sender,origin,Q_prod_lim,Demand,fuel_cost,boiler_eff,lang,plotPath,imageQlty):    
     array_de_meses_lim,array_de_demd,array_de_fraction=arrays_Savings_Month(Q_prod_lim,Demand,fuel_cost,boiler_eff)
   
     output2=pd.DataFrame(array_de_fraction)
@@ -1391,7 +1391,7 @@ def savingsMonths(sender,ressspiReg,Q_prod_lim,Demand,fuel_cost,boiler_eff,lang,
 #    fig,ax = plt.subplots()
 
     ax = fig.add_subplot(111) 
-    if ressspiReg==-2:
+    if origin==-2:
         fig.patch.set_alpha(0)
     if lang=="spa":
         meses=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec"]
@@ -1416,15 +1416,15 @@ def savingsMonths(sender,ressspiReg,Q_prod_lim,Demand,fuel_cost,boiler_eff,lang,
 
       
     
-    if ressspiReg==-2:
+    if origin==-2:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
         image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
         f.close()
         return image_base64
-    if ressspiReg==-1:
+    if origin==-1:
         fig.savefig(str(plotPath)+'savMonths.png', format='png', dpi=imageQlty)  
-    if ressspiReg==0:
+    if origin==0:
         plt.show()
         return output_excel

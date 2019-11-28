@@ -46,7 +46,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #Sender identity. Needed for use customized modules or generic modules (Solar collectors, finance, etc.)
     sender=confReport['sender']
     
-    if sender=='solatom': #The request come from Solatom's front-end www.ressspi.com
+    if sender=='solatom': #The request comes from Solatom's front-end www.ressspi.com
         sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/') #SOLATOM
     
     elif sender=='CIMAV': #The request comes from CIMAV front-end
@@ -226,7 +226,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
         localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
         ## METEO
-        if sender=='solatom': #Use Solatom propietary meteo DB
+        if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
