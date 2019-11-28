@@ -21,16 +21,19 @@ SHIPcal is an open-source code to simulate solar heat applications for industria
 #All prev. contributors (from bitbucket) will received an email with instructions
 
 Installation instructions (Please check the pdf "SHIPcal Installation Manual" for further information)
-From anaconda (on windows):
-create a new environment and install the following libraries:
-django, numpy, scipy, pandas, pillow and matplotlib.
-it is also necessary the iapws. Since it is not included in anaconda, install manually in the terminal:
-pip install iapws
-Now create and navigate to the folder of your project, example /Desktop/SHIPcal:
-clone this repository in the folder: git clone https://github.com/mfrasquet/SHIPcal.git
-clone the frontend repository in the same folder: git clone https://github.com/mfrasquet/SHIPcal_frontend.git
-Access the SHIPcal_frontend folder created after the clonning process (cd SHIPcal)
+
+#From anaconda (on windows):
+- create a new environment and install the following libraries:
+  - django, numpy, scipy, pandas, pillow and matplotlib.
+- it is also necessary the iapws. Since it is not included in anaconda, install manually in the terminal:
+  - pip install iapws
+- Now create and navigate to the folder of your project, example /Desktop/SHIPcal:
+- clone this repository in the folder: git clone https://github.com/mfrasquet/SHIPcal.git
+- clone the frontend repository in the same folder: git clone https://github.com/mfrasquet/SHIPcal_frontend.git
+- Access the SHIPcal_frontend folder created after the clonning process (cd SHIPcal)
+
 Now type again:
-python manage.py runserver 0.0.0.0:8000
+- python manage.py runserver 0.0.0.0:8000
+
 and that's it!
-Finaly, open a browser and go to http://localhost:8000/
+- Finaly, open a browser and go to http://localhost:8000/
