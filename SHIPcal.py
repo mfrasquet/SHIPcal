@@ -13,7 +13,8 @@ Version record:
     Included boiler_eff for tacking care of energy before boiler (Energy_Before), which is different
     to energy after the boiler (Demand)
     - (1.1.10) 9/9/2019 New finance functions
-
+       - (28/11/2019) Rebranding to SHIPcal to avoid confusion with solatom's propetary front-end ressspi  
+       
 @author: Miguel Frasquet
 """
 
