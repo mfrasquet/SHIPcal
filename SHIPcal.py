@@ -28,14 +28,14 @@ from iapws import IAPWS97
 
 from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline 
 from General_modules.demandCreator_v1 import demandCreator
-from General_modules.fromDjangotoRessspi import djangoReport
+from General_modules.fromDjangotoSHIPcal import djangoReport
 from Solar_modules.EQSolares import SolarData
 from Solar_modules.EQSolares import theta_IAMs_v2
 from Solar_modules.EQSolares import IAM_calc
 #from Solar_modules.iteration_process import flow_calc, flow_calcOil
 #from Solar_modules.iteration_process import IT_temp,IT_tempOil
 from Integration_modules.integrations import *
-from Plot_modules.plottingRessspi import *
+from Plot_modules.plottingSHIPcal import *
 from Finance_modules.FinanceModels import Turn_key,ESCO,SP_plant_costFunctions
 
 
