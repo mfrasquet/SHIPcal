@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 from iapws import IAPWS97
 
-#Place to import Ressspi Libs
+#Place to import SHIPcal Libs
 
 from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline 
 from General_modules.demandCreator_v1 import demandCreator
@@ -52,7 +52,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif sender=='CIMAV': #The request comes from CIMAV front-end
         sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/CIMAV/') #CIMAV collectors information databases and TMYs
 
-    version="1.1.10" #Ressspi version
+    version="1.1.10" #SHIPcal version
     lang=confReport['lang'] #Language
         
     #Paths
@@ -161,7 +161,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         terreno="clean_ground"
         """
 
-    elif origin==1: #Simulation called from external front-end (not ReSSSPI). Available from 1 to inf+
+    elif origin==1: #Simulation called from external front-end. Available from 1 to inf+
              
         ## ENERGY DEMAND
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
@@ -224,7 +224,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         co2TonPrice=0 #[€/TonCo2]
         co2factor=1 #Default value 1, after it will be modified [-]
 
-        localMeteo="Fargo_SAM.dat" #Be sure this location is included in Ressspi DB
+        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
         ## METEO
         if sender=='solatom': #Use Solatom propietary meteo DB
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
@@ -302,7 +302,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_in_C_AR=mainswatertemperature(file_loc)
     else:    
         #Process control
-        T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid
+        T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. SHIPcal needs the monthly average temp of the water grid
         T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
 
     #Process parameters
@@ -1119,7 +1119,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     return(template_vars,plotVars,reportsVar,version)
 
-# ----------------------------------- END RESSSPI -------------------------
+# ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
     #%% 
        
