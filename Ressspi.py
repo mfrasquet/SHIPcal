@@ -60,9 +60,9 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         plotPath=os.path.dirname(os.path.dirname(__file__))+'/ressspi/ressspiForm/static/results/' #FilePath for images when called by www.ressspi.com
     elif ressspiReg==-3:
         plotPath=os.path.dirname(os.path.realpath(__file__))+'/CIMAV/results' #FilePath for images when called cimav
-    if ressspiReg==0:
+    elif ressspiReg==0:
         plotPath=""
-    if ressspiReg==1: #Simulation called from other front-ends (use positive integers)
+    elif ressspiReg==1: #Simulation called from other front-ends (use positive integers)
         plotPath=""
     
     
@@ -161,7 +161,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         terreno="clean_ground"
         """
 
-    if ressspiReg==1: #Simulation called from external front-end (not ReSSSPI). Available from 1 to inf+
+    elif ressspiReg==1: #Simulation called from external front-end (not ReSSSPI). Available from 1 to inf+
              
         ## ENERGY DEMAND
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
@@ -194,7 +194,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         
                   
-    if ressspiReg==0:  #Simulation called from Python file
+    elif ressspiReg==0:  #Simulation called from Python file
 
         ## TO BE IMPLEMENTED Not used for the moment, it will change in future versions
         surfaceAvailable=500 #Surface available for the solar plant
@@ -1023,7 +1023,6 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
               'Break_cost':Break_cost}
     
     # Annual simulations
-    ressspiReg=0#BORRAR DESPUÉS!!!!!!
     
     if steps_sim==8759:
         if plots[0]==1: #(0) Sankey plot
@@ -1201,4 +1200,3 @@ else:
    
 #[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
-#Esto esta en la rama implementacion CIMAV?
