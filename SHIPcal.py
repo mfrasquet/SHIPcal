@@ -13,7 +13,8 @@ Version record:
     Included boiler_eff for tacking care of energy before boiler (Energy_Before), which is different
     to energy after the boiler (Demand)
     - (1.1.10) 9/9/2019 New finance functions
-
+       - (28/11/2019) Rebranding to SHIPcal to avoid confusion with solatom's propetary front-end ressspi  
+       
 @author: Miguel Frasquet
 """
 
@@ -24,45 +25,45 @@ import numpy as np
 import pandas as pd
 from iapws import IAPWS97
 
-#Place to import Ressspi Libs
+#Place to import SHIPcal Libs
 
 from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline 
 from General_modules.demandCreator_v1 import demandCreator
-from General_modules.fromDjangotoRessspi import djangoReport
+from General_modules.fromDjangotoSHIPcal import djangoReport
 from Solar_modules.EQSolares import SolarData
 from Solar_modules.EQSolares import theta_IAMs_v2
 from Solar_modules.EQSolares import IAM_calc
 #from Solar_modules.iteration_process import flow_calc, flow_calcOil
 #from Solar_modules.iteration_process import IT_temp,IT_tempOil
 from Integration_modules.integrations import *
-from Plot_modules.plottingRessspi import *
+from Plot_modules.plottingSHIPcal import *
 from Finance_modules.FinanceModels import Turn_key,ESCO,SP_plant_costFunctions
 
 
-def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
+def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
     #%%
     
    
     #Sender identity. Needed for use customized modules or generic modules (Solar collectors, finance, etc.)
     sender=confReport['sender']
     
-    if sender=='solatom': #The request come from Solatom's front-end www.ressspi.com
+    if sender=='solatom': #The request comes from Solatom's front-end www.ressspi.com
         sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/') #SOLATOM
     
     elif sender=='CIMAV': #The request comes from CIMAV front-end
         sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/CIMAV/') #CIMAV collectors information databases and TMYs
 
-    version="1.1.10" #Ressspi version
+    version="1.1.10" #SHIPcal version
     lang=confReport['lang'] #Language
         
     #Paths
-    if ressspiReg==-2: #Simulation called from ReSSSPI front-end
+    if origin==-2: #Simulation called from ReSSSPI front-end
         plotPath=os.path.dirname(os.path.dirname(__file__))+'/ressspi/ressspiForm/static/results/' #FilePath for images when called by www.ressspi.com
-    elif ressspiReg==-3:
+    elif origin==-3:
         plotPath=os.path.dirname(os.path.realpath(__file__))+'/CIMAV/results' #FilePath for images when called cimav
-    elif ressspiReg==0:
+    elif origin==0:
         plotPath=""
-    elif ressspiReg==1: #Simulation called from other front-ends (use positive integers)
+    elif origin==1: #Simulation called from other front-ends (use positive integers)
         plotPath=""
     
     
@@ -95,7 +96,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     #%%
     # ------------------------------------- INPUTS --------------------------------
     
-    if ressspiReg==-2: #Simulation called from front-end -> www.ressspi.com
+    if origin==-2: #Simulation called from front-end -> www.ressspi.com
              
         ## ENERGY DEMAND
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
@@ -125,7 +126,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
         Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
     
-    elif ressspiReg==-3: #Simulation called from CIMAV's front end
+    elif origin==-3: #Simulation called from CIMAV's front end
     #--->ENERGY DEMAND
         from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
         
@@ -161,7 +162,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         terreno="clean_ground"
         """
 
-    elif ressspiReg==1: #Simulation called from external front-end (not ReSSSPI). Available from 1 to inf+
+    elif origin==1: #Simulation called from external front-end. Available from 1 to inf+
              
         ## ENERGY DEMAND
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
@@ -194,7 +195,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         
                   
-    elif ressspiReg==0:  #Simulation called from Python file
+    elif origin==0:  #Simulation called from Python file
 
         ## TO BE IMPLEMENTED Not used for the moment, it will change in future versions
         surfaceAvailable=500 #Surface available for the solar plant
@@ -224,9 +225,9 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         co2TonPrice=0 #[€/TonCo2]
         co2factor=1 #Default value 1, after it will be modified [-]
 
-        localMeteo="Fargo_SAM.dat" #Be sure this location is included in Ressspi DB
+        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
         ## METEO
-        if sender=='solatom': #Use Solatom propietary meteo DB
+        if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
@@ -302,7 +303,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         T_in_C_AR=mainswatertemperature(file_loc)
     else:    
         #Process control
-        T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. Ressspi needs the monthly average temp of the water grid
+        T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. SHIPcal needs the monthly average temp of the water grid
         T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
 
     #Process parameters
@@ -927,11 +928,11 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
         
 
-        if ressspiReg==-2: #If ReSSSPI front-end is calling, then it uses Solatom propietary cost functions
+        if origin==-2: #If ReSSSPI front-end is calling, then it uses Solatom propietary cost functions
             from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
             [Selling_price,Break_cost,OM_cost_year]=SOL_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
 
-        elif ressspiReg==-3: #Use the CIMAV's costs functions
+        elif origin==-3: #Use the CIMAV's costs functions
             from CIMAV.CIMAV_modules.CIMAV_financeModels import CIMAV_plant_costFunctions
             [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput,type_coll) #Returns all the prices in mxn
         else: #If othe collector is selected, it uses default cost functions
@@ -1026,58 +1027,58 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
     
     if steps_sim==8759:
         if plots[0]==1: #(0) Sankey plot
-            image_base64,sankeyDict=SankeyPlot(sender,ressspiReg,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
+            image_base64,sankeyDict=SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
         if plots[0]==0: #(0) Sankey plot -> no plotting
             sankeyDict={'Production':0,'raw_potential':0,'Thermal_loss':0,'Utilization':0}
         if plots[1]==1: #(1) Production week Winter & Summer
-            prodWinterPlot(sender,ressspiReg,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)   
-            prodSummerPlot(sender,ressspiReg,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)  
+            prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)   
+            prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)  
         if plots[2]==1 and finance_study==1: #(2) Plot Finance
-            financePlot(sender,ressspiReg,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty)
+            financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty)
         if plots[3]==1: #(3)Plot of Storage first week winter & summer 
-            storageWinter(sender,ressspiReg,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
-            storageSummer(sender,ressspiReg,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
+            storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
+            storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
         if plots[4]==1: #(4) Plot Prod months
-            output_excel=prodMonths(sender,ressspiReg,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
+            output_excel=prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
         if plots[15]==1: #(14) Plot Month savings
-            output_excel2=savingsMonths(sender,ressspiReg,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
+            output_excel2=savingsMonths(sender,origin,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
 
     
     # Non-annual simulatios (With annual simuations you cannot see anything)
     if steps_sim!=8759:
         if plots[5]==1: #(5) Theta angle Plot
-            thetaAnglesPlot(sender,ressspiReg,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
+            thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
         if plots[6]==1: #(6) IAM angles Plot
-            IAMAnglesPlot(sender,ressspiReg,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty) 
+            IAMAnglesPlot(sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty) 
         if plots[7]==1: #(7) Plot Overview (Demand vs Solar Radiation) 
-            demandVsRadiation(sender,ressspiReg,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty)
+            demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty)
         if plots[8]==1: #(8) Plot flowrates  & Temp & Prod
-            flowRatesPlot(sender,ressspiReg,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
+            flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
         if plots[9]==1: #(9)Plot Storage non-annual simulation  
-            storageAnnual(sender,ressspiReg,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
+            storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
              
     # Property plots
     if fluidInput!="oil": #WATER
         if plots[10]==1: #(10) Mollier Plot for s-t for Water
-            mollierPlotST(sender,ressspiReg,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)              
+            mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)              
         if plots[11]==1: #(11) Mollier Plot for s-h for Water 
-            mollierPlotSH(sender,ressspiReg,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)  
+            mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)  
     if fluidInput=="oil": 
         if plots[12]==1:
-            rhoTempPlotOil(sender,ressspiReg,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
+            rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
         if plots[13]==1:
-            viscTempPlotOil(sender,ressspiReg,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
+            viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
     
     # Other plots
     if plots[14]==1: #(14) Plot Production
-        productionSolar(sender,ressspiReg,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty)
+        productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty)
        
     
     #%% 
     
     #Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
     if steps_sim==8759: #The report is only available when annual simulation is performed
-        if ressspiReg==-2:
+        if origin==-2:
             from Solatom_modules.templateSolatom import reportOutput
             fileName="results"+str(reg)
             reportsVar={'logo_output':'no_logo','date':inputs['date'],'type_integration':type_integration,
@@ -1096,7 +1097,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             reportsVar.update(meteoDict)
             reportsVar.update(processDict)
             reportsVar.update(integrationDesign)   
-            template_vars=reportOutput(ressspiReg,reportsVar,-1,"",pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)),Energy_Before_annual,sankeyDict)
+            template_vars=reportOutput(origin,reportsVar,-1,"",pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)),Energy_Before_annual,sankeyDict)
         
         else:
             template_vars={} 
@@ -1111,7 +1112,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
             reportsVar.update(confReport)
             reportsVar.update(annualProdDict)
             reportsVar.update(modificators)
-            if ressspiReg==0:
+            if origin==0:
                 reportOutputOffline(reportsVar)
     else:
         template_vars={}
@@ -1119,7 +1120,7 @@ def ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,d
         
     return(template_vars,plotVars,reportsVar,version)
 
-# ----------------------------------- END RESSSPI -------------------------
+# ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
     #%% 
        
@@ -1187,9 +1188,9 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
 # ---------------------------------------------------
 
-ressspiReg=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=0 #0 if new record; -2 if it comes from www.ressspi.com
 
-if ressspiReg==0:
+if origin==0:
     #To perform simulations from command line using hardcoded inputs
     inputsDjango={}
     last_reg=666
@@ -1198,5 +1199,5 @@ else:
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
    
-#[jSonResults,plotVars,reportsVar,version]=ressspiSIM(ressspiReg,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 

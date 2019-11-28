@@ -8,7 +8,7 @@ Created on Wed Jul 18 12:19:06 2018
 import sys
 sys.path.append('General_modules')
 
-from General_modules.func_General import annualConsumpFromRessspi
+#from General_modules.func_General import annualConsumpFromSHIPcal
 
 
 
@@ -90,11 +90,5 @@ def djangoReport(inputsDjango):
             'localInput':''}
 
     return (inputs,annualConsumptionkWh,inputsDjango['last_reg'],P_op_bar,monthArray,weekArray,dayArray)
-
-#inputsDjango={'date': '2018-08-04', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'miguel', 'sectorIndustry': 'Minning', 'fuel': 'LNG', 'fuelPrice': 0.07, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Almeria', 'location_aux': '', 'surface': 2000, 'terrain': 'clean_ground', 'distance': 2000, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'steam', 'pressure': 10.0, 'pressureUnit': 'bar', 'tempIN': 100.0, 'tempOUT': 184.0, 'connection': 'process', 'process': '', 'demand': 5000.0, 'demandUnit': 'MWh', 'hourINI': '1', 'hourEND': '24', 'Mond': 0.16666666666666666, 'Tues': 0.16666666666666666, 'Wend': 0.16666666666666666, 'Thur': 0.16666666666666666, 'Fri': 0.2, 'Sat': 0.0, 'Sun': 0.0, 'Jan': 0.09090909090909091, 'Feb': 0.09090909090909091, 'Mar': 0.09090909090909091, 'Apr': 0.09090909090909091, 'May': 0.09090909090909091, 'Jun': 0.09090909090909091, 'Jul': 0.09090909090909091, 'Aug': 0.09090909090909091, 'Sep': 0.0, 'Oct': 0.09090909090909091, 'Nov': 0.09, 'Dec': 0.09, 'last_reg': 80}
-
-#
-#(inputs,annualConsumptionkWh,last_reg,P_op_bar,activeMonthsArray,activeWeekArray,activeHoursArray)=djangoReport(inputsDjango)
-    
 
 
