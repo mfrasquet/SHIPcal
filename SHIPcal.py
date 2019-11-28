@@ -192,7 +192,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
         Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
         Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
-
                   
     elif origin==0:  #Simulation called from Python file
 
