@@ -115,7 +115,7 @@ def DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_
     
     return Demand_sim
 
-def annualConsumpFromRessspi(activeHoursArray,activeDaysWeekArray,activeMonthsArray,annualConsumptionkWh):
+def annualConsumpFromSHIPcal(activeHoursArray,activeDaysWeekArray,activeMonthsArray,annualConsumptionkWh):
     #Una vez tengo los arrays lo convierto en horario
     findes_array=[3,0,3,2,3,2,3,3,2,3,2,3] #Vector findes es 28-el numero de días de cada mes, suponemos 28=4 semanas
     

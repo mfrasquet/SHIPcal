@@ -8,7 +8,7 @@ Created on Wed Jul 18 12:19:06 2018
 import sys
 sys.path.append('General_modules')
 
-from General_modules.func_General import annualConsumpFromRessspi
+#from General_modules.func_General import annualConsumpFromSHIPcal
 
 
 
