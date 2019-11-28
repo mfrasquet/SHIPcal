@@ -1,4 +1,11 @@
-# ressspi_offline
+# SHIPcal
+
+SHIPcal is an open-source code to simulate solar heat applications for industrial process heat. SHIPcal is written in Python 3 and can be run from terminal or from a web based front-end. There are several propetary front-ends that call SHIPcal. As for example:
+- STEORcal (Developed by Miguel Frasquet)
+- ReSSSPI (Developed by SOLATOM)
+- CIMAV (Developed by CIMAV)
+
+#Technical comments
 
 #Moved from bitbucket private repository to github (Eurosun 2018)
 #Resuming commits and contributions begining October 2018
@@ -9,7 +16,7 @@
 - Miguel Frasquet Herraiz (SOLATOM) Added new reg to allow external front-ends call ressspi (see an example of frontend at https://github.com/mfrasquet/frontendRessspi
 
 #Bug fixing from 2019
--See slack channel for more information
+-See slack channel for more information https://shipcal.slack.com. If you want to contribute send an email to mfrasquetherraiz@gmail.com
 
 #All prev. contributors (from bitbucket) will received an email with instructions
 
