@@ -37,7 +37,6 @@ from Solar_modules.EQSolares import IAM_calc
 #from Solar_modules.iteration_process import IT_temp,IT_tempOil
 from Integration_modules.integrations import *
 from Plot_modules.plottingSHIPcal import *
-from Finance_modules.FinanceModels import Turn_key,ESCO,SP_plant_costFunctions
 
 
 def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
@@ -151,7 +150,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
         file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
         file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
-        Lat,Huso=Lat_Huso(file_loc) #Calls a function wich reads only the line where the Lat and Timezone is and gives back theit values for the right city
+        Lat,Huso,Positional_longitude=Lat_Huso(file_loc) #Calls a function wich reads only the line where the Lat and Timezone is and gives back theit values for the right city
         """
         ## TO BE IMPLEMENTED Not used for the moment, it will change in future versions
         surfaceAvailable=500 #Surface available for the solar plant
@@ -193,7 +192,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
         Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
         Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
-        
                   
     elif origin==0:  #Simulation called from Python file
 
@@ -915,7 +913,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         #---- FINANCIAL SIMULATION INPUTS ---------------------------------
     
         #Fixed parameters
-        IPC=5 #5 Para México #2.5 Spain # Annual increase of the price of money in %
+        if sender == 'CIMAV':
+            IPC=5 #5 for México 
+        else:
+            IPC=2.5 #for Spain # Annual increase of the price of money in %
         fuelIncremento=3.5 # Annual increase of fuel price in %
         n_years_sim=25 #Number of years for the simulation
         
@@ -929,14 +930,17 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
 
         if origin==-2: #If ReSSSPI front-end is calling, then it uses Solatom propietary cost functions
+            from Finance_modules.FinanceModels import Turn_key,ESCO
             from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
             [Selling_price,Break_cost,OM_cost_year]=SOL_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
 
         elif origin==-3: #Use the CIMAV's costs functions
-            from CIMAV.CIMAV_modules.CIMAV_financeModels import CIMAV_plant_costFunctions
-            [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput,type_coll) #Returns all the prices in mxn
+            from CIMAV.CIMAV_modules.CIMAV_financeModels import Turn_key,ESCO,CIMAV_plant_costFunctions
+            destination=[Lat,Positional_longitude]
+            [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput,type_coll,destination) #Returns all the prices in mxn
+
         else: #If othe collector is selected, it uses default cost functions
-            
+            from Finance_modules.FinanceModels import Turn_key,ESCO,SP_plant_costFunctions
             #This function calls the standard cost functions, if necessary, please modify them within the function
             [Selling_price,Break_cost,OM_cost_year]=SP_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
             
@@ -1112,7 +1116,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             reportsVar.update(confReport)
             reportsVar.update(annualProdDict)
             reportsVar.update(modificators)
-            if origin==0:
+            if origin==0 or origin == -3:
                 reportOutputOffline(reportsVar)
     else:
         template_vars={}
