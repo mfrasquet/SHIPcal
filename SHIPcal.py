@@ -755,7 +755,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
       
         
     
-        if i==0:    #Condiciones iniciales
+        if i==0:    #Initial conditions
             bypass.append("OFF")
             Q_prod[i]=0
             T_in_K[i]=temp[0] #Ambient temperature 
@@ -767,7 +767,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 SOC[i]=100*energyStored/energStorageMax
             
         else:
-    
             if DNI[i]>lim_inf_DNI :#tengo suficiente radiacion o tengo demanda OPERATION
                
                 if type_integration=="SL_L_PS":
@@ -797,14 +796,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                                     
                     #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
                     if fluidInput!="oil":
-                        flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)                    
+                        flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)#Not used, only for S_L_RF                  
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                         [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageWaterSimple(Q_prod[i],Demand[i])
                     else: 
                         
                         T_av_process_K=(T_out_process_K+T_in_process_K)/2
                         [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
-                        flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K))      
+                        flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) #Not used, only for S_L_RF         
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                                                                                                          
                         [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageOilSimple(Q_prod[i],Demand[i])
     
@@ -907,6 +906,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
+    # DataFRame summary of the simulation 
+    simulationDF=pd.DataFrame({'DNI':DNI,'T_in':T_in_K-273,'T_out':T_out_K-273,'bypass':bypass,
+                               'Q_prod':Q_prod,'Q_prod_rec':Q_prod_rec,'flow_rate_kgs':flow_rate_kgs,
+                               'flow_rate_rec':flow_rate_rec,'Q_prod_lim':Q_prod_lim,'Demand':Demand,
+                               'Q_defocus':Q_defocus})
+    
+    
     #%%
     # BLOCK 2.2 - ANUAL INTEGRATION <><><><><><><><><><><><><><><><><><><><><><><><><><><>
         
@@ -937,7 +943,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # ------------------------------------------------------------------------------------
 # BLOCK 3 - FINANCE SIMULATION -------------------------------------------------------
 # ------------------------------------------------------------------------------------
-       
+    
+    Break_cost=0 # Init variable
     if finance_study==1 and steps_sim==8759:#This eneters only for yearly simulations with the flag finance_study = 1
 
     # BLOCK 3.1 - PLANT INVESTMENT <><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -1173,14 +1180,14 @@ plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1]
 #(15) A- Plot Month savings 
 
 
-finance_study=1
+finance_study=0
 
-mes_ini_sim=1
-dia_ini_sim=1
+mes_ini_sim=6
+dia_ini_sim=2
 hora_ini_sim=1
 
-mes_fin_sim=12
-dia_fin_sim=31
+mes_fin_sim=6
+dia_fin_sim=2
 hora_fin_sim=24
 
 
@@ -1202,7 +1209,7 @@ n_coll_loop=10
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_PS"
+type_integration="SL_L_P"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
