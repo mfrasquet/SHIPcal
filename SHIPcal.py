@@ -15,7 +15,11 @@ Version record:
     - (1.1.10) 9/9/2019 New finance functions
        - (28/11/2019) Rebranding to SHIPcal to avoid confusion with solatom's propetary front-end ressspi  
        
-@author: Miguel Frasquet
+@authors (in order of involvement): 
+    Miguel Frasquet Herraiz - US/SOLATOM (mfrasquetherraiz@gmail.com)
+    Joey Bannenberg - FONTYS UNIVERSITY (jhabannenberg@gmail.com)
+    Yago NEl Vila Gracia - ETH (yagonelvilagracia@hotmail.com)
+    Juan Antonio Aramburo Pasapera  - CIMAV (ja.arpa97@gmail.com)
 """
 
 #Standard Libs
@@ -33,29 +37,30 @@ from General_modules.fromDjangotoSHIPcal import djangoReport
 from Solar_modules.EQSolares import SolarData
 from Solar_modules.EQSolares import theta_IAMs_v2
 from Solar_modules.EQSolares import IAM_calc
-#from Solar_modules.iteration_process import flow_calc, flow_calcOil
-#from Solar_modules.iteration_process import IT_temp,IT_tempOil
 from Integration_modules.integrations import *
 from Plot_modules.plottingSHIPcal import *
 
 
 def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
-    #%%
     
-   
-    #Sender identity. Needed for use customized modules or generic modules (Solar collectors, finance, etc.)
-    sender=confReport['sender']
+#%%
+# ------------------------------------------------------------------------------------
+# BLOCK 1 - VARIABLE INITIALIZATION --------------------------------------------------
+# ------------------------------------------------------------------------------------
     
+    # BLOCK 1.1 - SIMULATION CONTROL <><><><><><><><><><><><><><><><><><><><><><><><><><><>
+    
+    version="1.1.10" #SHIPcal version
+    lang=confReport['lang'] #Language
+    sender=confReport['sender'] #Sender identity. Needed for use customized modules or generic modules (Solar collectors, finance, etc.)
+    
+    #-->  Paths
     if sender=='solatom': #The request comes from Solatom's front-end www.ressspi.com
         sys.path.append(os.path.dirname(os.path.dirname(__file__))+'/ressspi_solatom/') #SOLATOM
     
     elif sender=='CIMAV': #The request comes from CIMAV front-end
         sys.path.append(os.path.dirname(os.path.realpath(__file__))+'/CIMAV/') #CIMAV collectors information databases and TMYs
 
-    version="1.1.10" #SHIPcal version
-    lang=confReport['lang'] #Language
-        
-    #Paths
     if origin==-2: #Simulation called from ReSSSPI front-end
         plotPath=os.path.dirname(os.path.dirname(__file__))+'/ressspi/ressspiForm/static/results/' #FilePath for images when called by www.ressspi.com
     elif origin==-3:
@@ -65,35 +70,52 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif origin==1: #Simulation called from other front-ends (use positive integers)
         plotPath=""
     
+    #-->  Simulation options
+    finance_study=simControl['finance_study'] #In order to include the financial study. 1-> Yes ; 0-> No
     
-    #Input Control ---------------------------------------
-        #Modifiers to control extraordinary situations
-    mofINV=modificators['mofINV'] #Investment modificator to include: Subsidies, extra-costs, etc. [-]
-    mofDNI=modificators['mofDNI'] #DNI modificator to take into correct Meteonorm data if necessary [-] 
-    mofProd=modificators['mofProd'] #Production modificator to include: Dusty environments, shadows, etc. [-]
+    #-->  Simulation length
     
-        #Pre-design of the solar field
-    num_loops=desginDict['num_loops'] #Number of loops of the solar plant [-]
-    n_coll_loop=desginDict['n_coll_loop'] #Number of modules connected in series per loop [-]
-    type_integration=desginDict['type_integration'] #Type of integration scheme from IEA Task 49 
-    almVolumen=desginDict['almVolumen'] #Storage capacity [litres]
+    # Initial step of the simulation
+    mes_ini_sim=simControl['mes_ini_sim']   # Month in which the simulation starts 
+    dia_ini_sim=simControl['dia_ini_sim']   # Day in which the simulation starts 
+    hora_ini_sim=simControl['hora_ini_sim'] # Hour in which the simulation starts 
     
-    #Simulation Control ---------------------------------------
-        #In order to include the financial study
-    finance_study=simControl['finance_study']
+    # Final step of the simulation
+    mes_fin_sim=simControl['mes_fin_sim']   # Month in which the simulation ends
+    dia_fin_sim=simControl['dia_fin_sim']   # Day in which the simulation ends
+    hora_fin_sim=simControl['hora_fin_sim'] # Hour in which the simulation ends
     
-        #Initial step of the simulation
-    mes_ini_sim=simControl['mes_ini_sim']
-    dia_ini_sim=simControl['dia_ini_sim']
-    hora_ini_sim=simControl['hora_ini_sim']
-        #Final step of the simulation
-    mes_fin_sim=simControl['mes_fin_sim'] 
-    dia_fin_sim=simControl['dia_fin_sim']
-    hora_fin_sim=simControl['hora_fin_sim']
-    
-   
     #%%
-    # ------------------------------------- INPUTS --------------------------------
+    # BLOCK 1.2 - PARAMETERS <><><><><><><><><><><><><><><><><><><><><><><><><><><>
+    
+    #--> Finance parameters
+    fuelIncremento=3.5 # Annual increase of fuel price [%]
+    n_years_sim=25 # Number of years for the simulation [years]
+    
+    #--> Process parameters
+    
+    lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
+    m_dot_min_kgs=0.08 # Minimum flowrate before re-circulation [kg/s]
+    coef_flow_rec=2 # Multiplier for flowrate when recirculating [-]
+    Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
+    
+    #%%
+    # BLOCK 1.3 - SIMULATION VARIABLES <><><><><><><><><><><><><><><><><><><><><><><><><><><>    
+    
+    #--> Simulation modifiers (useful to control extraordinary situations)
+    mofINV=modificators['mofINV'] # Investment modificator to include: Subsidies, extra-costs, etc. [-]
+    mofDNI=modificators['mofDNI'] # DNI modificator to take into correct Meteonorm data if necessary [-] 
+    mofProd=modificators['mofProd'] # Production modificator to include: Dusty environments, shadows, etc. [-]
+    
+    # --> Solar field
+    num_loops=desginDict['num_loops'] # Number of loops of the solar plant [-]
+    n_coll_loop=desginDict['n_coll_loop'] # Number of modules connected in series per loop [-]
+    
+    # --> Balance of plant
+    type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
+    almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
+    
+    # --> User inputs (from front-end)
     
     if origin==-2: #Simulation called from front-end -> www.ressspi.com
              
@@ -126,40 +148,32 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
     
     elif origin==-3: #Simulation called from CIMAV's front end
-    #--->ENERGY DEMAND
+    
+        ## ENERGY DEMAND
         from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
         
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
         file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
        
-    #-->PROCESS
+        ## PROCESS
         fluidInput=inputsDjango['fluid'] #Type of fluid 
         T_out_C=inputsDjango['tempOUT'] #High temperature [ºC]
         T_in_C=inputsDjango['tempIN'] #Low temperature [ºC]
         #P_op_bar=P_op_bar #[bar]
         
-    #-->## FINANCE
+        ## FINANCE
         businessModel=inputsDjango['businessModel'] #Type of business model
         fuel=inputsDjango['fuel'] #Type of fuel used
         Fuel_price=inputsDjango['fuelPrice'] #Price of fossil fuel [mxn/kWh] transformed the units in the views.py
         co2TonPrice= inputsDjango['co2TonPrice'] #[mxn/ton]
         co2factor=inputsDjango['co2factor'] #[-]
         
-    #-->METEO
+        ## METEO
         from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso
         localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
         file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
         file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
         Lat,Huso,Positional_longitude=Lat_Huso(file_loc) #Calls a function wich reads only the line where the Lat and Timezone is and gives back theit values for the right city
-        """
-        ## TO BE IMPLEMENTED Not used for the moment, it will change in future versions
-        surfaceAvailable=500 #Surface available for the solar plant
-        orientation="NS"
-        inclination="flat" 
-        shadowInput="free"
-        distanceInput=15 #From the solar plant to the network integration point [m]
-        terreno="clean_ground"
-        """
 
     elif origin==1: #Simulation called from external front-end. Available from 1 to inf+
              
@@ -167,7 +181,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
         file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
        
-
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
         
@@ -193,15 +206,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
         Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
                   
-    elif origin==0:  #Simulation called from Python file
-
-        ## TO BE IMPLEMENTED Not used for the moment, it will change in future versions
-        surfaceAvailable=500 #Surface available for the solar plant
-        orientation="NS"
-        inclination="flat" 
-        shadowInput="free"
-        distanceInput=15 #From the solar plant to the network integration point [m]
-        terreno="clean_ground"
+    elif origin==0:  #Simulation called from Python file (called from the terminal)
         
         ## ENERGY DEMAND
         dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
@@ -216,6 +221,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_in_C=20 #Low temperature [ºC]
         P_op_bar=25 #[bar] 
         
+        # Not implemented yet
+        distanceInput=15 #From the solar plant to the network integration point [m]
+        surfaceAvailable=500 #Surface available for the solar plant [m2]
+        
         ## FINANCE
         businessModel="turnkey"
         fuel="Gasoil-B" #Type of fuel
@@ -223,8 +232,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         co2TonPrice=0 #[€/TonCo2]
         co2factor=1 #Default value 1, after it will be modified [-]
 
-        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
         ## METEO
+        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -236,9 +245,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
      
-        
-        # -------------------------------------------------
-        #CO2 factors of the different fuels availables
+        #CO2 factors of the different fuels availables (Usually it is taken care by the front-end but here, since the simulation is not called from a front-end, it has to be calculated)
         if fuel in ["NG","LNG"]:
             co2factor=.2/1000 #[TonCo2/kWh]  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
         if fuel in ['Fueloil2','Fueloil3','Gasoil-B','Gasoil-C']:
@@ -250,21 +257,24 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         if fuel in ['Biomass']:
             co2factor=.41/1000 #[TonCo2/kWh]  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
 
-        # --------------------------------------------------------------------------------------
+    #Demand of energy before the boiler
+    Energy_Before=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) # [kWh]
+    Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
+    Demand=Boiler_eff*Energy_Before #Demand of energy after the boiler [kWh]
 
-    
-    #%%
-    
 
+    # --> Solar collector 
         
-    # -----------------------------------------------
-    
-    #Collector
     if sender=='solatom': #Using Solatom Collector
-        from Solatom_modules.solatom_param import solatom_param
-        type_coll=20 #Solatom 20" fresnel collector - Change if other collector is used
+        
+        ## IAM 
         IAM_file='Solatom.csv'
         IAM_folder=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/IAM_files/"
+        IAMfile_loc=IAM_folder+IAM_file
+        
+        ## Solar collector characteristics
+        from Solatom_modules.solatom_param import solatom_param
+        type_coll=20 #Solatom 20" fresnel collector - Change if other collector is used
         REC_type=1
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
     
@@ -276,49 +286,39 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         IAM_folder=os.path.dirname(os.path.realpath(__file__))+"/Collector_modules/"
     
     else: #Using other collectors (to be filled with customized data)
-
+        
+        ## IAM 
         IAM_file='defaultCollector.csv'
-        IAM_folder=os.path.dirname(__file__)+"/Collector_modules/" 
+        IAM_folder=os.path.dirname(__file__)+"/Collector_modules/"
+        IAMfile_loc=IAM_folder+IAM_file
+        
+        ## Solar collector characteristics
         REC_type=1 #Type of receiver used (1 -> Schott receiver tube)
         Area_coll=26.4 #Aperture area of collector per module [m²]
         rho_optic_0=0.75583 #Optical eff. at incidence angle=0 [º]
         Long=5.28 #Longitude of each module [m]
         
-    if sender != 'CIMAV':    
-        IAMfile_loc=IAM_folder+IAM_file
-
-    beta=0 #Inclination not implemented [-]
-    orient_az_rad=0 #Orientation not implemented [-]
-    roll=0 #Roll not implemented [-]
-       
-    
-    
     Area=Area_coll*n_coll_loop #Area of aperture per loop [m²] Used later
     Area_total=Area*num_loops #Total area of aperture [m²] Used later
-    
-    if sender=='CIMAV':
-        from CIMAV.CIMAV_modules.func_General import mainswatertemperature
-        T_in_C_AR=mainswatertemperature(file_loc)
-    else:    
-        #Process control
-        T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) #When input process is water from the grid. SHIPcal needs the monthly average temp of the water grid
-        T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
-
-    #Process parameters
-    lim_inf_DNI=200 #Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.08 #Minimum flowrate before re-circulation [kg/s]
-    coef_flow_rec=2 #Multiplier for flowrate when recirculating [-]
-    
-    
-    
-    # ---------------------------------------------------------------------
-    # --------------------------- SIMULATION ------------------------------
-    # ---------------------------------------------------------------------
-      
-        
     num_modulos_tot=n_coll_loop*num_loops
     
-    #Solar Data
+    # --> Financial variables
+
+    # Annual increase of the price of money [%]
+    if sender == 'CIMAV':
+        IPC=5 # 5 for México
+    else:
+        IPC=2.5 # 2.5 for Spain 
+        
+    incremento=IPC/100+fuelIncremento/100
+    
+    if co2TonPrice>0:
+        CO2=1 #Flag to take into account co2 savings in terms of cost per ton emitted
+    else:
+        CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
+    
+    # --> Meteo variables
+   
     output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender)
 
     """
@@ -337,37 +337,35 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     output[11]->step_sim
             
     """
-    T_in_flag=1 #Flag 1 si la temperatura es constante (circuito cerrado); 0 si se toma agua de red (circuito abierto con reposicion)
-    
-    #Renombramos variables y las transformamos para trabajar mas comodo
-#    month=output[:,0]
-#    day_month=output[:,1]
-#    hour_day=output[:,2]
-#    hour_year= output[:,3]
-#    W=output[:,4]
-    SUN_ELV=output[:,5] #[rad]
-    SUN_AZ=output[:,6] #[rad]
-    #DECL=output[:,7] - #[rad]
-    #SUN_ZEN=output[:,8] #[rad]
-    DNI=output[:,9] *mofDNI # [W/m²]
-#    DNI_positive_hours=(0 < DNI).sum()
-    temp=output[:,10]+273 #[K] Ambient temperature
-    step_sim=output [:,11]   
-    steps_sim=len(output) #Numero de steps en la simulacion
-    
+
+    SUN_ELV=output[:,5] # Sun elevation [rad]
+    SUN_AZ=output[:,6] # Sun azimuth [rad]
+    DNI=output[:,9] *mofDNI # Direct Normal Irradiation [W/m²]
+    temp=output[:,10]+273 # Ambient temperature [K] 
+    step_sim=output [:,11] #Array containing the simulation steps 
+    steps_sim=len(output) # Number of steps in the simulation
+
     meteoDict={'DNI':DNI.tolist(),'localMeteo':localMeteo}
     
-    Boiler_eff=0.8 #Boiler efficiency to take into account the excess of fuel consumed
     
-    #Demand of energy before the boiler
-    Energy_Before=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) #kWh
-    Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
-    #Demand of energy after the boiler
-    Demand=Boiler_eff*Energy_Before #kWh
-    #Preparation of variables depending on the scheme selected
+    # --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
+        
+    orientation="NS"
+    inclination="flat" 
+    shadowInput="free"
+    terreno="clean_ground"
+
+    beta=0 #Inclination not implemented [-]
+    orient_az_rad=0 #Orientation not implemented [-]
+    roll=0 #Roll not implemented [-]
+       
+     
+    #%%
+    # BLOCK 1.4 - PROCESS VARIABLES <><><><><><><><><><><><><><><><><><><><><><><><><><><>      
+    # IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
+
+    # --> Variable init
     
-    
-    #Variable init
     sat_liq=0 #Not used
     sat_vap=0 #Not used
     x_design=0 #Not used
@@ -385,13 +383,25 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     h_in=0
     h_out=0
     
-    if type_integration=="SL_L_RF":    
+    T_in_flag=1 #Flag 1 si la temperatura es constante (circuito cerrado); 0 si se toma agua de red (circuito abierto con reposicion)
+    
+    #Temperature of the make-up water
+    if sender=='CIMAV':
+        from CIMAV.CIMAV_modules.func_General import mainswatertemperature
+        T_in_C_AR=mainswatertemperature(file_loc)
+    else:    
+        T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) # When input process is water from the grid. SHIPcal needs the monthly average temp of the water grid
+        T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
+
         
+    # --> Integration: 
+        #Supply level with liquid heat transfer media solar return flow boost
+        
+    if type_integration=="SL_L_RF": 
+
         heatFactor=.5 #Proportion of temperature
         DELTA_T_HX=5 #Degrees for DELTA in the heat Exchanger
         P_op_Mpa=P_op_bar/10
-        
-    
         
         T_in_K=T_in_C+273
         T_in_process_C=T_in_C
@@ -416,7 +426,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_out_HX_K=(T_in_process_K+(T_out_K-T_in_process_K)*heatFactor)
         T_out_HX_C=T_out_HX_K-273
         outputHXState=IAPWS97(P=P_op_Mpa, T=T_out_HX_K)
-#        outHX_s=outputHXState.s #Not used?
         hHX_out=outputHXState.h
         
         #Our design point will be heat the fluid at x%
@@ -431,23 +440,21 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         out_s=outputState.s
         h_out=outputState.h                                                                                                                                                                                  
         T_av_process_K=(T_in_process_K+T_out_process_K)/2
+    
+    # --> Integration: 
+        # SL_L_P => Supply level with liquid heat transfer media parallel integration
+        # PL_E_PM => Process level external HEX for heating of product or process medium
         
     if type_integration=="SL_L_P" or type_integration=="PL_E_PM":   
         
         P_op_Mpa=P_op_bar/10
 
-        
         T_in_K=T_in_C+273
         T_in_process_C=T_in_C
         T_in_process_K=T_in_K
         
-            
-        
-
-        
         if fluidInput!="oil":
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_process_K)
-#            sProcess_in=inputState.s
             hProcess_in=inputState.h  
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273    
@@ -460,8 +467,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             outProcess_s=outputProcessState.s
             hProcess_out=outputProcessState.h    
             
-            
-            
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
             h_in=inputState.h    
             in_s=inputState.s
@@ -470,7 +475,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             out_s=outputState.s
             h_out=outputState.h
         
-    
+    # --> Integration: 
+        # SL_L_S => Supply level with liquid heat transfer media solar heating of storages
+        # SL_L_S3 => Supply level with liquid heat transfer media solar heating of storages (Pasteurization case)
+        
     if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
 
         
@@ -509,6 +517,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         storage_ini_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_in_K))/3600 #Storage capacity in kWh
     
         energStorageMax=storage_max_energy-storage_ini_energy
+    
+    # --> Integration: 
+        # SL_L_PS => Supply level with liquid heat transfer media parallel integration with storage
         
     if type_integration=="SL_L_PS":
         
@@ -544,7 +555,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
             energStorageMax=(almVolumen*(1/1000)*(rho_av)*Cp_av*(T_out_K-T_in_K))/3600 #Storage capacity in kWh
             
-    
+    # --> Integration: 
+        # SL_S_FW => Supply level with steam solar heating of boiler feed water
+        
     if type_integration=="SL_S_FW":
  
         
@@ -607,7 +620,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         porctSensible=sensiblePart/total
         porctLatent=latentPart/total
         porctPreHeated=PreHeatedPart/total
-    #    Demand2=Demand*porctSensT_in_Kible
         Demand2=Demand*porctPreHeated
         
     
@@ -620,6 +632,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         energStorageMax=almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K-T_in_K)/3600 #Storage capacity in kWh
         energyStored=0 #Initial storage
     
+    # --> Integration: 
+        # SL_S_FW => Supply level with steam direct solar steam generation
+        
     if type_integration=="SL_S_PD":
         
         
@@ -656,8 +671,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                        'T_out_process_C':T_out_process_C,'T_in_process_C':T_in_process_C,'T_out_HX_C':T_out_HX_C}
     
 
+#%%
+# ------------------------------------------------------------------------------------
+# BLOCK 2 - SOLAR SIMULATION --------------------------------------------------
+# ------------------------------------------------------------------------------------
+    
+    # BLOCK 2.1 - SIMULATION ANNUAL LOOP <><><><><><><><><><><><><><><><><><><><><><><><><><><>
         
-    #Declaracion de variables
+    # Variable initialization
     theta_transv_rad=np.zeros(steps_sim)
     theta_i_rad=np.zeros(steps_sim)
     theta_i_deg=np.zeros(steps_sim)
@@ -694,6 +715,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         btrans,ntrans = IAM_fiteq(type_coll,2)
         from CIMAV.CIMAV_modules.incidence_angle import theta_IAMs_v2 as theta_IAMs_CIMAV
     
+    # <><><><><><><><><><><><><><><><><> ANNUAL SIMULATION LOOP <><><><><><><><><><><><><><><>
     for i in range(0,steps_sim):
         
         if sender != 'CIMAV':
@@ -733,7 +755,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
       
         
     
-        if i==0:    #Condiciones iniciales
+        if i==0:    #Initial conditions
             bypass.append("OFF")
             Q_prod[i]=0
             T_in_K[i]=temp[0] #Ambient temperature 
@@ -745,7 +767,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 SOC[i]=100*energyStored/energStorageMax
             
         else:
-    
             if DNI[i]>lim_inf_DNI :#tengo suficiente radiacion o tengo demanda OPERATION
                
                 if type_integration=="SL_L_PS":
@@ -775,14 +796,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                                     
                     #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
                     if fluidInput!="oil":
-                        flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)                    
+                        flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)#Not used, only for S_L_RF                  
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                         [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageWaterSimple(Q_prod[i],Demand[i])
                     else: 
                         
                         T_av_process_K=(T_out_process_K+T_in_process_K)/2
                         [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
-                        flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K))      
+                        flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) #Not used, only for S_L_RF         
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                                                                                                          
                         [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageOilSimple(Q_prod[i],Demand[i])
     
@@ -885,7 +906,16 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
-    #---- ANUAL SUMMARY -----------------------------------------------            
+    # DataFRame summary of the simulation 
+    simulationDF=pd.DataFrame({'DNI':DNI,'T_in':T_in_K-273,'T_out':T_out_K-273,'bypass':bypass,
+                               'Q_prod':Q_prod,'Q_prod_rec':Q_prod_rec,'flow_rate_kgs':flow_rate_kgs,
+                               'flow_rate_rec':flow_rate_rec,'Q_prod_lim':Q_prod_lim,'Demand':Demand,
+                               'Q_defocus':Q_defocus})
+    
+    
+    #%%
+    # BLOCK 2.2 - ANUAL INTEGRATION <><><><><><><><><><><><><><><><><><><><><><><><><><><>
+        
     Production_max=sum(Q_prod) #Produccion total en kWh. Asumiendo que se consume todo lo producido
     Production_lim=sum(Q_prod_lim) #Produccion limitada total en kWh
     Demand_anual=sum(Demand) #Demanda energética anual
@@ -908,26 +938,16 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
                     'flow_rate_kgs':flow_rate_kgs.tolist()}
     
+
+#%%
+# ------------------------------------------------------------------------------------
+# BLOCK 3 - FINANCE SIMULATION -------------------------------------------------------
+# ------------------------------------------------------------------------------------
     
+    Break_cost=0 # Init variable
     if finance_study==1 and steps_sim==8759:#This eneters only for yearly simulations with the flag finance_study = 1
-        #---- FINANCIAL SIMULATION INPUTS ---------------------------------
-    
-        #Fixed parameters
-        if sender == 'CIMAV':
-            IPC=5 #5 for México 
-        else:
-            IPC=2.5 #for Spain # Annual increase of the price of money in %
-        fuelIncremento=3.5 # Annual increase of fuel price in %
-        n_years_sim=25 #Number of years for the simulation
-        
-        
-        incremento=IPC/100+fuelIncremento/100
-    
-        if co2TonPrice>0:
-            CO2=1 #Flag to take into account co2 savings in terms of cost per ton emitted
-        else:
-            CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
-        
+
+    # BLOCK 3.1 - PLANT INVESTMENT <><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
         if origin==-2: #If ReSSSPI front-end is calling, then it uses Solatom propietary cost functions
             from Finance_modules.FinanceModels import Turn_key,ESCO
@@ -943,11 +963,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             from Finance_modules.FinanceModels import Turn_key,ESCO,SP_plant_costFunctions
             #This function calls the standard cost functions, if necessary, please modify them within the function
             [Selling_price,Break_cost,OM_cost_year]=SP_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
-            
-      
+              
         Selling_price=Selling_price*mofINV
         
-        #---- FINANCE ---------------------------------------------------------
+    #%%    
+    # BLOCK 3.2 - FINANCE MODEL <><><><><><><><><><><><><><><><><><><><><><><><><><><>
         
         if CO2==1:
             co2Savings=tonCo2Saved*co2TonPrice
@@ -1008,11 +1028,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         FCF=np.array([]) #No finance simulation
         AmortYear=0 #No finance simulation
         Selling_price=0 #No finance simulation
-    #%%
-    # ---------------------------------------------------------------------
-    # --------------------------- PLOT CONSOLE ----------------------------
-    # ---------------------------------------------------------------------
-     
+        
+#%%
+# ------------------------------------------------------------------------------------
+# BLOCK 4 - PLOT GENERATION ----------------------------------------------------------
+# ------------------------------------------------------------------------------------
+    
+    
     plotVars={'lang':lang,'Production_max':Production_max,'Production_lim':Production_lim,
               'Perd_term_anual':Perd_term_anual,'DNI_anual_irradiation':DNI_anual_irradiation,
               'Area':Area,'num_loops':num_loops,'imageQlty':imageQlty,'plotPath':plotPath,
@@ -1027,8 +1049,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
               'x_design':x_design,'h_in':h_in,'h_out':h_out,'hProcess_out':hProcess_out,'outProcess_h':outProcess_h,
               'Break_cost':Break_cost}
     
-    # Annual simulations
+    # --> Calling plot functions
     
+    # Plots for annual simulations
     if steps_sim==8759:
         if plots[0]==1: #(0) Sankey plot
             image_base64,sankeyDict=SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
@@ -1048,7 +1071,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             output_excel2=savingsMonths(sender,origin,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
 
     
-    # Non-annual simulatios (With annual simuations you cannot see anything)
+    # Plots for non-annual simulatios (With annual simuations you cannot see anything)
     if steps_sim!=8759:
         if plots[5]==1: #(5) Theta angle Plot
             thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
@@ -1078,7 +1101,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty)
        
     
-    #%% 
+#%%
+# ------------------------------------------------------------------------------------
+# BLOCK 5 - REPORT GENERATION ----------------------------------------------------------
+# ------------------------------------------------------------------------------------
     
     #Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
     if steps_sim==8759: #The report is only available when annual simulation is performed
@@ -1124,12 +1150,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     return(template_vars,plotVars,reportsVar,version)
 
+
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
-    #%% 
+#%% 
        
 
-    
+# Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
 imageQlty=200
@@ -1153,14 +1180,14 @@ plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1]
 #(15) A- Plot Month savings 
 
 
-finance_study=1
+finance_study=0
 
-mes_ini_sim=1
-dia_ini_sim=1
+mes_ini_sim=6
+dia_ini_sim=2
 hora_ini_sim=1
 
-mes_fin_sim=12
-dia_fin_sim=31
+mes_fin_sim=6
+dia_fin_sim=2
 hora_fin_sim=24
 
 
@@ -1182,7 +1209,7 @@ n_coll_loop=10
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_PS"
+type_integration="SL_L_P"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
