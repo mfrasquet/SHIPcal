@@ -18,22 +18,31 @@ from General_modules.func_General import thermalOil
 from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C
 
 def offWaterSimple(bypass,T_in_flag,T_in_C_AR,T_in_K_old):
-#SL_L_P Supply level with liquid heat transfer media Parallel integration pg52             
+            
     bypass.append("OFF")
-    if T_in_flag==1:
+    
+    if T_in_flag==1: # Closed circuit
         T_in_K=T_in_K_old
     else:
-        T_in_K=T_in_C_AR+273
+        T_in_K=T_in_C_AR+273 # Input from public water grid
     T_out_K=0+273
-    Q_prod=0 #No hay produccion  
+    Q_prod=0 # There's no production  
     return [T_out_K,Q_prod,T_in_K]
 
 def offOilSimple(bypass,T_in_K_old):
-#SL_L_P Supply level with liquid heat transfer media Parallel integration pg52             
+         
     bypass.append("OFF")
     T_in_K=T_in_K_old
     T_out_K=0+273
-    Q_prod=0 #No hay produccion  
+    Q_prod=0 # There's no production   
+    return [T_out_K,Q_prod,T_in_K]
+
+def offSteamSimple(bypass,T_in_K_old):
+         
+    bypass.append("OFF")
+    T_in_K=T_in_K_old
+    T_out_K=0+273
+    Q_prod=0 # There's no production   
     return [T_out_K,Q_prod,T_in_K]
 
 def offStorageWaterSimple(bypass,T_in_flag,T_in_C_AR,T_in_K_old,energStorageMax,energyStored):

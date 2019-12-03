@@ -37,6 +37,7 @@ from General_modules.fromDjangotoSHIPcal import djangoReport
 from Solar_modules.EQSolares import SolarData
 from Solar_modules.EQSolares import theta_IAMs_v2
 from Solar_modules.EQSolares import IAM_calc
+from Finance_modules.FinanceModels import SP_plant_costFunctions
 from Integration_modules.integrations import *
 from Plot_modules.plottingSHIPcal import *
 
@@ -69,6 +70,20 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         plotPath=""
     elif origin==1: #Simulation called from other front-ends (use positive integers)
         plotPath=""
+        
+    #-->  Propetary libs
+    if sender=='solatom': #The request comes from Solatom's front-end www.ressspi.com
+        from Solatom_modules.solatom_param import optic_efficiency_N
+        from Solatom_modules.solatom_param import solatom_param
+        from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
+        from Solatom_modules.templateSolatom import reportOutput
+    elif sender=='CIMAV': #The request comes from CIMAV front-end
+        from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
+        from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso
+        from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
+        from CIMAV.CIMAV_modules.func_General import mainswatertemperature
+        from CIMAV.CIMAV_modules.incidence_angle import theta_IAMs_v2 as theta_IAMs_CIMAV
+        from CIMAV.CIMAV_modules.CIMAV_financeModels import Turn_key,ESCO,CIMAV_plant_costFunctions
     
     #-->  Simulation options
     finance_study=simControl['finance_study'] #In order to include the financial study. 1-> Yes ; 0-> No
@@ -98,6 +113,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     m_dot_min_kgs=0.08 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=2 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
+    
+        ## SL_L_RF
+    heatFactor=.5 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
+    DELTA_T_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
+    HX_eff=0.9 # Simplification for HX efficiency
+    
     
     #%%
     # BLOCK 1.3 - SIMULATION VARIABLES <><><><><><><><><><><><><><><><><><><><><><><><><><><>    
@@ -149,9 +170,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     elif origin==-3: #Simulation called from CIMAV's front end
     
-        ## ENERGY DEMAND
-        from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
-        
+        ## ENERGY DEMAND 
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
         file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
        
@@ -169,7 +188,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         co2factor=inputsDjango['co2factor'] #[-]
         
         ## METEO
-        from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso
         localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
         file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
         file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
@@ -273,13 +291,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         IAMfile_loc=IAM_folder+IAM_file
         
         ## Solar collector characteristics
-        from Solatom_modules.solatom_param import solatom_param
         type_coll=20 #Solatom 20" fresnel collector - Change if other collector is used
         REC_type=1
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
-        from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
         REC_type,Area_coll,rho_optic_0,Long=CIMAV_collectors(type_coll)
         IAM_file='defaultCollector.csv'
@@ -387,7 +403,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     #Temperature of the make-up water
     if sender=='CIMAV':
-        from CIMAV.CIMAV_modules.func_General import mainswatertemperature
         T_in_C_AR=mainswatertemperature(file_loc)
     else:    
         T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) # When input process is water from the grid. SHIPcal needs the monthly average temp of the water grid
@@ -399,9 +414,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     if type_integration=="SL_L_RF": 
 
-        heatFactor=.5 #Proportion of temperature
-        DELTA_T_HX=5 #Degrees for DELTA in the heat Exchanger
-        HX_eff=0.9 #HX efficiency
+
         P_op_Mpa=P_op_bar/10
         
         T_in_K=T_in_C+273
@@ -679,7 +692,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     # BLOCK 2.1 - SIMULATION ANNUAL LOOP <><><><><><><><><><><><><><><><><><><><><><><><><><><>
         
-    # Variable initialization
+    #--> Variable initialization
     theta_transv_rad=np.zeros(steps_sim)
     theta_i_rad=np.zeros(steps_sim)
     theta_i_deg=np.zeros(steps_sim)
@@ -714,22 +727,23 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     if sender=='CIMAV':
         blong,nlong = IAM_fiteq(type_coll,1)
         btrans,ntrans = IAM_fiteq(type_coll,2)
-        from CIMAV.CIMAV_modules.incidence_angle import theta_IAMs_v2 as theta_IAMs_CIMAV
-    
-    # <><><><><><><><><><><><><><><><><> ANNUAL SIMULATION LOOP <><><><><><><><><><><><><><><>
+         
+    #--> <><><><><><><><><><><><><><><><><> ANNUAL SIMULATION LOOP <><><><><><><><><><><><><><><>
     for i in range(0,steps_sim):
         
-        if sender != 'CIMAV':
-            theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
-            theta_i_deg[i]=abs(theta_i_deg[i])
+        ## IAM calculation           
 
-        if sender=='solatom': #Using Solatom IAMs 
-            from Solatom_modules.solatom_param import optic_efficiency_N
-            IAM[i]=optic_efficiency_N(theta_transv_deg[i],theta_i_deg[i],n_coll_loop) #(theta_transv_deg[i],theta_i_deg[i],n_coll_loop):
-            IAM_long[i]=0
-            IAM_t[i]=0
+        if sender=='solatom': #Using Solatom's IAMs
+            if SUN_ELV[i]>0:
+                theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+                theta_i_deg[i]=abs(theta_i_deg[i])
+                IAM[i]=optic_efficiency_N(theta_transv_deg[i],theta_i_deg[i],n_coll_loop) #(theta_transv_deg[i],theta_i_deg[i],n_coll_loop):
+            else:
+                IAM_long[i]=0
+                IAM_t[i]=0
+                IAM[i]=IAM_long[i]*IAM_t[i]
             
-        elif sender=='CIMAV':
+        elif sender=='CIMAV': #Using CIMAV's IAMs 
             if SUN_ELV[i]>0 and SUN_ELV[i]<180:
                 #calcula el angulo de incidencia transversal y longitudinal. Es decir el ángulo entre la proyeccion longitudina/tranversal y el vector area del colector
                 theta_transv_deg[i],theta_i_deg[i] = theta_IAMs_CIMAV(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
@@ -741,9 +755,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             
             IAM[i]=IAM_long[i]*IAM_t[i]
             
-        else:
-            #Cálculo del IAM long y transv
+        else:               # Using default's IAMs 
             if SUN_ELV[i]>0:
+                theta_transv_deg[i],theta_i_deg[i]=theta_IAMs_v2(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+                theta_i_deg[i]=abs(theta_i_deg[i])
                 [IAM_long[i]]=IAM_calc(theta_i_deg[i],0,IAMfile_loc) #Longitudinal
                 [IAM_t[i]]=IAM_calc(theta_transv_deg[i],1,IAMfile_loc) #Transversal
                 IAM[i]=IAM_long[i]*IAM_t[i]
@@ -752,11 +767,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 IAM_t[i]=0
                 IAM[i]=IAM_long[i]*IAM_t[i]
 
-        
+        ## Instant = 0 (Initial conditions)
       
-        
-    
-        if i==0:    #Initial conditions
+        if i==0:    
             bypass.append("OFF")
             Q_prod[i]=0
             T_in_K[i]=temp[0] #Ambient temperature 
@@ -766,9 +779,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 storage_energy[0]=storage_ini_energy
     #            SOC[i]=100*(T_alm_K[i]-273)/(T_max_storage-273)
                 SOC[i]=100*energyStored/energStorageMax
-            
+       
+        ## Instant >= 1 
         else:
-            if DNI[i]>lim_inf_DNI :#tengo suficiente radiacion o tengo demanda OPERATION
+            
+            if DNI[i]>lim_inf_DNI :# Status: ON -> There's enough DNI to start the system
                
                 if type_integration=="SL_L_PS":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
@@ -880,11 +895,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     #SL_S_PD Supply level with steam for direct steam generation
                     [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                     [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageWaterSimple(Q_prod[i],Demand[i])
-            else: #No hay radiación ni demanda NO OPERATION            
+            
+            else: # Status: OFF -> There's not enough DNI to put the solar plant in production     
+                
                 if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
-                    [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i],T_alm_K[i],storage_energy[i]]=offOnlyStorageWaterSimple(T_alm_K[i-1],energStorageMax,energyStored,T_alm_K[i-1],storage_energy[i-1])
-    
+                    [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i],T_alm_K[i],storage_energy[i]]=offOnlyStorageWaterSimple(T_alm_K[i-1],energStorageMax,energyStored,T_alm_K[i-1],storage_energy[i-1]) 
                     if Demand[i]>0:
                         [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy)      
                              
@@ -896,10 +912,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                    
                 if type_integration=="SL_L_P" or type_integration=="PL_E_PM" or type_integration=="SL_L_RF":
                     #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
-                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offWaterSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+                    if fluidInput=="water":
+                        [T_out_K[i],Q_prod[i],T_in_K[i]]=offWaterSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+                    if fluidInput=="oil":
+                        [T_out_K[i],Q_prod[i],T_in_K[i]]=offOilSimple(bypass,T_in_K[i-1])
                 if type_integration=="SL_S_FW":
                     #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage 
-                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offWaterSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offSteamSimple(bypass,T_in_flag,T_in_K[i-1])
                 if type_integration=="SL_S_FWS":
                     #SL_S_FWS Supply level with steam for solar heating of boiler feed water with storage 
                     [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageWaterSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
@@ -907,7 +926,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageWaterSimple(Q_prod[i],energyStored,Demand2[i],energStorageMax)                         
                 if type_integration=="SL_S_PD":
                     #SL_S_PD Supply level with steam for direct steam generation
-                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offWaterSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offSteamSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
     
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
@@ -955,17 +974,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # BLOCK 3.1 - PLANT INVESTMENT <><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
         if origin==-2: #If ReSSSPI front-end is calling, then it uses Solatom propietary cost functions
-            from Finance_modules.FinanceModels import Turn_key,ESCO
-            from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
             [Selling_price,Break_cost,OM_cost_year]=SOL_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
 
         elif origin==-3: #Use the CIMAV's costs functions
-            from CIMAV.CIMAV_modules.CIMAV_financeModels import Turn_key,ESCO,CIMAV_plant_costFunctions
             destination=[Lat,Positional_longitude]
             [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput,type_coll,destination) #Returns all the prices in mxn
 
         else: #If othe collector is selected, it uses default cost functions
-            from Finance_modules.FinanceModels import Turn_key,ESCO,SP_plant_costFunctions
             #This function calls the standard cost functions, if necessary, please modify them within the function
             [Selling_price,Break_cost,OM_cost_year]=SP_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
               
@@ -979,6 +994,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         else:
             co2Savings=0
         if businessModel=="Llave en mano" or businessModel=="Turnkey project" or businessModel=="turnkey":
+            from Finance_modules.FinanceModels import Turn_key
             [LCOE,IRR,IRR10,AmortYear,Acum_FCF,FCF,Energy_savings,OM_cost,fuelPrizeArray,Net_anual_savings]=Turn_key(Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,incremento,co2Savings)
             if lang=="spa":        
                 TIRscript="TIR para el cliente"
@@ -993,6 +1009,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         #Modelo tipo ESCO    
         if businessModel=="Compra de energia" or businessModel=="ESCO" or businessModel=="Renting":
              #From financing institution poit of view        
+            from Finance_modules.FinanceModels import ESCO
             [IRR,IRR10,AmortYear,Acum_FCF,FCF,BenefitESCO,OM_cost,fuelPrizeArray,Energy_savings,Net_anual_savings]=ESCO(priceReduction,Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,incremento,co2Savings)
             if lang=="spa":    
                 TIRscript="TIR para la ESE"
@@ -1114,7 +1131,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
     if steps_sim==8759: #The report is only available when annual simulation is performed
         if origin==-2:
-            from Solatom_modules.templateSolatom import reportOutput
             fileName="results"+str(reg)
             reportsVar={'logo_output':'no_logo','date':inputs['date'],'type_integration':type_integration,
                         'fileName':fileName,'reg':reg,
@@ -1214,7 +1230,7 @@ n_coll_loop=10
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
+type_integration="SL_L_S"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1235,5 +1251,5 @@ else:
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
    
-#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
