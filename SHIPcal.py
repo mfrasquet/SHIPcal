@@ -118,6 +118,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     heatFactor=.5 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
     DELTA_T_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
     HX_eff=0.9 # Simplification for HX efficiency
+        ## SL_L_S
+    DELTA_ST=30 # Temperature delta over the design process temp for the storage
+    flow_rate_design_kgs=2 # Design flow rate (fix value for SL_L_S)
     
     
     #%%
@@ -235,7 +238,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## PROCESS
         fluidInput="water" #"water" "steam" "oil" 
-        T_out_C=200 #High temperature [ºC]
+        T_out_C=90 #High temperature [ºC]
         T_in_C=60 #Low temperature [ºC]
         P_op_bar=15 #[bar] 
         
@@ -495,17 +498,20 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
 
-        
-        T_max_storage=95+273 #MAx temperature storage
-        T_min_storage=80+273 #MIN temperature storage to supply to the process
-        flow_rate_design_kgs=3 #Design flow rate
         P_op_Mpa=P_op_bar/10
-        
         T_in_K=T_in_C+273
         T_ini_storage=T_in_K #Initial temperature of the storage
         if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
             T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273-5 
         T_out_K=T_out_C+273
+       
+        T_min_storage=T_out_C+273 #MIN temperature storage to supply to the process # Process temp [K]  
+        
+        if T_out_C+DELTA_ST>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
+            T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T #Max temperature storage [K]
+        else:
+            T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K]
+                
         
         inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
         h_in=inputState.h
@@ -797,7 +803,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
      
                 if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
-                    if fluidInput!="oil":
+                    if fluidInput=="water":
                          
                         [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageWaterSimple(T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,flow_rate_design_kgs)
                                                                                                                                            
@@ -930,11 +936,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
-    # DataFRame summary of the simulation 
-    simulationDF=pd.DataFrame({'DNI':DNI,'T_in':T_in_K-273,'T_out':T_out_K-273,'bypass':bypass,
-                               'Q_prod':Q_prod,'Q_prod_rec':Q_prod_rec,'flow_rate_kgs':flow_rate_kgs,
-                               'flow_rate_rec':flow_rate_rec,'Q_prod_lim':Q_prod_lim,'Demand':Demand,
-                               'Q_defocus':Q_defocus})
+    # DataFRame summary of the simulation (only for SL_L_P)
+#     simulationDF=pd.DataFrame({'DNI':DNI,'T_in':T_in_K-273,'T_out':T_out_K-273,'bypass':bypass,
+#                               'Q_prod':Q_prod,'Q_prod_rec':Q_prod_rec,'flow_rate_kgs':flow_rate_kgs,
+#                               'flow_rate_rec':flow_rate_rec,'Q_prod_lim':Q_prod_lim,'Demand':Demand,
+#                               'Q_defocus':Q_defocus})
     
     
     #%%
@@ -1182,7 +1188,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -1203,12 +1209,12 @@ plots=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 
 finance_study=1
 
-mes_ini_sim=1
-dia_ini_sim=1
+mes_ini_sim=6
+dia_ini_sim=6
 hora_ini_sim=1
 
-mes_fin_sim=12
-dia_fin_sim=31
+mes_fin_sim=6
+dia_fin_sim=6
 hora_fin_sim=24
 
 
@@ -1240,7 +1246,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
 # ---------------------------------------------------
 
-origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
+origin=0 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
