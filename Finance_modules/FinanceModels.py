@@ -38,6 +38,8 @@ def SP_plant_costFunctions(n_coll,integration,alm,fluid):
     if alm !=0:
         if fluid == "water":
             cost_storage=alm*(2.1*(alm/1000)**(-0.5))
+        elif fluid == 'steam':
+            cost_storage=alm*(2.1*(alm/1000)**(-0.5)) # SL_S_FWS (steam fluid but water storage)
         elif fluid == "oil":
             cost_storage=alm*(6.4*(alm/1000)**(-0.5))
         else:
@@ -45,7 +47,6 @@ def SP_plant_costFunctions(n_coll,integration,alm,fluid):
     else:
         cost_storage=0
         
-
     plantCost=module_cost+cost_power_block+cost_storage #Total cost without maintenance
     breakdownCost=[module_cost,cost_power_block,cost_storage] #The cost separated by modules, power blocks, and storage
     

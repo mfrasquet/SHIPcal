@@ -2,6 +2,7 @@
 #Miguel Frasquet
 
 import numpy as np
+import math
 #from matplotlib import pyplot as plt
 
 def bar_MPa(pres):
@@ -213,6 +214,29 @@ def thermalOil(T): #Function to derive the properties of thermal oil from the Th
     #PrantNumber
     Prant=177506.92794*T**(-1.68808)
     return(rho,Cp,k,Dv,Kv,thermalDiff,Prant)
+    
+    
+def moltenSalt(T): #Function to derive the properties of molten Salts from Solar Salt SQM
+ 
+    T=T-273 #To transform K to C
+    if T==0:
+        T=0.001
+    else:
+        pass
+ 
+    #Density kg/m3
+    rho=-0.636*T+2090
+    #Specific Heat kJ/kgK
+    Cp=0.000172*T+1.44
+    #Thermal conductivity W/mK
+    k=1.89e-4*T+.441
+    #Dinamic viscosity #kg/m*s
+    Dv=0.0238*math.exp(-6.47e-3*T)
+
+    return(rho,Cp,k,Dv)
+ 
+
+ 
 
 def reportOutputOffline(reportsVar):
     print("")
