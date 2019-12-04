@@ -524,12 +524,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         #Storage calculations for water
         energyStored=0 #Initial storage
         T_avg_K=(T_in_K+T_out_K)/2
-        tempAlm=T_out_K-273
+#        tempAlm=T_out_K-273
         
         almacenamiento=IAPWS97(P=P_op_Mpa, T=T_out_K) #Propiedades en el almacenamiento
         almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
         almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg          
-        storage_max_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K))/3600 #Storage capacity in kWh
+        storage_max_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_max_storage))/3600 #Storage capacity in kWh
         
         almacenamiento=IAPWS97(P=P_op_Mpa, T=T_in_K) #Propiedades en el almacenamiento
         almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
@@ -551,7 +551,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273
             T_out_K=T_out_C+273
-            tempAlm=T_out_K-273
+#            tempAlm=T_out_K-273
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
             h_in=inputState.h
             in_s=inputState.s
@@ -569,7 +569,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             energStorageMax=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K-T_in_K))/3600 #Storage capacity in kWh
         else:
             T_out_K=T_out_C+273
-            tempAlm=T_out_K-273
+#            tempAlm=T_out_K-273
             energyStored=0 #Initial storage
             T_av_K=(T_in_K+T_out_K)/2
             [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
@@ -645,7 +645,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
         
         T_avg_K=(T_in_K+T_out_K)/2
-        tempAlm=T_out_K-273
+#        tempAlm=T_out_K-273
         almacenamiento=IAPWS97(P=P_op_Mpa, T=T_avg_K) #Propiedades en el almacenamiento
         almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
         almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg

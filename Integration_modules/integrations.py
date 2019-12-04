@@ -154,7 +154,7 @@ def operationOnlyStorageWaterSimple(T_max_storage,T_in_K_old,P_op_Mpa,temp,REC_t
         
 
     Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
-    T_out_K=T_max_storage    
+    T_out_K=T_max_storage    #Not used
     
     return [T_out_K,Perd_termicas,Q_prod,T_in_K_old,flow_rate_kgs]
 
