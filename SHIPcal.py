@@ -233,7 +233,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=180000 #[kWh]
+        totalConsumption=780000 #[kWh]
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         
         ## PROCESS
@@ -522,9 +522,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         h_out=outputState.h
         
         #Storage calculations for water
-        energyStored=0 #Initial storage
+        energyStored=0 # Initially the storage is empty
         T_avg_K=(T_in_K+T_out_K)/2
-#        tempAlm=T_out_K-273
         
         almacenamiento=IAPWS97(P=P_op_Mpa, T=T_out_K) #Propiedades en el almacenamiento
         almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
@@ -536,7 +535,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg      
         storage_ini_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_in_K))/3600 #Storage capacity in kWh
     
-        energStorageMax=storage_max_energy-storage_ini_energy
+        energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
     
     # --> Integration: 
         # SL_L_PS => Supply level with liquid heat transfer media parallel integration with storage
@@ -793,6 +792,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                
                 if type_integration=="SL_L_PS":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
+                    
                     if fluidInput!="oil":                                                                                                            
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                         [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageWaterSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
@@ -803,20 +803,17 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
      
                 if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
+                    
                     if fluidInput=="water":
-                         
+                        #Solar field calculations
                         [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageWaterSimple(T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,flow_rate_design_kgs)
-                                                                                                                                           
+                        #Storage control
                         [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy)      
-                    else:
-                        pass
-    #                    [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i]]=operationOilSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
-    #                    [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageOilSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
+                    
      
-     
-                if type_integration=="SL_L_P" or type_integration=="PL_E_PM":
-                                    
+                if type_integration=="SL_L_P" or type_integration=="PL_E_PM":     
                     #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
+                    
                     if fluidInput!="oil":
                         flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)#Not used, only for S_L_RF                  
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
@@ -829,9 +826,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationOilSimple(bypass,T_in_K[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])                                                                                                          
                         [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageOilSimple(Q_prod[i],Demand[i])
     
-                if type_integration=="SL_L_RF":
-                                    
+                if type_integration=="SL_L_RF":            
                     #SL_L_RF Supply level with liquid heat transfer media return boost integration pg52 
+                    
                     if fluidInput!="oil":
                         flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)                    
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
@@ -890,15 +887,18 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageOilSimple(Q_prod[i],Demand[i])
     
                 if type_integration=="SL_S_FW":
-                     #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage              
+                    #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage              
+                    
                     [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                     [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageWaterSimple(Q_prod[i],Demand2[i])
                 if type_integration=="SL_S_FWS":
                     #SL_S_FW Supply level with steam for solar heating of boiler feed water with storage  
+                    
                     [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageWaterSimple(Q_prod[i],energyStored,Demand2[i],energStorageMax)     
                 if type_integration=="SL_S_PD":
                     #SL_S_PD Supply level with steam for direct steam generation
+                    
                     [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                     [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageWaterSimple(Q_prod[i],Demand[i])
             
@@ -906,33 +906,39 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 
                 if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
+                    
                     [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i],T_alm_K[i],storage_energy[i]]=offOnlyStorageWaterSimple(T_alm_K[i-1],energStorageMax,energyStored,T_alm_K[i-1],storage_energy[i-1]) 
                     if Demand[i]>0:
                         [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy)      
                              
                 if type_integration=="SL_L_PS":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
+                    
                     [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageWaterSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
                     if Demand[i]>0:
                         [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageWaterSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
                    
                 if type_integration=="SL_L_P" or type_integration=="PL_E_PM" or type_integration=="SL_L_RF":
                     #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
+                    
                     if fluidInput=="water":
                         [T_out_K[i],Q_prod[i],T_in_K[i]]=offWaterSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
                     if fluidInput=="oil":
                         [T_out_K[i],Q_prod[i],T_in_K[i]]=offOilSimple(bypass,T_in_K[i-1])
                 if type_integration=="SL_S_FW":
                     #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage 
-                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offSteamSimple(bypass,T_in_flag,T_in_K[i-1])
+                    
+                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offSteamSimple(bypass,T_in_K[i-1])
                 if type_integration=="SL_S_FWS":
                     #SL_S_FWS Supply level with steam for solar heating of boiler feed water with storage 
+                    
                     [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageWaterSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
                     if Demand2[i]>0:
                         [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageWaterSimple(Q_prod[i],energyStored,Demand2[i],energStorageMax)                         
                 if type_integration=="SL_S_PD":
                     #SL_S_PD Supply level with steam for direct steam generation
-                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offSteamSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+                    
+                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offSteamSimple(bypass,T_in_K[i-1])
     
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
@@ -1209,12 +1215,12 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 
 finance_study=1
 
-mes_ini_sim=6
-dia_ini_sim=6
+mes_ini_sim=1
+dia_ini_sim=1
 hora_ini_sim=1
 
-mes_fin_sim=6
-dia_fin_sim=6
+mes_fin_sim=12
+dia_fin_sim=31
 hora_fin_sim=24
 
 
@@ -1225,8 +1231,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=2 
-n_coll_loop=10
+num_loops=1 
+n_coll_loop=6
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1236,7 +1242,7 @@ n_coll_loop=10
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_S"
+type_integration="SL_S_FW"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1246,7 +1252,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
 # ---------------------------------------------------
 
-origin=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
