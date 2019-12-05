@@ -297,6 +297,8 @@ def outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen
             almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
             almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg     
             T_alm_new=(newEnerg/(almacenamiento_CP*almVolumen*(1/1000)*(1/almacenamiento_rho))) #in K
+            if IAPWS97(P=P_op_Mpa, T=T_alm_new).x>0: #Steam in the storage danger!!
+                T_alm_new=IAPWS97(P=P_op_Mpa, x=0).T
     #        SOC=100*(T_alm_new-273)/(T_max_storage-273)
             SOC=100*energyStored/energStorageMax
         else: # No more room for storage
@@ -364,6 +366,8 @@ def outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen
                 almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
                 almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg     
                 T_alm_new=(newEnerg/(almacenamiento_CP*almVolumen*(1/1000)*(1/almacenamiento_rho))) #in K
+                if IAPWS97(P=P_op_Mpa, T=T_alm_new).x>0: #Steam in the storage danger!!
+                    T_alm_new=IAPWS97(P=P_op_Mpa, x=0).T
 #                SOC=100*(T_alm_new-273)/(T_max_storage-273)
                 SOC=100*energyStored/energStorageMax
             else: #No more room in the storage
