@@ -378,12 +378,16 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     orient_az_rad=0 #Orientation not implemented [-]
     roll=0 #Roll not implemented [-]
        
-     
-    #%%
-    # BLOCK 1.4 - PROCESS VARIABLES <><><><><><><><><><><><><><><><><><><><><><><><><><><>      
+    
+
+#%%
+# ------------------------------------------------------------------------------------
+# BLOCK 2 - SOLAR SIMULATION --------------------------------------------------
+# ------------------------------------------------------------------------------------
+    # BLOCK 2.1 - PROCESS VARIABLES <><><><><><><><><><><><><><><><><><><><><><><><><><><>      
     # IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
 
-    # --> Variable init
+    # --> Process variable init
     
     sat_liq=0 #Not used
     sat_vap=0 #Not used
@@ -412,8 +416,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
 
         
-    # --> Integration: 
-        #Supply level with liquid heat transfer media solar return flow boost
+    # --> Integrations: 
+        # SL_L_RF Supply level with liquid heat transfer media solar return flow boost
         
     if type_integration=="SL_L_RF": 
 
@@ -458,7 +462,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         h_out=outputState.h                                                                                                                                                                                  
         T_av_process_K=(T_in_process_K+T_out_process_K)/2
     
-    # --> Integration: 
+    # ----------------------------------------
         # SL_L_P => Supply level with liquid heat transfer media parallel integration
         # PL_E_PM => Process level external HEX for heating of product or process medium
         
@@ -492,7 +496,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             out_s=outputState.s
             h_out=outputState.h
         
-    # --> Integration: 
+    # ----------------------------------------
         # SL_L_S => Supply level with liquid heat transfer media solar heating of storages
         # SL_L_S3 => Supply level with liquid heat transfer media solar heating of storages (Pasteurization case)
         
@@ -537,7 +541,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
         energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
     
-    # --> Integration: 
+    # ----------------------------------------
         # SL_L_PS => Supply level with liquid heat transfer media parallel integration with storage
         
     if type_integration=="SL_L_PS":
@@ -574,7 +578,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
             energStorageMax=(almVolumen*(1/1000)*(rho_av)*Cp_av*(T_out_K-T_in_K))/3600 #Storage capacity in kWh
             
-    # --> Integration: 
+    # ---------------------------------------- 
         # SL_S_FW => Supply level with steam solar heating of boiler feed water
         
     if type_integration=="SL_S_FW":
@@ -651,7 +655,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         energStorageMax=almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K-T_in_K)/3600 #Storage capacity in kWh
         energyStored=0 #Initial storage
     
-    # --> Integration: 
+    # ----------------------------------------
         # SL_S_FW => Supply level with steam direct solar steam generation
         
     if type_integration=="SL_S_PD":
@@ -689,15 +693,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     integrationDesign={'x_design':x_design,'porctSensible':porctSensible,'almVolumen':almVolumen,'energStorageMax':energStorageMax,
                        'T_out_process_C':T_out_process_C,'T_in_process_C':T_in_process_C,'T_out_HX_C':T_out_HX_C}
     
-
-#%%
-# ------------------------------------------------------------------------------------
-# BLOCK 2 - SOLAR SIMULATION --------------------------------------------------
-# ------------------------------------------------------------------------------------
     
-    # BLOCK 2.1 - SIMULATION ANNUAL LOOP <><><><><><><><><><><><><><><><><><><><><><><><><><><>
-        
-    #--> Variable initialization
+    # --> Simulation Loop variable init
+    
     theta_transv_rad=np.zeros(steps_sim)
     theta_i_rad=np.zeros(steps_sim)
     theta_i_deg=np.zeros(steps_sim)
@@ -732,11 +730,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     if sender=='CIMAV':
         blong,nlong = IAM_fiteq(type_coll,1)
         btrans,ntrans = IAM_fiteq(type_coll,2)
-         
-    #--> <><><><><><><><><><><><><><><><><> ANNUAL SIMULATION LOOP <><><><><><><><><><><><><><><>
-    for i in range(0,steps_sim):
+    
+    # BLOCK 2.2 - SIMULATION ANNUAL LOOP <><><><><><><><><><><><><><><><><><><><><><><><><><><>        
+             
+    for i in range(0,steps_sim): #--> <><><><><¡ ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
         
-        ## IAM calculation           
+    # --> IAM calculation           
 
         if sender=='solatom': #Using Solatom's IAMs
             if SUN_ELV[i]>0:
@@ -772,7 +771,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 IAM_t[i]=0
                 IAM[i]=IAM_long[i]*IAM_t[i]
 
-        ## Instant = 0 (Initial conditions)
+    # --> Instant = 0 (Initial conditions)
       
         if i==0:    
             bypass.append("OFF")
@@ -785,7 +784,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #            SOC[i]=100*(T_alm_K[i]-273)/(T_max_storage-273)
                 SOC[i]=100*energyStored/energStorageMax
        
-        ## Instant >= 1 
+    # --> Instant >= 1 (Thermodynamic calculations)
         else:
             
             if DNI[i]>lim_inf_DNI :# Status: ON -> There's enough DNI to start the system
@@ -1007,6 +1006,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             co2Savings=tonCo2Saved*co2TonPrice
         else:
             co2Savings=0
+        
+        # Turnkey model   
         if businessModel=="Llave en mano" or businessModel=="Turnkey project" or businessModel=="turnkey":
             from Finance_modules.FinanceModels import Turn_key
             [LCOE,IRR,IRR10,AmortYear,Acum_FCF,FCF,Energy_savings,OM_cost,fuelPrizeArray,Net_anual_savings]=Turn_key(Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,incremento,co2Savings)
@@ -1020,7 +1021,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 TIRscript10="IRR for the client 10 years"
     
         
-        #Modelo tipo ESCO    
+        # ESCO Energy service company model    
         if businessModel=="Compra de energia" or businessModel=="ESCO" or businessModel=="Renting":
              #From financing institution poit of view        
             from Finance_modules.FinanceModels import ESCO
@@ -1085,7 +1086,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
               'x_design':x_design,'h_in':h_in,'h_out':h_out,'hProcess_out':hProcess_out,'outProcess_h':outProcess_h,
               'Break_cost':Break_cost}
     
-    # --> Calling plot functions
+    # Plot functions
     
     # Plots for annual simulations
     if steps_sim==8759:
@@ -1142,7 +1143,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # BLOCK 5 - REPORT GENERATION ----------------------------------------------------------
 # ------------------------------------------------------------------------------------
     
-    #Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
+    # Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
     if steps_sim==8759: #The report is only available when annual simulation is performed
         if origin==-2:
             fileName="results"+str(reg)
