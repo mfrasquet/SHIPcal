@@ -845,8 +845,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         if flowToHx[i]==0:
                             T_toProcess_K[i]=T_in_process_K
                         else:
-                            #Brach to mix                        
-                            toMixstate=IAPWS97(P=P_op_Mpa, T=T_out_K[i])
+                            #Branch from HX to mix                        
+                            toMixstate=IAPWS97(P=P_op_Mpa, T=T_out_K[i]-DELTA_T_HX)
                             #Mix
                             T_av_HX_K=(T_in_process_K+T_out_HX_K)/2
                             toProcessstate=IAPWS97(P=P_op_Mpa, T=T_av_HX_K)
@@ -1218,12 +1218,12 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 
 finance_study=1
 
-mes_ini_sim=1
-dia_ini_sim=1
+mes_ini_sim=6
+dia_ini_sim=5
 hora_ini_sim=1
 
-mes_fin_sim=12
-dia_fin_sim=31
+mes_fin_sim=6
+dia_fin_sim=6
 hora_fin_sim=24
 
 
@@ -1235,7 +1235,7 @@ mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
 num_loops=1 
-n_coll_loop=12
+n_coll_loop=6
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1245,7 +1245,7 @@ n_coll_loop=12
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_S"
+type_integration="SL_L_RF"
 almVolumen=1000 #litros
 
 # --------------------------------------------------
@@ -1255,7 +1255,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
 # ---------------------------------------------------
 
-origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
+origin=0 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
