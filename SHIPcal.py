@@ -838,9 +838,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
                         else:
                             #HX simulation
-                            Q_prodProcessSide=Q_prod[i]*HX_eff
+                            Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
                             flowToHx[i]=Q_prodProcessSide/(hHX_out-hProcess_in)  
-        
+                            Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
                         flowToMix[i]=flowDemand[i]-flowToHx[i]
                         if flowToHx[i]==0:
                             T_toProcess_K[i]=T_in_process_K
@@ -1267,5 +1267,5 @@ else:
     last_reg=inputsDjango['last_reg']
     inputsDjango= {'fuel': 'Propane', 'pressureUnit': 'bar', 'Jun': 0.083, 'tempOUT': 90.0, 'shadows': 'free', 'sectorIndustry': 'Agro_Livestock', 'businessModel': 'turnkey', 'last_reg': 596, 'Wend': 0.2, 'surface': None, 'demand': 783756.0, 'Dec': 0.083, 'Feb': 0.083, 'date': '2019-12-04', 'Nov': 0.083, 'Fri': 0.2, 'fuelPrice': 0.0693, 'inclination': 'flat', 'fluid': 'water', 'location_aux': '', 'process': '', 'Jan': 0.083, 'co2factor': 0.00022, 'Sat': 0.0, 'industry': 'xxxxxx', 'Thur': 0.2, 'Oct': 0.083, 'Jul': 0.083, 'Apr': 0.083, 'pressure': 3.0, 'location': 'Badajoz', 'Tues': 0.2, 'Aug': 0.083, 'name': 'pablo', 'Mond': 0.2, 'distance': None, 'Sep': 0.083, 'orientation': 'NS', 'tempIN': 15.0, 'terrain': 'other', 'Sun': 0.0, 'hourEND': 21, 'hourINI': 9, 'Mar': 0.083, 'demandUnit': 'kWh', 'connection': 'storage', 'May': 0.083, 'fuelUnit': 'eur_kWh', 'email': 'xxxx', 'co2TonPrice': 0.0}
    
-#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
