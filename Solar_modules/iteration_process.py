@@ -66,7 +66,7 @@ def IT_temp(T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_
     Perd_termicas=Q_loss_rec*n_coll_loop*Long 
     return[T_outlet_K,Perd_termicas]
 
-def IT_tempOil(T_in_K,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0):    
+def IT_tempOil(T_in_K,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate,rho_optic_0):    
     T_outlet_KX=999
     for jj in range(1,202):
         if jj>=200: #Si no llegamos a convergencia después de 200 iteraciones paramos
@@ -88,7 +88,7 @@ def IT_tempOil(T_in_K,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_l
         if Q_loss_rec<=0:
             Q_loss_rec=0
         
-        T_outlet_K=T_in_K+(DNI*Area*IAM*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/(flow_rate_rec*Cp_av_KJkgK*1000) #In W 
+        T_outlet_K=T_in_K+(DNI*Area*IAM*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/(flow_rate*Cp_av_KJkgK*1000) #In W 
     Perd_termicas=Q_loss_rec*n_coll_loop*Long 
     return[T_outlet_K,Perd_termicas]
     
