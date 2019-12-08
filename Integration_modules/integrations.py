@@ -432,7 +432,106 @@ def outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen
             
     newEnerg=newEnerg/3600
     return [T_alm_new,newEnerg,Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defoscus,Q_useful]
+  
+def outputOnlyStorageOilSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_in_alm_K,T_alm_K_old,Q_prod,energyStored,Demand,energStorageMax,storage_energy_old,storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy): 
+ 
     
+    if T_min_storage>=T_alm_K_old: # The storage is still under the minimum temperatura -> Charge
+       
+        if ((Q_prod-Demand)+energyStored)<energStorageUseful: # A.1 still room in the storage
+            Q_useful=Q_prod
+#            energyStored=energyStored+(Q_prod) #New state of the storage
+            energyStored=0
+            Q_charg=(Q_prod)
+            Q_discharg=0
+            Q_defoscus=0
+            Q_prod_lim=0
+            newEnerg=(storage_energy_old+Q_prod)*3600 #KJ   
+            
+            [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
+            T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
+            
+            if T_alm_new>T_min_storage:
+                energyStored=(newEnerg/3600-storage_min_energy) 
+
+            SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful
+        else: # A.2 No more room for storage
+            Q_charg=energStorageUseful-energyStored
+            Q_useful=Demand+(energStorageUseful-energyStored)
+            Q_discharg=0
+            Q_defoscus=Q_prod-Demand-Q_charg
+            Q_prod_lim=Q_prod-Q_charg-Q_defoscus
+            energyStored=energStorageUseful #New state of the storage
+            SOC=100
+#            [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
+            T_alm_new=T_max_storage
+            newEnerg=storage_max_energy
+
+    
+    else:
+    
+        if Q_prod+energyStored<Demand: #B.2 Complete discharge
+            Q_prod_lim=Q_prod+energyStored
+            Q_useful=Q_prod+energyStored
+            Q_discharg=energyStored
+            Q_charg=0
+            energyStored=0 #New state of the storage
+            SOC=0
+            Q_defoscus=0
+            newEnerg=(storage_energy_old-Q_discharg)*3600
+            T_alm_new=T_min_storage+0.0001 #in K
+           
+            
+        if (Q_prod<Demand) and (Q_prod+energyStored>Demand): # B.1 Partial discharge
+            
+            energyStored=energyStored-(Demand-Q_prod)#New state of the storage
+            Q_charg=0
+            Q_discharg=(Demand-Q_prod)
+            Q_prod_lim=Demand
+            Q_useful=Demand
+            Q_defoscus=0
+            newEnerg=(storage_energy_old+Q_prod-Demand)*3600 #KJ   
+            [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
+            T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
+            if T_alm_new<=274: #Avoid absolute zero
+                T_alm_new=274
+            SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful
+    
+              
+        if (Q_prod>=Demand): #Charging
+            if ((Q_prod-Demand)+energyStored)<energStorageUseful and (T_alm_K_old<T_max_storage): # B.3.2 Still room in the storage for the full production
+                Q_useful=Q_prod
+                energyStored=energyStored+(Q_prod-Demand) #New state of the storage
+                Q_charg=(Q_prod-Demand)
+                Q_discharg=0
+                Q_defoscus=0
+                Q_prod_lim=Q_prod-Q_charg
+                newEnerg=(storage_energy_old+Q_prod-Demand)*3600 #KJ 
+    
+                [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
+                T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
+                SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful
+            else: # B.3.1 No more room in the storage
+                if (T_alm_K_old<T_max_storage): 
+                    Q_charg=energStorageUseful-energyStored
+                    Q_useful=Demand+(energStorageUseful-energyStored)
+                else:
+                    Q_charg=0
+                    Q_useful=Demand
+                    
+                Q_discharg=0
+                Q_defoscus=Q_prod-Demand-Q_charg
+                Q_prod_lim=Q_prod-Q_charg-Q_defoscus
+                energyStored=energStorageUseful #New state of the storage
+                SOC=100
+                T_alm_new=T_max_storage
+#                newEnerg=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_max_storage)) #Storage capacity in kWh
+                newEnerg=storage_max_energy*3600 #kJ
+            
+    newEnerg=newEnerg/3600
+    return [T_alm_new,newEnerg,Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defoscus,Q_useful]
+    
+
 def outputStorageWaterSimple(Q_prod,energyStored,Demand,energStorageMax):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration with storage pg52 
     if Q_prod+energyStored<Demand: #Complete discharge
