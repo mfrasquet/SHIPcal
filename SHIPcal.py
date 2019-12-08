@@ -474,7 +474,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_in_process_C=T_in_C
         T_in_process_K=T_in_K
         
-        if fluidInput!="oil":
+        if fluidInput=="water":
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_process_K)
             hProcess_in=inputState.h  
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
@@ -483,7 +483,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_out_K=T_out_C+273
         T_out_process_K=T_out_K
         T_out_process_C=T_out_C
-        if fluidInput!="oil":
+        if fluidInput=="water":
             outputProcessState=IAPWS97(P=P_op_Mpa, T=T_out_process_K)
             outProcess_s=outputProcessState.s
             hProcess_out=outputProcessState.h    
@@ -553,7 +553,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         T_in_K=T_in_C+273
         
-        if fluidInput!="oil":
+        if fluidInput=="water":
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273
             T_out_K=T_out_C+273
@@ -795,7 +795,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 if type_integration=="SL_L_PS":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                     
-                    if fluidInput!="oil":                                                                                                            
+                    if fluidInput=="water":                                                                                                            
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                         [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageWaterSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
                     else:
@@ -818,7 +818,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 if type_integration=="SL_L_P" or type_integration=="PL_E_PM":     
                     #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
                     
-                    if fluidInput!="oil":
+                    if fluidInput=="water":
                         flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)#Not used, only for S_L_RF                  
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                         [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageWaterSimple(Q_prod[i],Demand[i])
@@ -833,7 +833,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 if type_integration=="SL_L_RF":            
                     #SL_L_RF Supply level with liquid heat transfer media return boost integration pg52 
                     
-                    if fluidInput!="oil":
+                    if fluidInput=="water":
                         flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)                    
                         [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationWaterSimple(bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                         if newBypass=="REC":
@@ -1129,7 +1129,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
              
     # Property plots
-    if fluidInput!="oil": #WATER
+    if fluidInput=="water": #WATER
         if plots[10]==1: #(10) Mollier Plot for s-t for Water
             mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)              
         if plots[11]==1: #(11) Mollier Plot for s-h for Water 
@@ -1274,5 +1274,5 @@ else:
     last_reg=inputsDjango['last_reg']
     inputsDjango= {'fuel': 'Propane', 'pressureUnit': 'bar', 'Jun': 0.083, 'tempOUT': 90.0, 'shadows': 'free', 'sectorIndustry': 'Agro_Livestock', 'businessModel': 'turnkey', 'last_reg': 596, 'Wend': 0.2, 'surface': None, 'demand': 783756.0, 'Dec': 0.083, 'Feb': 0.083, 'date': '2019-12-04', 'Nov': 0.083, 'Fri': 0.2, 'fuelPrice': 0.0693, 'inclination': 'flat', 'fluid': 'water', 'location_aux': '', 'process': '', 'Jan': 0.083, 'co2factor': 0.00022, 'Sat': 0.0, 'industry': 'xxxxxx', 'Thur': 0.2, 'Oct': 0.083, 'Jul': 0.083, 'Apr': 0.083, 'pressure': 3.0, 'location': 'Badajoz', 'Tues': 0.2, 'Aug': 0.083, 'name': 'pablo', 'Mond': 0.2, 'distance': None, 'Sep': 0.083, 'orientation': 'NS', 'tempIN': 15.0, 'terrain': 'other', 'Sun': 0.0, 'hourEND': 21, 'hourINI': 9, 'Mar': 0.083, 'demandUnit': 'kWh', 'connection': 'storage', 'May': 0.083, 'fuelUnit': 'eur_kWh', 'email': 'xxxx', 'co2TonPrice': 0.0}
    
-#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
