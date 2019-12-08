@@ -237,7 +237,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         
         ## PROCESS
-        fluidInput="water" #"water" "steam" "oil" 
+        fluidInput="oil" #"water" "steam" "oil" 
         T_out_C=90 #High temperature [ºC]
         T_in_C=60 #Low temperature [ºC]
         P_op_bar=15 #[bar] 
@@ -505,44 +505,81 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         P_op_Mpa=P_op_bar/10
         T_in_K=T_in_C+273
         T_ini_storage=T_in_K #Initial temperature of the storage
-        if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-            T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273-5 
+        
+        if fluidInput=="water": # Only applies to water
+            if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
+                T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273-5 
+        
         T_out_K=T_out_C+273
        
         T_min_storage=T_out_C+273 #MIN temperature storage to supply to the process # Process temp [K]  
         
-        if T_out_C+DELTA_ST>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-            T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T #Max temperature storage [K]
+        if fluidInput=="water": # Only applies to water
+            if T_out_C+DELTA_ST>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
+                T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T #Max temperature storage [K]
+            else:
+                T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K]
         else:
-            T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K]
-                
+            T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K] 
         
-        inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
-        h_in=inputState.h
-        in_s=inputState.s
-        in_x=inputState.x
-        outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
-        out_s=outputState.s
-        h_out=outputState.h
+        if fluidInput=="water": # WATER STORAGE
+            inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
+            h_in=inputState.h
+            in_s=inputState.s
+            in_x=inputState.x
+            outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
+            out_s=outputState.s
+            h_out=outputState.h
+            
+            #Storage calculations for water
+            energyStored=0 # Initially the storage is empty
+            T_avg_K=(T_in_K+T_out_K)/2
+            
+            almacenamiento=IAPWS97(P=P_op_Mpa, T=T_out_K) #Propiedades en el almacenamiento
+            almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
+            almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg          
+            storage_max_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_max_storage))/3600 #Storage capacity in kWh
+            
+            almacenamiento=IAPWS97(P=P_op_Mpa, T=T_in_K) #Propiedades en el almacenamiento
+            almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
+            almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg      
+            storage_ini_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_in_K))/3600 #Storage capacity in kWh
         
-        #Storage calculations for water
-        energyStored=0 # Initially the storage is empty
-        T_avg_K=(T_in_K+T_out_K)/2
+            storage_min_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K))/3600 #Storage capacity in kWh
+            energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
         
-        almacenamiento=IAPWS97(P=P_op_Mpa, T=T_out_K) #Propiedades en el almacenamiento
-        almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
-        almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg          
-        storage_max_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_max_storage))/3600 #Storage capacity in kWh
+            energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
         
-        almacenamiento=IAPWS97(P=P_op_Mpa, T=T_in_K) #Propiedades en el almacenamiento
-        almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
-        almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg      
-        storage_ini_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_in_K))/3600 #Storage capacity in kWh
+        if fluidInput=="oil": # THERMAL OIL STORAGE
+           
+            
+#            inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
+#            h_in=inputState.h
+#            in_s=inputState.s
+#            in_x=inputState.x
+#            outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
+#            out_s=outputState.s
+#            h_out=outputState.h
+            
+            #Storage calculations for water
+            energyStored=0 # Initially the storage is empty
+            T_avg_K=(T_in_K+T_out_K)/2
+            
+            # Properties for MAX point
+                 
+            [storage_max_rho,storage_max_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_max_storage)
+            storage_max_energy=(almVolumen*(1/1000)*(storage_max_rho)*storage_max_Cp*(T_max_storage))/3600 #Storage capacity in kWh
+            
+            [storage_ini_rho,storage_ini_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_in_K)
+            storage_ini_energy=(almVolumen*(1/1000)*(storage_ini_rho)*storage_ini_Cp*(T_in_K))/3600 #Storage capacity in kWh
+        
+            [storage_min_rho,storage_min_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_out_K)
+            storage_min_energy=(almVolumen*(1/1000)*(storage_min_rho)*storage_min_Cp*(T_out_K))/3600 #Storage capacity in kWh
+            
+            energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
+        
+            energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
     
-        storage_min_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K))/3600 #Storage capacity in kWh
-        energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
-    
-        energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
     
     # ----------------------------------------
         # SL_L_PS => Supply level with liquid heat transfer media parallel integration with storage
@@ -911,11 +948,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 
                 if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
+                    if fluidInput !="steam":
+                        [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i],T_alm_K[i],storage_energy[i]]=offOnlyStorageSimple(T_alm_K[i-1],energStorageMax,energyStored,T_alm_K[i-1],storage_energy[i-1],SOC[i-1]) 
+                        if Demand[i]>0:
+                            [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
                     
-                    [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i],T_alm_K[i],storage_energy[i]]=offOnlyStorageWaterSimple(T_alm_K[i-1],energStorageMax,energyStored,T_alm_K[i-1],storage_energy[i-1],SOC[i-1]) 
-                    if Demand[i]>0:
-                        [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
-                             
                 if type_integration=="SL_L_PS":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                     

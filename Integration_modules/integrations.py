@@ -56,7 +56,7 @@ def offStorageWaterSimple(bypass,T_in_flag,T_in_C_AR,T_in_K_old,energStorageMax,
     Q_prod=0 #No hay produccion
     SOC=100*energyStored/energStorageMax
     return [T_out_K,Q_prod,T_in_K,SOC]
-def offOnlyStorageWaterSimple(T_in_K_old,energStorageMax,energyStored,T_K_alm_old,storage_energy_old,SOC_old):
+def offOnlyStorageSimple(T_in_K_old,energStorageMax,energyStored,T_K_alm_old,storage_energy_old,SOC_old):
 
     T_in_K=T_in_K_old
 
@@ -68,6 +68,8 @@ def offOnlyStorageWaterSimple(T_in_K_old,energStorageMax,energyStored,T_K_alm_ol
     storage_energy=storage_energy_old
     T_alm_K=T_K_alm_old
     return [T_out_K,Q_prod,T_in_K,SOC,T_alm_K,storage_energy]
+
+
 def inputsWithDNIWaterSimple(T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
 
