@@ -237,7 +237,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         
         ## PROCESS
-        fluidInput="oil" #"water" "steam" "oil" 
+        fluidInput="water" #"water" "steam" "oil" 
         T_out_C=90 #High temperature [ºC]
         T_in_C=60 #Low temperature [ºC]
         P_op_bar=15 #[bar] 
@@ -539,6 +539,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg      
         storage_ini_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_in_K))/3600 #Storage capacity in kWh
     
+        storage_min_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K))/3600 #Storage capacity in kWh
+        energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
+    
         energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
     
     # ----------------------------------------
@@ -809,7 +812,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageWaterSimple(T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,flow_rate_design_kgs)
 
                         #Storage control
-                        [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy)      
+                        [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
                     
      
                 if type_integration=="SL_L_P" or type_integration=="PL_E_PM":     
@@ -909,9 +912,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                     
-                    [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i],T_alm_K[i],storage_energy[i]]=offOnlyStorageWaterSimple(T_alm_K[i-1],energStorageMax,energyStored,T_alm_K[i-1],storage_energy[i-1]) 
+                    [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i],T_alm_K[i],storage_energy[i]]=offOnlyStorageWaterSimple(T_alm_K[i-1],energStorageMax,energyStored,T_alm_K[i-1],storage_energy[i-1],SOC[i-1]) 
                     if Demand[i]>0:
-                        [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy)      
+                        [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
                              
                 if type_integration=="SL_L_PS":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
@@ -949,7 +952,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #                               'Q_prod':Q_prod,'Q_prod_rec':Q_prod_rec,'flow_rate_kgs':flow_rate_kgs,
 #                               'flow_rate_rec':flow_rate_rec,'Q_prod_lim':Q_prod_lim,'Demand':Demand,
 #                               'Q_defocus':Q_defocus})
-    
+
+    # DataFRame summary of the simulation (only for SL_L_S)
+#    simulationDF=pd.DataFrame({'DNI':DNI,'Q_prod':Q_prod,'Q_charg':Q_charg,'Q_discharg':Q_discharg,'Q_defocus':Q_defocus,'Demand':Demand,'storage_energy':storage_energy,'SOC':SOC,'T_alm_K':T_alm_K-273})
+        
     
     #%%
     # BLOCK 2.2 - ANUAL INTEGRATION <><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -1220,11 +1226,11 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 finance_study=1
 
 mes_ini_sim=6
-dia_ini_sim=5
+dia_ini_sim=6
 hora_ini_sim=1
 
 mes_fin_sim=6
-dia_fin_sim=6
+dia_fin_sim=7
 hora_fin_sim=24
 
 
@@ -1235,8 +1241,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=1 
-n_coll_loop=6
+num_loops=2 
+n_coll_loop=10
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1246,8 +1252,8 @@ n_coll_loop=6
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_RF"
-almVolumen=1000 #litros
+type_integration="SL_L_S"
+almVolumen=10000 #litros
 
 # --------------------------------------------------
 confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}

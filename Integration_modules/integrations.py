@@ -56,14 +56,15 @@ def offStorageWaterSimple(bypass,T_in_flag,T_in_C_AR,T_in_K_old,energStorageMax,
     Q_prod=0 #No hay produccion
     SOC=100*energyStored/energStorageMax
     return [T_out_K,Q_prod,T_in_K,SOC]
-def offOnlyStorageWaterSimple(T_in_K_old,energStorageMax,energyStored,T_K_alm_old,storage_energy_old):
+def offOnlyStorageWaterSimple(T_in_K_old,energStorageMax,energyStored,T_K_alm_old,storage_energy_old,SOC_old):
 
     T_in_K=T_in_K_old
 
     T_out_K=0+273
     Q_prod=0 #No hay produccion
 #    SOC=100*(T_K_alm_old-273)/(T_max_storage-273)
-    SOC=100*energyStored/energStorageMax
+#    SOC=100*energyStored/energStorageMax
+    SOC=SOC_old
     storage_energy=storage_energy_old
     T_alm_K=T_K_alm_old
     return [T_out_K,Q_prod,T_in_K,SOC,T_alm_K,storage_energy]
@@ -276,7 +277,7 @@ def outputKettle(P_op_Mpa,almVolumen,T_alm_K_old,Q_prod,T_in_C_AR):
 #    T_alm_new=(newEnerg/(almacenamiento_CP*almVolumen*(1/1000)*(1/almacenamiento_rho))) #in K
 
     
-def outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_in_alm_K,T_alm_K_old,Q_prod,energyStored,Demand,energStorageMax,storage_energy_old,storage_ini_energy): 
+def outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_in_alm_K,T_alm_K_old,Q_prod,energyStored,Demand,energStorageMax,storage_energy_old,storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy): 
     
 #    almacenamiento=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Propiedades en el almacenamiento
 #    almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
@@ -285,9 +286,10 @@ def outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen
     
     if T_min_storage>=T_alm_K_old: # The storage is still under the minimum temperatura -> Charge
        
-        if ((Q_prod-Demand)+energyStored)<energStorageMax: #still room in the storage
+        if ((Q_prod-Demand)+energyStored)<energStorageUseful: # A.1 still room in the storage
             Q_useful=Q_prod
-            energyStored=energyStored+(Q_prod) #New state of the storage
+#            energyStored=energyStored+(Q_prod) #New state of the storage
+            energyStored=0
             Q_charg=(Q_prod)
             Q_discharg=0
             Q_defoscus=0
@@ -297,29 +299,31 @@ def outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen
             almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
             almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg     
             T_alm_new=(newEnerg/(almacenamiento_CP*almVolumen*(1/1000)*(1/almacenamiento_rho))) #in K
+            if T_alm_new>T_min_storage:
+                energyStored=(newEnerg/3600-storage_min_energy) 
             if IAPWS97(P=P_op_Mpa, T=T_alm_new).x>0: #Steam in the storage danger!!
                 T_alm_new=IAPWS97(P=P_op_Mpa, x=0).T
     #        SOC=100*(T_alm_new-273)/(T_max_storage-273)
-            SOC=100*energyStored/energStorageMax
-        else: # No more room for storage
-            Q_charg=energStorageMax-energyStored
-            Q_useful=Demand+(energStorageMax-energyStored)
+            SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful
+        else: # A.2 No more room for storage
+            Q_charg=energStorageUseful-energyStored
+            Q_useful=Demand+(energStorageUseful-energyStored)
             Q_discharg=0
             Q_defoscus=Q_prod-Demand-Q_charg
             Q_prod_lim=Q_prod-Q_charg-Q_defoscus
-            energyStored=energStorageMax #New state of the storage
+            energyStored=energStorageUseful #New state of the storage
             SOC=100
             almacenamiento=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Propiedades en el almacenamiento
             almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
             almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg            
             T_alm_new=T_max_storage
-            newEnerg=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_max_storage)) #Storage capacity in kWh
-        
+#            newEnerg=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_max_storage)) #Storage capacity in kWh
+            newEnerg=storage_max_energy
 
     
     else:
     
-        if Q_prod+energyStored<Demand: #Complete discharge
+        if Q_prod+energyStored<Demand: #B.2 Complete discharge
             Q_prod_lim=Q_prod+energyStored
             Q_useful=Q_prod+energyStored
             Q_discharg=energyStored
@@ -330,11 +334,11 @@ def outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen
             almacenamiento=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Propiedades en el almacenamiento
             almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
             almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg
-            newEnerg=storage_ini_energy*3600
-            T_alm_new=(newEnerg/(almacenamiento_CP*almVolumen*(1/1000)*(1/almacenamiento_rho))) #in K
+            newEnerg=(storage_energy_old-Q_discharg)*3600
+            T_alm_new=T_min_storage+0.0001 #in K
            
             
-        if (Q_prod<Demand) and (Q_prod+energyStored>Demand): #Partial discharge
+        if (Q_prod<Demand) and (Q_prod+energyStored>Demand): # B.1 Partial discharge
             
             energyStored=energyStored-(Demand-Q_prod)#New state of the storage
             Q_charg=0
@@ -347,21 +351,22 @@ def outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen
             almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
             almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg     
             T_alm_new=(newEnerg/(almacenamiento_CP*almVolumen*(1/1000)*(1/almacenamiento_rho))) #in K
-            if T_alm_new<=274:
+            if T_alm_new<=274: #Avoid absolute zero
                 T_alm_new=274
 #            SOC=100*(T_alm_new-273)/(T_max_storage-273)
-            SOC=100*energyStored/energStorageMax
+            SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful
     
               
         if (Q_prod>=Demand): #Charging
-            if ((Q_prod-Demand)+energyStored)<energStorageMax: #Still room in the storage for the full production
+            if ((Q_prod-Demand)+energyStored)<energStorageUseful and (T_alm_K_old<T_max_storage): # B.3.2 Still room in the storage for the full production
                 Q_useful=Q_prod
                 energyStored=energyStored+(Q_prod-Demand) #New state of the storage
                 Q_charg=(Q_prod-Demand)
                 Q_discharg=0
                 Q_defoscus=0
                 Q_prod_lim=Q_prod-Q_charg
-                newEnerg=(storage_energy_old+Q_prod-Demand)*3600 #KJ   
+                newEnerg=(storage_energy_old+Q_prod-Demand)*3600 #KJ 
+    
                 almacenamiento=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Propiedades en el almacenamiento
                 almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
                 almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg     
@@ -369,21 +374,26 @@ def outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen
                 if IAPWS97(P=P_op_Mpa, T=T_alm_new).x>0: #Steam in the storage danger!!
                     T_alm_new=IAPWS97(P=P_op_Mpa, x=0).T
 #                SOC=100*(T_alm_new-273)/(T_max_storage-273)
-                SOC=100*energyStored/energStorageMax
-            else: #No more room in the storage
-                Q_charg=energStorageMax-energyStored
-#                Q_prod=Q_charg
-                Q_useful=Demand+(energStorageMax-energyStored)
+                SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful
+            else: # B.3.1 No more room in the storage
+                if (T_alm_K_old<T_max_storage): 
+                    Q_charg=energStorageUseful-energyStored
+                    Q_useful=Demand+(energStorageUseful-energyStored)
+                else:
+                    Q_charg=0
+                    Q_useful=Demand
+                    
                 Q_discharg=0
                 Q_defoscus=Q_prod-Demand-Q_charg
                 Q_prod_lim=Q_prod-Q_charg-Q_defoscus
-                energyStored=energStorageMax #New state of the storage
+                energyStored=energStorageUseful #New state of the storage
                 SOC=100
                 almacenamiento=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Propiedades en el almacenamiento
                 almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
                 almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg            
                 T_alm_new=T_max_storage
-                newEnerg=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_max_storage)) #Storage capacity in kWh
+#                newEnerg=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_max_storage)) #Storage capacity in kWh
+                newEnerg=storage_max_energy*3600 #kJ
             
     newEnerg=newEnerg/3600
     return [T_alm_new,newEnerg,Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defoscus,Q_useful]
