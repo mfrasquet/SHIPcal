@@ -31,7 +31,7 @@ from iapws import IAPWS97
 
 #Place to import SHIPcal Libs
 
-from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline 
+from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline, moltenSalt
 from General_modules.demandCreator_v1 import demandCreator
 from General_modules.fromDjangotoSHIPcal import djangoReport
 from Solar_modules.EQSolares import SolarData
@@ -237,9 +237,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         
         ## PROCESS
-        fluidInput="oil" #"water" "steam" "oil" 
-        T_out_C=90 #High temperature [ºC]
-        T_in_C=60 #Low temperature [ºC]
+        fluidInput="moltenSalt" #"water" "steam" "oil" "moltenSalt"
+        T_out_C=190 #High temperature [ºC]
+        T_in_C=160 #Low temperature [ºC]
         P_op_bar=15 #[bar] 
         
         # Not implemented yet
@@ -551,16 +551,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
         
         if fluidInput=="oil": # THERMAL OIL STORAGE
-           
-            
-#            inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
-#            h_in=inputState.h
-#            in_s=inputState.s
-#            in_x=inputState.x
-#            outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
-#            out_s=outputState.s
-#            h_out=outputState.h
-            
+                       
             #Storage calculations for water
             energyStored=0 # Initially the storage is empty
             T_avg_K=(T_in_K+T_out_K)/2
@@ -574,6 +565,26 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             storage_ini_energy=(almVolumen*(1/1000)*(storage_ini_rho)*storage_ini_Cp*(T_in_K))/3600 #Storage capacity in kWh
         
             [storage_min_rho,storage_min_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_out_K)
+            storage_min_energy=(almVolumen*(1/1000)*(storage_min_rho)*storage_min_Cp*(T_out_K))/3600 #Storage capacity in kWh
+            
+            energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
+        
+            energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
+    
+        if fluidInput=="moltenSalt": # MOLTEN SALTS STORAGE
+                       
+            #Storage calculations for water
+            energyStored=0 # Initially the storage is empty
+            T_avg_K=(T_in_K+T_out_K)/2
+            
+            # Properties for MAX point
+            [storage_max_rho,storage_max_Cp,k,Dv]=moltenSalt(T_max_storage)
+            storage_max_energy=(almVolumen*(1/1000)*(storage_max_rho)*storage_max_Cp*(T_max_storage))/3600 #Storage capacity in kWh
+            
+            [storage_ini_rho,storage_ini_Cp,k,Dv]=moltenSalt(T_in_K)
+            storage_ini_energy=(almVolumen*(1/1000)*(storage_ini_rho)*storage_ini_Cp*(T_in_K))/3600 #Storage capacity in kWh
+        
+            [storage_min_rho,storage_min_Cp,k,Dv]=moltenSalt(T_out_K)
             storage_min_energy=(almVolumen*(1/1000)*(storage_min_rho)*storage_min_Cp*(T_out_K))/3600 #Storage capacity in kWh
             
             energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh

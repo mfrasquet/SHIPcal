@@ -13,8 +13,8 @@ version: 1.0
 from iapws import IAPWS97
 import numpy as np
 from Solar_modules.iteration_process import flow_calc, flow_calcOil
-from Solar_modules.iteration_process import IT_temp,IT_tempOil
-from General_modules.func_General import thermalOil
+from Solar_modules.iteration_process import IT_temp
+from General_modules.func_General import thermalOil,moltenSalt
 from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C
 
 def offWaterSimple(bypass,T_in_flag,T_in_C_AR,T_in_K_old):
@@ -100,17 +100,18 @@ def operationOilKettleSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypas
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52    
     [T_in_K]=inputsWithDNIOilSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)    
     #Calculo el flowrate necesario para poder dar el salto de temp necesario
+    fluidInput="oil"
     T_out_K=T_out_C+273
     T_av_K=(T_in_K+T_out_K)/2
     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
     
     flow_rate_kgs=1 #kg/s
-    T_out_K,Perd_termicas=IT_tempOil(T_in_K,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
+    T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
 
     if T_out_K<T_alm_K+DeltaKettle:
         #RECIRCULACION
         flow_rate_rec=flow_rate_kgs
-        T_out_K,Perd_termicas=IT_tempOil(T_in_K,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
+        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
         Q_prod=0 #No hay produccion
         
         T_av_K=(T_in_K+T_out_K)/2
@@ -140,7 +141,8 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
     if fluidInput =="water":
         inlet=IAPWS97(P=P_op_Mpa, T=T_in_K_old)
         h_in_kJkg=inlet.h
-        T_out_K,Perd_termicas=IT_temp(T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)    
+        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
+    
         if T_out_K>=T_max_storage:
                 outlet=IAPWS97(P=P_op_Mpa, T=T_out_K) 
                 if outlet.x>0: #Steam
@@ -154,13 +156,24 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
             
     if fluidInput =="oil":
         [SF_inlet_rho,SF_inlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_in_K_old)
-        T_out_K,Perd_termicas=IT_tempOil(T_in_K_old,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
+           
+    if fluidInput =="moltenSalt":
+        [rho,SF_inlet_Cp,k,Dv]=moltenSalt(T_in_K_old)
+        
+    T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
+    
     
     if fluidInput =="water":    
         Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
     
     if fluidInput =="oil":    
         [SF_outlet_rho,SF_outlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_out_K)    
+        SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
+        Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
+    
+    if fluidInput =="moltenSalt":     
+        [rho,SF_outlet_Cp,k,Dv]=moltenSalt(T_out_K)
+        
         SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
         Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
         
@@ -173,6 +186,7 @@ def operationWaterSimple(bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     [h_in_kJkg,T_in_K]=inputsWithDNIWaterSimple(T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old)
   
+    fluidInput="water"
 #    gainSolar=DNI*Area*IAM*rho_optic_0
     T_out_K=T_out_C+273 #Target temp
     #Calculo el flowrate necesario para poder dar el salto de temp necesario
@@ -181,7 +195,7 @@ def operationWaterSimple(bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_
     if flow_rate_kgs<=m_dot_min_kgs and T_out_K>T_in_K: #El caudal necesario para obtener la temp de salida es inferior al mínimo
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
-        T_out_K,Perd_termicas=IT_temp(T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
+        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
         Q_prod=0 #No hay produccion
         outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
         h_out_kJkg=outlet.h
@@ -209,6 +223,7 @@ def operationOilSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52    
     [T_in_K]=inputsWithDNIOilSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)    
     #Calculo el flowrate necesario para poder dar el salto de temp necesario
+    fluidInput="oil"
     T_out_K=T_out_C+273
     T_av_K=(T_in_K+T_out_K)/2
     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
@@ -219,7 +234,7 @@ def operationOilSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,
     if flow_rate_kgs<=m_dot_min_kgs and T_out_K>T_in_K: #El caudal necesario para obtener la temp de salida es inferior al mínimo
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
-        T_out_K,Perd_termicas=IT_tempOil(T_in_K,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
+        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
         Q_prod=0 #No hay produccion
         
         T_av_K=(T_in_K+T_out_K)/2
@@ -306,6 +321,8 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
                 storage_rho=1/storage_V
             if fluidInput=="oil":
                 [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
+            if fluidInput=="moltenSalt":
+                [storage_rho,storage_Cp,k,Dv]=moltenSalt(T_alm_K_old)
             
             T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
             
@@ -359,6 +376,8 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
                 storage_rho=1/storage_V
             if fluidInput=="oil":
                 [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
+            if fluidInput=="moltenSalt":
+                [storage_rho,storage_Cp,k,Dv]=moltenSalt(T_alm_K_old)
             
             T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
             
@@ -384,6 +403,8 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
                     storage_rho=1/storage_V
                 if fluidInput=="oil":
                     [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
+                if fluidInput=="moltenSalt":
+                    [storage_rho,storage_Cp,k,Dv]=moltenSalt(T_alm_K_old)
             
                 T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
                 
