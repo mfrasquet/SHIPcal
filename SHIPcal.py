@@ -812,7 +812,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageWaterSimple(T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,flow_rate_design_kgs)
 
                         #Storage control
-                        [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful)      
+                        [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
                     
      
                 if type_integration=="SL_L_P" or type_integration=="PL_E_PM":     
@@ -914,7 +914,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     
                     [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i],T_alm_K[i],storage_energy[i]]=offOnlyStorageWaterSimple(T_alm_K[i-1],energStorageMax,energyStored,T_alm_K[i-1],storage_energy[i-1],SOC[i-1]) 
                     if Demand[i]>0:
-                        [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful)      
+                        [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageWaterSimple(P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
                              
                 if type_integration=="SL_L_PS":
                     #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
@@ -952,7 +952,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #                               'Q_prod':Q_prod,'Q_prod_rec':Q_prod_rec,'flow_rate_kgs':flow_rate_kgs,
 #                               'flow_rate_rec':flow_rate_rec,'Q_prod_lim':Q_prod_lim,'Demand':Demand,
 #                               'Q_defocus':Q_defocus})
-    
+
+    # DataFRame summary of the simulation (only for SL_L_S)
+#    simulationDF=pd.DataFrame({'DNI':DNI,'Q_prod':Q_prod,'Q_charg':Q_charg,'Q_discharg':Q_discharg,'Q_defocus':Q_defocus,'Demand':Demand,'storage_energy':storage_energy,'SOC':SOC,'T_alm_K':T_alm_K-273})
+        
     
     #%%
     # BLOCK 2.2 - ANUAL INTEGRATION <><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -1271,5 +1274,5 @@ else:
     last_reg=inputsDjango['last_reg']
     inputsDjango= {'fuel': 'Propane', 'pressureUnit': 'bar', 'Jun': 0.083, 'tempOUT': 90.0, 'shadows': 'free', 'sectorIndustry': 'Agro_Livestock', 'businessModel': 'turnkey', 'last_reg': 596, 'Wend': 0.2, 'surface': None, 'demand': 783756.0, 'Dec': 0.083, 'Feb': 0.083, 'date': '2019-12-04', 'Nov': 0.083, 'Fri': 0.2, 'fuelPrice': 0.0693, 'inclination': 'flat', 'fluid': 'water', 'location_aux': '', 'process': '', 'Jan': 0.083, 'co2factor': 0.00022, 'Sat': 0.0, 'industry': 'xxxxxx', 'Thur': 0.2, 'Oct': 0.083, 'Jul': 0.083, 'Apr': 0.083, 'pressure': 3.0, 'location': 'Badajoz', 'Tues': 0.2, 'Aug': 0.083, 'name': 'pablo', 'Mond': 0.2, 'distance': None, 'Sep': 0.083, 'orientation': 'NS', 'tempIN': 15.0, 'terrain': 'other', 'Sun': 0.0, 'hourEND': 21, 'hourINI': 9, 'Mar': 0.083, 'demandUnit': 'kWh', 'connection': 'storage', 'May': 0.083, 'fuelUnit': 'eur_kWh', 'email': 'xxxx', 'co2TonPrice': 0.0}
    
-[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
