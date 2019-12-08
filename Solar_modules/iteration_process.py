@@ -86,7 +86,7 @@ def flow_calc (T_out_K,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,
     Perd_termicas=Q_loss_rec*n_coll_loop*Long     
     return [flow_rate_kgs,Perd_termicas]
 
-def flow_calcOil (T_out_K,T_in_K,Cp_av,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0):
+def flow_calcHTF (T_out_K,T_in_K,Cp_av,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0):
     
     DELTA_T_loss=T_out_K-temp_amb_K
     [Q_loss_rec]=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI) #W/m
