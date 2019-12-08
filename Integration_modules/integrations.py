@@ -17,14 +17,17 @@ from Solar_modules.iteration_process import IT_temp
 from General_modules.func_General import thermalOil,moltenSalt
 from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C
 
-def offWaterSimple(bypass,T_in_flag,T_in_C_AR,T_in_K_old):
+def offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,T_in_K_old):
             
     bypass.append("OFF")
     
-    if T_in_flag==1: # Closed circuit
+    if fluidInput=="water":
+        if T_in_flag==1: # Closed circuit
+            T_in_K=T_in_K_old
+        else:
+            T_in_K=T_in_C_AR+273 # Input from public water grid
+    if fluidInput=="oil" or fluidInput=="moltenSalt" or fluidInput=="steam":
         T_in_K=T_in_K_old
-    else:
-        T_in_K=T_in_C_AR+273 # Input from public water grid
     T_out_K=0+273
     Q_prod=0 # There's no production  
     return [T_out_K,Q_prod,T_in_K]
@@ -45,13 +48,16 @@ def offSteamSimple(bypass,T_in_K_old):
     Q_prod=0 # There's no production   
     return [T_out_K,Q_prod,T_in_K]
 
-def offStorageWaterSimple(bypass,T_in_flag,T_in_C_AR,T_in_K_old,energStorageMax,energyStored):
+def offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,T_in_K_old,energStorageMax,energyStored):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52             
     bypass.append("OFF")
-    if T_in_flag==1:
-        T_in_K=T_in_K_old
-    else:
-        T_in_K=T_in_C_AR+273
+    if fluidInput=="water":
+        if T_in_flag==1:
+            T_in_K=T_in_K_old
+        else:
+            T_in_K=T_in_C_AR+273
+    if fluidInput=="oil" or fluidInput=="moltenSalt" or fluidInput=="steam":
+        T_in_K=T_in_K_old        
     T_out_K=0+273
     Q_prod=0 #No hay produccion
     SOC=100*energyStored/energStorageMax
@@ -492,7 +498,8 @@ def outputStorageSimple(Q_prod,energyStored,Demand,energStorageMax):
            SOC=100*energyStored/energStorageMax
            
     return [Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defoscus,Q_useful]
-def outputWithoutStorageWaterSimple(Q_prod,Demand):
+
+def outputWithoutStorageSimple(Q_prod,Demand):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     if Q_prod<=Demand:
         Q_prod_lim=Q_prod
@@ -504,17 +511,7 @@ def outputWithoutStorageWaterSimple(Q_prod,Demand):
         Q_defocus=Q_prod-Demand
     return[Q_prod_lim,Q_defocus,Q_useful]
 
-def outputWithoutStorageOilSimple(Q_prod,Demand):
-#SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
-    if Q_prod<=Demand:
-        Q_prod_lim=Q_prod
-        Q_useful=Q_prod
-        Q_defocus=0
-    else:
-        Q_prod_lim=Demand
-        Q_useful=Demand
-        Q_defocus=Q_prod-Demand
-    return[Q_prod_lim,Q_defocus,Q_useful]
+
 
 def outputStorageOilSimple(Q_prod,energyStored,Demand,energStorageMax):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration with storage pg52 
