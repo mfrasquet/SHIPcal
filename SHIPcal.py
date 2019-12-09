@@ -992,7 +992,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 if type_integration=="SL_S_FWS":
                     #SL_S_FWS Supply level with steam for solar heating of boiler feed water with storage 
                     
-                    [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
+                    [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
                     if Demand2[i]>0:
                         [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand2[i],energStorageMax)                         
                 
@@ -1307,7 +1307,7 @@ n_coll_loop=16
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_S_PD"
+type_integration="SL_S_FWS"
 almVolumen=100000 #litros
 
 # --------------------------------------------------
