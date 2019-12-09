@@ -52,7 +52,7 @@ def IT_temp(fluidInput,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,
         
         T_av_K=(T_outlet_KX+T_in_K)/2
         
-        if fluidInput=="water":
+        if fluidInput=="water" or fluidInput=="steam":
             average=IAPWS97(P=P_op_Mpa, T=T_av_K)
             Cp_av_KJkgK=average.cp
         if fluidInput=="oil":

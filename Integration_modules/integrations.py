@@ -191,7 +191,7 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
 
 def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
-    if fluidInput=="water":
+    if fluidInput=="water" or fluidInput=="steam":
         [h_in_kJkg,T_in_K]=inputsWithDNIWaterSimple(T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old)
     if fluidInput=="oil":
         [T_in_K]=inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)
@@ -201,7 +201,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     
     T_out_K=T_out_C+273 #Target temp
     
-    if fluidInput=="water":
+    if fluidInput=="water" or fluidInput=="steam":
         #Calculo el flowrate necesario para poder dar el salto de temp necesario
         flow_rate_kgs,Perd_termicas=flow_calc (T_out_K,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
     
@@ -223,7 +223,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
         Q_prod=0 #No hay produccion
         
-        if fluidInput=="water":
+        if fluidInput=="water" or fluidInput=="steam":
             outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
             h_out_kJkg=outlet.h
             Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)
@@ -245,7 +245,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     else:
         #PRODUCCION
         
-        if fluidInput=="water":
+        if fluidInput=="water" or fluidInput=="steam":
             outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
             h_out_kJkg=outlet.h
             if bypass_old=="REC":
