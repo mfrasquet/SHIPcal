@@ -1134,7 +1134,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # BLOCK 4 - PLOT GENERATION ----------------------------------------------------------
 # ------------------------------------------------------------------------------------
     
-    origin=0
     plotVars={'lang':lang,'Production_max':Production_max,'Production_lim':Production_lim,
               'Perd_term_anual':Perd_term_anual,'DNI_anual_irradiation':DNI_anual_irradiation,
               'Area':Area,'num_loops':num_loops,'imageQlty':imageQlty,'plotPath':plotPath,
