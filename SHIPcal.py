@@ -31,7 +31,7 @@ from iapws import IAPWS97
 
 #Place to import SHIPcal Libs
 
-from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline 
+from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline,waterFromGrid_v3
 from General_modules.demandCreator_v1 import demandCreator
 from General_modules.fromDjangotoSHIPcal import djangoReport
 from Solar_modules.EQSolares import SolarData
@@ -81,7 +81,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
         from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso
         from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
-        from CIMAV.CIMAV_modules.func_General import mainswatertemperature
         from CIMAV.CIMAV_modules.incidence_angle import theta_IAMs_v2 as theta_IAMs_CIMAV
         from CIMAV.CIMAV_modules.CIMAV_financeModels import Turn_key,ESCO,CIMAV_plant_costFunctions
     
@@ -410,7 +409,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     #Temperature of the make-up water
     if sender=='CIMAV':
-        T_in_C_AR=mainswatertemperature(file_loc)
+        T_in_C_AR=waterFromGrid_v3(file_loc,sender)
     else:    
         T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) # When input process is water from the grid. SHIPcal needs the monthly average temp of the water grid
         T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]

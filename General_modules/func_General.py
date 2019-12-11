@@ -193,6 +193,27 @@ def waterFromGrid_v2(T_in_C_AR_mes):
         T_in_C_AR+=[T_in_C_AR_mes[month]]*(days_in_the_month[month]*24) #Append the average temperature from the grid number_of_days_in_the_month*24 times
     return(np.array(T_in_C_AR)) #Returns the list transformed to an array.
 
+def waterFromGrid_v3(file_meteo, sender='CIMAV'):
+    if sender=='CIMAV':
+        Tamb = np.loadtxt(file_meteo, delimiter="\t", skiprows=4)[:,6]#Reads the temperature of the weather. The TMYs are a bit different.
+    else:
+        Tamb = np.loadtxt(file_meteo, delimiter="\t")[:,9]#Reads the temperature of the weather
+    TambAverage=np.mean(Tamb) #Computes the year average
+    TambMax=np.amax(Tamb) #Computes the maximum temperature
+    
+    offset = 3 #A defined offset of 3 °C
+    ratio = 0.22 + 0.0056*(TambAverage - 6.67)
+    lag = 1.67 - 0.56*(TambAverage - 6.67)
+#The offset, lag, and ratio values were obtained by fitting data compiled by Abrams and Shedd [8], the FloridaSolar Energy Center [9], and Sandia National Labs
+    
+    T_in_C_AR=[] #It is easier to work with this array as a list first to print 24 times the mean value of the water temperature for every day
+    
+    for day in range(365):
+        #The hourly year array is built by the temperature calculated for the day printed 24 times for each day
+        T_in_C_AR+=[(TambAverage+offset)+ratio*(TambMax/2)*np.sin(np.radians(-90+(day-15-lag)*360/365))]*24 #This was taken from TRNSYS documentation.
+    
+    return np.array(T_in_C_AR)
+
 def thermalOil(T): #Function to derive the properties of thermal oil from the Thermal oil DB
     T=T-273 #To transform K to C
     if T==0:
