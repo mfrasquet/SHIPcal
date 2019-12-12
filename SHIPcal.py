@@ -235,7 +235,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=15000*8760 #[kWh]
+        totalConsumption=1500*8760 #[kWh]
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         
         ## PROCESS
@@ -1196,6 +1196,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
         if plots[13]==1:
             viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
+    if fluidInput=="moltenSalt": 
+        if plots[12]==1:
+            rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
+        if plots[13]==1:
+            viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
+
+
     
     # Other plots
     if plots[14]==1: #(14) Plot Production
@@ -1278,6 +1285,8 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 #(13) P- Plot thermal oil properties Viscosities vs Temp 
 #(14) Plot Production 
 #(15) A- Plot Month savings 
+#(16) P- Plot thermal oil properties Rho & Cp vs Temp
+#(17) P- Plot thermal oil properties Viscosities vs Temp 
 
 
 finance_study=1
@@ -1298,7 +1307,7 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=60 
+num_loops=8 
 n_coll_loop=20
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1310,7 +1319,7 @@ n_coll_loop=20
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
 type_integration="SL_L_PS"
-almVolumen=100000 #litros
+almVolumen=10000 #litros
 
 # --------------------------------------------------
 confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
@@ -1331,5 +1340,5 @@ else:
     last_reg=inputsDjango['last_reg']
     
 
-[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
