@@ -31,7 +31,7 @@ from iapws import IAPWS97
 
 #Place to import SHIPcal Libs
 
-from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline, moltenSalt
+from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline, moltenSalt,waterFromGrid_v3 
 from General_modules.demandCreator_v1 import demandCreator
 from General_modules.fromDjangotoSHIPcal import djangoReport
 from Solar_modules.EQSolares import SolarData
