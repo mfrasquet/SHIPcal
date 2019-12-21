@@ -301,8 +301,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
-        REC_type,Area_coll,rho_optic_0,Long=CIMAV_collectors(type_coll)
-        IAM_file='defaultCollector.csv'
+        Area_coll,rho_optic_0,eta1,eta2,mdot_test,Long,weight=CIMAV_collectors(type_coll) 
+        IAM_file='defaultCollector.csv' #Se puede borrar despues 
+        REC_type=1#Se puede borrar despues 
         IAM_folder=os.path.dirname(os.path.realpath(__file__))+"/Collector_modules/"
     
     else: #Using other collectors (to be filled with customized data)
@@ -791,8 +792,20 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         btrans,ntrans = IAM_fiteq(type_coll,2)
     
     # BLOCK 2.2 - SIMULATION ANNUAL LOOP <><><><><><><><><><><><><><><><><><><><><><><><><><><>        
-             
-    for i in range(0,steps_sim): #--> <><><><><¡ ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
+    
+    # --> Instant = 0 (Initial conditions)
+    bypass.append("OFF")
+    Q_prod[0]=0
+    T_in_K[0]=temp[0] #Ambient temperature 
+    T_out_K[0]=0+273
+    if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+        T_alm_K[0]=T_ini_storage
+        storage_energy[0]=storage_ini_energy
+    #            SOC[i]=100*(T_alm_K[i]-273)/(T_max_storage-273)
+        SOC[0]=100*energyStored/energStorageMax
+
+        
+    for i in range(1,steps_sim): #--> <><><><>< ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
         
     # --> IAM calculation           
 
@@ -817,6 +830,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 IAM_long[i],IAM_t[i]=0,0
             
             IAM[i]=IAM_long[i]*IAM_t[i]
+            Tm_Ta=0.5*(T_in_C+T_out_C)-(temp[i]-273)#Calculates Tm-Ta in order to calculate the minimum DNI for the colector at that ambient temperature 
+            lim_inf_DNI=-(eta1*Tm_Ta + eta2*Tm_Ta**2)/rho_optic_0 
             
         else:               # Using default's IAMs 
             if SUN_ELV[i]>0:
@@ -830,177 +845,162 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 IAM_t[i]=0
                 IAM[i]=IAM_long[i]*IAM_t[i]
 
-    # --> Instant = 0 (Initial conditions)
-      
-        if i==0:    
-            bypass.append("OFF")
-            Q_prod[i]=0
-            T_in_K[i]=temp[0] #Ambient temperature 
-            T_out_K[i]=0+273
-            if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
-                T_alm_K[i]=T_ini_storage
-                storage_energy[0]=storage_ini_energy
-    #            SOC[i]=100*(T_alm_K[i]-273)/(T_max_storage-273)
-                SOC[i]=100*energyStored/energStorageMax
-       
-    # --> Instant >= 1 (Thermodynamic calculations)
-        else:
             
-            if DNI[i]>lim_inf_DNI :# Status: ON -> There's enough DNI to start the system
-               
-                if type_integration=="SL_L_PS":
-                    #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
-                    
-                    [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
-                    [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
-               
-                if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
-                    #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
-                    
-                    [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,flow_rate_design_kgs)
-
-                    #Storage control
-                    [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
-                    
-     
-                if type_integration=="SL_L_P" or type_integration=="PL_E_PM":     
-                    #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
-                    
-                    if fluidInput=="water":
-                        flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)#Not used, only for S_L_RF                  
-                         
-                    if fluidInput=="oil": 
-                        T_av_process_K=(T_out_process_K+T_in_process_K)/2
-                        [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
-                        flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) #Not used, only for S_L_RF         
-                    
-                    if fluidInput=="moltenSalt": 
-                        T_av_process_K=(T_out_process_K+T_in_process_K)/2
-                        [rho_av,Cp_av,k,Dv]=moltenSalt(T_av_process_K)    
-                        flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) #Not used, only for S_L_RF         
+        if DNI[i]>lim_inf_DNI :# Status: ON -> There's enough DNI to start the system
+           
+            if type_integration=="SL_L_PS":
+                #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
+                [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
+                [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
+           
+            elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+                #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
+                
+                [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,flow_rate_design_kgs)
+
+                #Storage control
+                [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
+                
+ 
+            elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":     
+                #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
+                
+                if fluidInput=="water":
+                    flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)#Not used, only for S_L_RF                  
+                     
+                if fluidInput=="oil": 
+                    T_av_process_K=(T_out_process_K+T_in_process_K)/2
+                    [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
+                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) #Not used, only for S_L_RF         
+                
+                if fluidInput=="moltenSalt": 
+                    T_av_process_K=(T_out_process_K+T_in_process_K)/2
+                    [rho_av,Cp_av,k,Dv]=moltenSalt(T_av_process_K)    
+                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) #Not used, only for S_L_RF         
+            
+                [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
+                [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                                    
+            elif type_integration=="SL_L_RF":            
+                #SL_L_RF Supply level with liquid heat transfer media return boost integration pg52 
+                
+                if fluidInput=="water":
+                    flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)                    
                     [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
-                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
-                                        
-                if type_integration=="SL_L_RF":            
-                    #SL_L_RF Supply level with liquid heat transfer media return boost integration pg52 
+                    if newBypass=="REC":
+                        flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating                         
+
+                    else:
+                        #HX simulation
+                        Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
+                        flowToHx[i]=Q_prodProcessSide/(hHX_out-hProcess_in)  
+                        Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
                     
-                    if fluidInput=="water":
-                        flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)                    
-                        [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
-                        if newBypass=="REC":
-                            flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating                         
-    
-                        else:
-                            #HX simulation
-                            Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
-                            flowToHx[i]=Q_prodProcessSide/(hHX_out-hProcess_in)  
-                            Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
-                        
-                        flowToMix[i]=flowDemand[i]-flowToHx[i]
-                        if flowToHx[i]==0:
-                            T_toProcess_K[i]=T_in_process_K
-                        else:
-                            #Branch from HX to mix                        
-                            toMixstate=IAPWS97(P=P_op_Mpa, T=T_out_K[i]-DELTA_T_HX)
-                            #Mix
-                            T_av_HX_K=(T_in_process_K+T_out_HX_K)/2
-                            toProcessstate=IAPWS97(P=P_op_Mpa, T=T_av_HX_K)
-                            
-                            if flowDemand[i]==0: #If there's no demand then T_toProcss_C[i]=0
-                                T_toProcess_C[i]=0
-                            else:
-                                T_toProcess_C[i]=(flowToMix[i]*hProcess_in+flowToHx[i]*toMixstate.h)/(flowDemand[i]*toProcessstate.cp)
-                        T_toProcess_K[i]=T_toProcess_K[i]+273
-                        [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
-                    
-                    else: 
-                        
-                        [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
-                        flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) 
-                                                                                                                                    
-                        [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
-                        
-                        if newBypass=="REC":
-                            flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating                         
-                        else:
-                            #HX simulation
-                            Q_prodProcessSide=Q_prod[i]*HX_eff
-                            Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
-                            flowToHx[i]=Q_prodProcessSide/(Cp_av*(T_out_HX_K-T_in_process_K))
-                            
-                        flowToMix[i]=flowDemand[i]-flowToHx[i]
-                        #Exit of the heat Echanger
-                        [rho_toHX,Cp_toHX,k_toHX,Dv_toHX,Kv_toHX,thermalDiff_toHX,Prant_toHX]=thermalOil(T_out_HX_K)                    
-                        #Brach to mix
-                        [rho_toMix,Cp_toMix,k_toMix,Dv_toMix,Kv_toMix,thermalDiff_toMix,Prant_toMix]=thermalOil(T_in_process_K)    
+                    flowToMix[i]=flowDemand[i]-flowToHx[i]
+                    if flowToHx[i]==0:
+                        T_toProcess_K[i]=T_in_process_K
+                    else:
+                        #Branch from HX to mix                        
+                        toMixstate=IAPWS97(P=P_op_Mpa, T=T_out_K[i]-DELTA_T_HX)
                         #Mix
-                        #T_av_HX_K=(T_in_process_K+T_out_HX_K)/2 #Ok when are more or less the same flowrate
-                        T_av_HX_K=T_in_process_K*(flowToMix[i]/flowDemand[i])+T_out_HX_K*(flowToHx[i]/flowDemand[i]) #When temperatures are very different            
-                        [rho_av_HX,Cp_av_HX,k_av_HX,Dv_av_HX,Kv_av_HX,thermalDiff_av_HX,Prant_av_HX]=thermalOil(T_av_HX_K)    
-                        if flowToHx[i]==0:
-                            T_toProcess_K[i]=T_in_process_K
+                        T_av_HX_K=(T_in_process_K+T_out_HX_K)/2
+                        toProcessstate=IAPWS97(P=P_op_Mpa, T=T_av_HX_K)
+                        
+                        if flowDemand[i]==0: #If there's no demand then T_toProcss_C[i]=0
+                            T_toProcess_C[i]=0
                         else:
-                            T_toProcess_K[i]=(flowToMix[i]*Cp_toMix*T_in_process_K+flowToHx[i]*Cp_toHX*T_out_HX_K)/(flowDemand[i]*Cp_av_HX)
-                        T_toProcess_C[i]=T_toProcess_K[i]-273                      
-                        [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
-    
-                if type_integration=="SL_S_FW":
-                    #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage              
-                    
-                    [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
-                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand2[i])
-                
-                if type_integration=="SL_S_FWS":
-                    #SL_S_FW Supply level with steam for solar heating of boiler feed water with storage  
-                    
-                    [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
-                    [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand2[i],energStorageMax)     
-                
-                if type_integration=="SL_S_PD":
-                    #SL_S_PD Supply level with steam for direct steam generation
-                    
-                    [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
+                            T_toProcess_C[i]=(flowToMix[i]*hProcess_in+flowToHx[i]*toMixstate.h)/(flowDemand[i]*toProcessstate.cp)
+                    T_toProcess_K[i]=T_toProcess_K[i]+273
                     [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                
+                else: 
+                    
+                    [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
+                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) 
+                                                                                                                                
+                    [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
+                    
+                    if newBypass=="REC":
+                        flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating                         
+                    else:
+                        #HX simulation
+                        Q_prodProcessSide=Q_prod[i]*HX_eff
+                        Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
+                        flowToHx[i]=Q_prodProcessSide/(Cp_av*(T_out_HX_K-T_in_process_K))
+                        
+                    flowToMix[i]=flowDemand[i]-flowToHx[i]
+                    #Exit of the heat Echanger
+                    [rho_toHX,Cp_toHX,k_toHX,Dv_toHX,Kv_toHX,thermalDiff_toHX,Prant_toHX]=thermalOil(T_out_HX_K)                    
+                    #Brach to mix
+                    [rho_toMix,Cp_toMix,k_toMix,Dv_toMix,Kv_toMix,thermalDiff_toMix,Prant_toMix]=thermalOil(T_in_process_K)    
+                    #Mix
+                    #T_av_HX_K=(T_in_process_K+T_out_HX_K)/2 #Ok when are more or less the same flowrate
+                    T_av_HX_K=T_in_process_K*(flowToMix[i]/flowDemand[i])+T_out_HX_K*(flowToHx[i]/flowDemand[i]) #When temperatures are very different            
+                    [rho_av_HX,Cp_av_HX,k_av_HX,Dv_av_HX,Kv_av_HX,thermalDiff_av_HX,Prant_av_HX]=thermalOil(T_av_HX_K)    
+                    if flowToHx[i]==0:
+                        T_toProcess_K[i]=T_in_process_K
+                    else:
+                        T_toProcess_K[i]=(flowToMix[i]*Cp_toMix*T_in_process_K+flowToHx[i]*Cp_toHX*T_out_HX_K)/(flowDemand[i]*Cp_av_HX)
+                    T_toProcess_C[i]=T_toProcess_K[i]-273                      
+                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+
+            elif type_integration=="SL_S_FW":
+                #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage              
+                
+                [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
+                [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand2[i])
             
-            else: # Status: OFF -> There's not enough DNI to put the solar plant in production     
+            elif type_integration=="SL_S_FWS":
+                #SL_S_FW Supply level with steam for solar heating of boiler feed water with storage  
                 
-                if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
-                    #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
-
-                    [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i],T_alm_K[i],storage_energy[i]]=offOnlyStorageSimple(T_alm_K[i-1],energStorageMax,energyStored,T_alm_K[i-1],storage_energy[i-1],SOC[i-1]) 
-                    if Demand[i]>0:
-                        [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)           
-                    
-                            
-                if type_integration=="SL_L_PS":
-                    #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
-                    
-                    [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
-                    if Demand[i]>0:
-                        [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
-                   
-                if type_integration=="SL_L_P" or type_integration=="PL_E_PM" or type_integration=="SL_L_RF":
-                    #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
-                    
-                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
-
-                if type_integration=="SL_S_FW":
-                    #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage 
-                    
-                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
-                    
-                if type_integration=="SL_S_FWS":
-                    #SL_S_FWS Supply level with steam for solar heating of boiler feed water with storage 
-                    
-                    [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
-                    if Demand2[i]>0:
-                        [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand2[i],energStorageMax)                         
+                [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
+                [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand2[i],energStorageMax)     
+            
+            elif type_integration=="SL_S_PD":
+                #SL_S_PD Supply level with steam for direct steam generation
                 
-                if type_integration=="SL_S_PD":
-                    #SL_S_PD Supply level with steam for direct steam generation
-                    
-                    [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+                [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
+                [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+        
+        else: # Status: OFF -> There's not enough DNI to put the solar plant in production     
+            
+            if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+                #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
+
+                [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i],T_alm_K[i],storage_energy[i]]=offOnlyStorageSimple(T_alm_K[i-1],energStorageMax,energyStored,T_alm_K[i-1],storage_energy[i-1],SOC[i-1]) 
+                if Demand[i]>0:
+                    [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)           
+                
+                        
+            elif type_integration=="SL_L_PS":
+                #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
+                
+                [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
+                if Demand[i]>0:
+                    [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
+               
+            elif type_integration=="SL_L_P" or type_integration=="PL_E_PM" or type_integration=="SL_L_RF":
+                #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
+                
+                [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+
+            elif type_integration=="SL_S_FW":
+                #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage 
+                
+                [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+                
+            elif type_integration=="SL_S_FWS":
+                #SL_S_FWS Supply level with steam for solar heating of boiler feed water with storage 
+                
+                [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
+                if Demand2[i]>0:
+                    [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand2[i],energStorageMax)                         
+            
+            elif type_integration=="SL_S_PD":
+                #SL_S_PD Supply level with steam for direct steam generation
+                
+                [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
     
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
@@ -1280,12 +1280,11 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 #(9) NA- Plot Storage non-annual simulation 
 #(10) P- Mollier Plot for s-t for Water
 #(11) P- Mollier Plot for s-h for Water
-#(12) P- Plot thermal oil properties Rho & Cp vs Temp
-#(13) P- Plot thermal oil properties Viscosities vs Temp 
+#(12) P- Plot thermal oil/molten salt properties Rho & Cp vs Temp
+#(13) P- Plot thermal oil/molten salt properties Viscosities vs Temp 
 #(14) Plot Production 
 #(15) A- Plot Month savings 
-#(16) P- Plot thermal oil properties Rho & Cp vs Temp
-#(17) P- Plot thermal oil properties Viscosities vs Temp 
+
 
 
 finance_study=1
@@ -1339,5 +1338,5 @@ else:
     last_reg=inputsDjango['last_reg']
     
 
-#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
