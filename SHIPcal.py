@@ -151,8 +151,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## PROCESS
         fluidInput=inputs['fluid'] #Type of fluid 
-        T_out_C=inputs['outletTemp'] #High temperature [ºC]
-        T_in_C=inputs['inletTemp'] #Low temperature [ºC]
+        T_process_in=inputs['outletTemp'] #HIGH - Process temperature [ºC]
+        T_process_out=inputs['inletTemp'] #LOW - Temperature at the return of the process [ºC]
         P_op_bar=P_op_bar #[bar]
             
         ## FINANCE
@@ -178,8 +178,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         ## PROCESS
         fluidInput=inputsDjango['fluid'] #Type of fluid 
-        T_out_C=inputsDjango['tempOUT'] #High temperature [ºC]
-        T_in_C=inputsDjango['tempIN'] #Low temperature [ºC]
+        T_process_in=inputsDjango['tempOUT'] #HIGH - Process temperature [ºC]
+        T_process_out=inputsDjango['tempIN'] #LOW - Temperature at the return of the process [ºC]
         #P_op_bar=P_op_bar #[bar]
         
         ## FINANCE
@@ -206,8 +206,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## PROCESS
         fluidInput=inputs['fluid'] #Type of fluid 
-        T_out_C=inputs['outletTemp'] #High temperature [ºC]
-        T_in_C=inputs['inletTemp'] #Low temperature [ºC]
+        T_process_in=inputs['outletTemp'] #HIGH - Process temperature [ºC]
+        T_process_out=inputs['inletTemp'] #LOW - Temperature at the return of the process [ºC]
         P_op_bar=P_op_bar #[bar]
             
         ## FINANCE
@@ -239,8 +239,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## PROCESS
         fluidInput="moltenSalt" #"water" "steam" "oil" "moltenSalt"
-        T_out_C=560 #High temperature [ºC]
-        T_in_C=270 #Low temperature [ºC]
+        T_process_in=560 #HIGH - Process temperature [ºC]
+        T_process_out=270 #LOW - Temperature at the return of the process [ºC]
         P_op_bar=6 #[bar] 
         
         # Not implemented yet
@@ -376,9 +376,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     shadowInput="free"
     terreno="clean_ground"
 
-    beta=0 #Inclination not implemented [-]
-    orient_az_rad=0 #Orientation not implemented [-]
-    roll=0 #Roll not implemented [-]
+    beta=0 #Pitch not implemented [rad]
+    orient_az_rad=0 #Orientation not implemented [rad]
+    roll=0 #Roll not implemented [rad]
        
     
 
@@ -424,7 +424,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     if type_integration=="SL_L_RF": 
 
 
-        P_op_Mpa=P_op_bar/10
+        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+
         
         T_in_K=T_in_C+273
         T_in_process_C=T_in_C
@@ -470,8 +473,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     if type_integration=="SL_L_P" or type_integration=="PL_E_PM":   
         
-        P_op_Mpa=P_op_bar/10
-
+        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        
         T_in_K=T_in_C+273
         T_in_process_C=T_in_C
         T_in_process_K=T_in_K
@@ -504,7 +509,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
 
-        P_op_Mpa=P_op_bar/10
+        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        
+        
         T_in_K=T_in_C+273
         T_ini_storage=T_in_K #Initial temperature of the storage
         
@@ -599,7 +608,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     if type_integration=="SL_L_PS":
         
-        P_op_Mpa=P_op_bar/10
+        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+
         
         T_in_K=T_in_C+273
         
@@ -644,7 +656,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     if type_integration=="SL_S_FW":
  
         
-        P_op_Mpa=P_op_bar/10
+        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+
 
         energStorageMax=0 #kWh
         energyStored=0 #kWh
@@ -673,8 +688,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     if type_integration=="SL_S_FWS":
         
-        P_op_Mpa=P_op_bar/10
-        
+        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+              
         T_out_K=IAPWS97(P=P_op_Mpa, x=0).T #Heating point
         T_out_C=T_out_K-273 
         
@@ -720,9 +736,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     if type_integration=="SL_S_PD":
         
-        
+        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+       
         x_design=0.4
-        P_op_Mpa=P_op_bar/10
+
         almVolumen=0 #litros
         energStorageMax=0 #kWh
         energyStored=0 #kWh
@@ -797,7 +815,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     bypass.append("OFF")
     Q_prod[0]=0
     T_in_K[0]=temp[0] #Ambient temperature 
-    T_out_K[0]=0+273
+    T_out_K[0]=temp[0] #Ambient temperature 
     if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
         T_alm_K[0]=T_ini_storage
         storage_energy[0]=storage_ini_energy
