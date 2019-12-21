@@ -229,16 +229,18 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif origin==0:  #Simulation called from Python file (called from the terminal)
         
         ## ENERGY DEMAND
-        dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
+#        dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
+        dayArray=[1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24] #24 hours day profile
+       
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=12780000 #[kWh]
+        totalConsumption=1500*8760 #[kWh]
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         
         ## PROCESS
-        fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
-        T_out_C=120 #High temperature [ºC]
-        T_in_C=60 #Low temperature [ºC]
+        fluidInput="moltenSalt" #"water" "steam" "oil" "moltenSalt"
+        T_out_C=560 #High temperature [ºC]
+        T_in_C=270 #Low temperature [ºC]
         P_op_bar=6 #[bar] 
         
         # Not implemented yet
@@ -1193,6 +1195,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
         if plots[13]==1:
             viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
+    if fluidInput=="moltenSalt": 
+        if plots[12]==1:
+            rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
+        if plots[13]==1:
+            viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
+
+
     
     # Other plots
     if plots[14]==1: #(14) Plot Production
@@ -1275,16 +1284,18 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 #(13) P- Plot thermal oil properties Viscosities vs Temp 
 #(14) Plot Production 
 #(15) A- Plot Month savings 
+#(16) P- Plot thermal oil properties Rho & Cp vs Temp
+#(17) P- Plot thermal oil properties Viscosities vs Temp 
 
 
 finance_study=1
 
-mes_ini_sim=1
-dia_ini_sim=1
+mes_ini_sim=6
+dia_ini_sim=4
 hora_ini_sim=1
 
-mes_fin_sim=12
-dia_fin_sim=31
+mes_fin_sim=6
+dia_fin_sim=8
 hora_fin_sim=24
 
 
@@ -1295,8 +1306,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=2 
-n_coll_loop=16
+num_loops=8 
+n_coll_loop=20
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1306,8 +1317,8 @@ n_coll_loop=16
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_S_FWS"
-almVolumen=100000 #litros
+type_integration="SL_L_PS"
+almVolumen=10000 #litros
 
 # --------------------------------------------------
 confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
@@ -1316,7 +1327,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
 # ---------------------------------------------------
 
-origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
+origin=0 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs

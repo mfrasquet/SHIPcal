@@ -11,7 +11,7 @@ from matplotlib.sankey import Sankey
 import numpy as np
 import pandas as pd
 from iapws import IAPWS97
-from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,thermalOil
+from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,thermalOil,moltenSalt
 import io
 import base64
 import os
@@ -473,7 +473,59 @@ def demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_pro
         return image_base64
     if origin==-1:
         fig.savefig(str(plotPath)+'demandProduction.png', format='png', dpi=imageQlty)
+
+def rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty):    
+    rhoList=[]
+    CpList=[]
+    T_step=[]
+    for T in range(100+273,600+273,5):
+        T_step.append(T-273)
+        [rho,Cp,k,Dv]=moltenSalt(T)
+        rhoList.append(rho)
+        CpList.append(Cp)
     
+    fig = plt.figure()
+    if origin==-2:
+        fig.patch.set_alpha(0)
+    if lang=="spa":     
+        fig.suptitle('Propiedades de las sales fundidas', fontsize=14, fontweight='bold')
+        ax1 = fig.add_subplot(111)  
+        ax1 .plot(np.arange(len(rhoList)), rhoList,'.k-',label="Densidad")
+        [rho,Cp,k,Dv]=moltenSalt(T_out_C+273)
+        plt .hlines(y=rho,xmin=0,xmax=min(range(len(rhoList)), key=lambda i: abs(rhoList[i]-rho)),color="#362510",linewidth=1,zorder=0)
+        plt .axvline(x=min(range(len(rhoList)), key=lambda i: abs(rhoList[i]-rho)),c="r")  
+        ax1.set_xlabel('Temperatura ºC')
+        ax1.set_ylabel('Densidad - kg/m3')
+        ax2 = ax1.twinx()          
+        ax2 .plot(np.arange(len(rhoList)), CpList,'.b-',label="Calor específico")
+        ax2.set_ylabel('Calor Específico - KJ/kgK', color="blue")
+        plt.xticks(list(np.arange(len(rhoList)))[1::8], T_step[1::8])  
+        plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
+    if lang=="eng":
+        fig.suptitle('Molten Salt properties', fontsize=14, fontweight='bold')
+        ax1 = fig.add_subplot(111)  
+        ax1 .plot(np.arange(len(rhoList)), rhoList,'.k-',label="Density")
+        [rho,Cp,k,Dv]=moltenSalt(T_out_C+273)
+        plt .hlines(y=rho,xmin=0,xmax=min(range(len(rhoList)), key=lambda i: abs(rhoList[i]-rho)),color="#362510",linewidth=1,zorder=0)
+        plt .axvline(x=min(range(len(rhoList)), key=lambda i: abs(rhoList[i]-rho)),c="r")  
+        ax1.set_xlabel('Temperature ºC')
+        ax1.set_ylabel('Density - kg/m3')
+        ax2 = ax1.twinx()          
+        ax2 .plot(np.arange(len(rhoList)), CpList,'.b-',label="Specific heat")
+        ax2.set_ylabel('Specific heat - lKJ/kgK', color="blue")
+        plt.xticks(list(np.arange(len(rhoList)))[1::8], T_step[1::8])  
+        plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
+
+    
+    if origin==-2:
+        f = io.BytesIO()           # Python 3
+        plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
+        plt.clf()
+        image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
+        f.close()
+        return image_base64
+    if origin==-1:
+        fig.savefig(str(plotPath)+'Salt.png', format='png', dpi=imageQlty)    
 
 def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):    
     rhoList=[]
@@ -499,7 +551,7 @@ def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):
         ax1.set_ylabel('Densidad - kg/m3')
         ax2 = ax1.twinx()          
         ax2 .plot(np.arange(len(rhoList)), CpList,'.b-',label="Calor específico")
-        ax2.set_ylabel('Calor Específico - lKJ/kgK', color="blue")
+        ax2.set_ylabel('Calor Específico - KJ/kgK', color="blue")
         plt.xticks(list(np.arange(len(rhoList)))[1::8], T_step[1::8])  
         plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
     if lang=="eng":
@@ -513,7 +565,7 @@ def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):
         ax1.set_ylabel('Density - kg/m3')
         ax2 = ax1.twinx()          
         ax2 .plot(np.arange(len(rhoList)), CpList,'.b-',label="Specific heat")
-        ax2.set_ylabel('Specific heat - lKJ/kgK', color="blue")
+        ax2.set_ylabel('Specific heat - KJ/kgK', color="blue")
         plt.xticks(list(np.arange(len(rhoList)))[1::8], T_step[1::8])  
         plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
@@ -528,6 +580,55 @@ def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):
     if origin==-1:
         fig.savefig(str(plotPath)+'Oil.png', format='png', dpi=imageQlty)
 
+def viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty): 
+    DvList=[]
+    T_step=[]
+    for T in range(100+273,600+273,5):
+        T_step.append(T-273)
+        [rho,Cp,k,Dv]=moltenSalt(T)
+        DvList.append(Dv*1e3)
+    
+    DvList=DvList[4:]
+    fig = plt.figure()
+    if origin==-2:
+        fig.patch.set_alpha(0)
+    if lang=="spa":    
+        fig.suptitle('Viscosidad de las sales fudidas', fontsize=14, fontweight='bold')
+        
+        ax1 = fig.add_subplot(111)  
+        ax1 .plot(np.arange(len(DvList)), DvList,'.k-',label="Viscosidad dinámica")
+        
+        [rho,Cp,k,Dv]=moltenSalt(T_out_C+273)
+        plt .hlines(y=Dv*1e3,xmin=0,xmax=min(range(len(DvList)), key=lambda i: abs(DvList[i]-Dv*1e3)),color="#362510",linewidth=1,zorder=0)
+        plt .axvline(x=min(range(len(DvList)), key=lambda i: abs(DvList[i]-Dv*1e3)),c="r")  
+        ax1.set_xlabel('Temperatura ºC')
+        ax1.set_ylabel('Viscosidad dinámica*1e3  - Ns/m2')
+        ax1.set_yscale('log')
+        plt.xticks(list(np.arange(len(DvList)))[1::8], T_step[1::8]) 
+     
+    if lang=="eng":
+        fig.suptitle('Molten Salt Viscosity', fontsize=14, fontweight='bold')
+        
+        ax1 = fig.add_subplot(111)  
+        ax1 .plot(np.arange(len(DvList)), DvList,'.k-',label="Dynamic viscosity")
+        
+        [rho,Cp,k,Dv]=moltenSalt(T_out_C+273)
+        plt .hlines(y=Dv*1e3,xmin=0,xmax=min(range(len(DvList)), key=lambda i: abs(DvList[i]-Dv*1e3))+4,color="#362510",linewidth=1,zorder=0)
+        plt .axvline(x=min(range(len(DvList)), key=lambda i: abs(DvList[i]-Dv*1e3))+4,c="r")  
+        ax1.set_xlabel('Temperature ºC')
+        ax1.set_ylabel('Dynamic viscosity*1e3  - Ns/m2')
+        ax1.set_yscale('log')
+           
+    if origin==-2:
+        f = io.BytesIO()           # Python 3
+        plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
+        plt.clf()
+        image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
+        f.close()
+        return image_base64
+    if origin==-1:
+        fig.savefig(str(plotPath)+'Salt2.png', format='png', dpi=imageQlty)
+        
 def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty): 
     DvList=[]
     KvList=[]
