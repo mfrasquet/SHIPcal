@@ -6,7 +6,7 @@ Archivo que contiene las funciones de ITERACION
 @author: Miguel Frasquet
 """
 from Collector_modules.receivers import Rec_loss
-from General_modules.func_General import thermalOil
+from General_modules.func_General import thermalOil,moltenSalt
 from iapws import IAPWS97
 
 def IT_flow (T_out_K,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop):
@@ -36,7 +36,7 @@ def IT_flow (T_out_K,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IA
         
     return [flow_rate_kgs,T_out_K,Q_loss_rec]
     
-def IT_temp(T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0):    
+def IT_temp(fluidInput,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate,rho_optic_0):    
     T_outlet_KX=999
     for jj in range(1,202):
         if jj>=200: #Si no llegamos a convergencia después de 200 iteraciones paramos
@@ -51,47 +51,28 @@ def IT_temp(T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_
             break
         
         T_av_K=(T_outlet_KX+T_in_K)/2
-        average=IAPWS97(P=P_op_Mpa, T=T_av_K)
-        Cp_av_KJkgK=average.cp
+        
+        if fluidInput=="water" or fluidInput=="steam":
+            average=IAPWS97(P=P_op_Mpa, T=T_av_K)
+            Cp_av_KJkgK=average.cp
+        if fluidInput=="oil":
+            [rho_av,Cp_av_KJkgK,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
+        if fluidInput=="moltenSalt":
+            [rho,Cp_av_KJkgK,k,Dv]=moltenSalt(T_av_K)
+            
         
         DELTA_T_loss=T_outlet_KX-temp_amb_K
         [Q_loss_rec]=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI)
         if Q_loss_rec<=0:
             Q_loss_rec=0
         
-        gain=(DNI*Area*IAM*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/(flow_rate_rec*Cp_av_KJkgK*1000) #In W
+        gain=(DNI*Area*IAM*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/(flow_rate*Cp_av_KJkgK*1000) #In W
         if jj<2 and gain<0: #To avoid iteration errors at the very beigning
             gain=0
         T_outlet_K=T_in_K+gain
     Perd_termicas=Q_loss_rec*n_coll_loop*Long 
     return[T_outlet_K,Perd_termicas]
 
-def IT_tempOil(T_in_K,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0):    
-    T_outlet_KX=999
-    for jj in range(1,202):
-        if jj>=200: #Si no llegamos a convergencia después de 200 iteraciones paramos
-            break
-        if jj==1:
-            err=99;
-        else:
-            err=(T_outlet_KX-T_outlet_K)/T_outlet_K
-            T_outlet_KX=T_outlet_K
-        
-        if abs(err)<=1e-4: #Si el error de convergencia es suficientemente bajo salimos del bucle
-            break
-        
-        T_av_K=(T_outlet_KX+T_in_K)/2
-        [rho_av,Cp_av_KJkgK,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
-        
-        DELTA_T_loss=T_outlet_KX-temp_amb_K
-        [Q_loss_rec]=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI)
-        if Q_loss_rec<=0:
-            Q_loss_rec=0
-        
-        T_outlet_K=T_in_K+(DNI*Area*IAM*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/(flow_rate_rec*Cp_av_KJkgK*1000) #In W 
-    Perd_termicas=Q_loss_rec*n_coll_loop*Long 
-    return[T_outlet_K,Perd_termicas]
-    
 
 def flow_calc (T_out_K,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0):
     T_av_K=(T_in_K+T_out_K)/2
@@ -105,7 +86,7 @@ def flow_calc (T_out_K,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,
     Perd_termicas=Q_loss_rec*n_coll_loop*Long     
     return [flow_rate_kgs,Perd_termicas]
 
-def flow_calcOil (T_out_K,T_in_K,Cp_av,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0):
+def flow_calcHTF (T_out_K,T_in_K,Cp_av,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0):
     
     DELTA_T_loss=T_out_K-temp_amb_K
     [Q_loss_rec]=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI) #W/m
