@@ -144,8 +144,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
              
         ## ENERGY DEMAND
         [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
-        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
-       
+        # file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_sin.csv", sep=',')   
+
+        
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
         
@@ -1356,5 +1358,5 @@ else:
     last_reg=inputsDjango['last_reg']
     
 
-[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+# [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
