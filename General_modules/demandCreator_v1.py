@@ -43,3 +43,9 @@ def demandCreator(totalConsumption,dayArray,weekArray,monthArray):
     annualHourly=np.multiply(totalConsumption_normailized,weight_of_hours_in_year) #Obtains the energy required for every hour in the year.
         
     return (annualHourly)
+
+# totalConsumption=969485
+# dayArray=[0.0009,0.0000,0.0000,0.0030,0.0083,0.0336,0.0692,0.0838,0.0776,0.0652,0.0686,0.0775,0.0774,0.0641,0.0602,0.0581,0.0541,0.0354,0.0400,0.0422,0.0431,0.0312,0.0040,0.0024]
+# weekArray=[1/7,1/7,1/7,1/7,1/7,1/7,1/7]
+# monthArray=[0.0468410773,0.03631628758,0.0803748871,0.0803748871,0.0803748871,0.09778113156,0.1127425776,0.1302037512,0.1238121566,0.1098808577,0.0572875254,0.0440099737]
+# annualHourly=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
