@@ -441,11 +441,12 @@ def demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_pro
         ax1 .axhline(y=0,xmin=0,xmax=steps_sim,c="blue",linewidth=0.5,zorder=0)
         ax1.set_xlabel('simulación (hora del año)')
         ax1.set_ylabel('Demanda - kWh',color="blue")
-        ax1.set_ylim([0,np.max(Demand)*1.2])
+        ax1.set_ylim([0,max(np.max(Q_prod),np.max(Demand))*1.2])
         plt.legend(loc='upper left', borderaxespad=0.)
         ax2 = ax1.twinx()          
         ax2 .plot(step_sim, DNI,'.-',color = 'red',label="DNI")
         ax2.set_ylabel('Radiación solar - W/m2',color='red')
+        ax2.set_ylim([0,np.max(DNI)*1.2])
         plt.legend(loc='upper right', borderaxespad=0.)
     if lang=="eng":
         fig.suptitle('Demand vs Solar Radiation', fontsize=14, fontweight='bold')
@@ -706,6 +707,7 @@ def flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,n
     ax1 .plot(step_sim, flowToHx,'.y-',label="Caudal flowToHx")
     ax1 .plot(step_sim, flowToMix,'.g-',label="Caudal flowToMix")
     ax1 .axhline(y=m_dot_min_kgs,xmin=0,xmax=steps_sim,c="black",linewidth=0.5,zorder=0)
+    ax1.set_ylim([0,(np.max(flow_rate_kgs*num_loops))*1.1])
     ax1.set_xlabel('simulación (hora del año)')
     ax1.set_ylabel('Caudal - kg/s')
     plt.legend(bbox_to_anchor=(1.15, .5), loc=2, borderaxespad=0.)
@@ -1110,7 +1112,7 @@ def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,
     plt.bar(step_sim, Q_discharg,color = '#2EAD23',label="Descarga",bottom=Q_prod,align='center')
      
     ax1.set_ylabel('Producción & Demanda - kWh')
-    ax1.set_ylim([0,np.max(Q_prod)*2])
+    ax1.set_ylim([0,max(np.max(Q_prod),np.max(Demand))*1.2])
     ax1.set_xlim([0,steps_sim])
 
     plt.legend(loc='upper left', borderaxespad=0.)
