@@ -223,8 +223,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             
             #>> ENERGY DEMAND
        
-#        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
-        file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
+        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+#        file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
 
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
