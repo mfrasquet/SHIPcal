@@ -223,8 +223,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             
             #>> ENERGY DEMAND
        
-        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
-#        file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
+#        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
 
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
@@ -369,7 +369,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Energy_Before=DemandData(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim) # [kWh]
     Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
     Demand=Boiler_eff*Energy_Before #Demand of energy after the boiler [kWh]
-
+    
     
     if co2TonPrice>0:
         CO2=1 #Flag to take into account co2 savings in terms of cost per ton emitted
@@ -1465,5 +1465,5 @@ else:
     last_reg=inputsDjango['last_reg']
     
 
-[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
