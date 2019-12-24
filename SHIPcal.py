@@ -90,21 +90,31 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #-->  Simulation length
     
     # Initial step of the simulation
-    mes_ini_sim=simControl['mes_ini_sim']   # Month in which the simulation starts 
-    dia_ini_sim=simControl['dia_ini_sim']   # Day in which the simulation starts 
-    hora_ini_sim=simControl['hora_ini_sim'] # Hour in which the simulation starts 
+    month_ini_sim=simControl['mes_ini_sim']   # Month in which the simulation starts 
+    day_ini_sim=simControl['dia_ini_sim']   # Day in which the simulation starts 
+    hour_ini_sim=simControl['hora_ini_sim'] # Hour in which the simulation starts 
     
     # Final step of the simulation
-    mes_fin_sim=simControl['mes_fin_sim']   # Month in which the simulation ends
-    dia_fin_sim=simControl['dia_fin_sim']   # Day in which the simulation ends
-    hora_fin_sim=simControl['hora_fin_sim'] # Hour in which the simulation ends
+    month_fin_sim=simControl['mes_fin_sim']   # Month in which the simulation ends
+    day_fin_sim=simControl['dia_fin_sim']   # Day in which the simulation ends
+    hour_fin_sim=simControl['hora_fin_sim'] # Hour in which the simulation ends
     
     #%%
     # BLOCK 1.2 - PARAMETERS <><><><><><><><><><><><><><><><><><><><><><><><><><><>
     
     #--> Finance parameters
-    fuelIncremento=3.5 # Annual increase of fuel price [%]
-    n_years_sim=25 # Number of years for the simulation [years]
+    fuelCostRaise=3.5 # Annual increase of fuel price [%]
+    
+    # Annual increase of the price of money through Consumer Price Index [%]
+    if sender == 'CIMAV':
+        CPI=5 # 5 for México
+    else:
+        CPI=2.5 # 2.5 for Spain 
+        
+    costRaise=CPI/100+fuelCostRaise/100
+    
+    n_years_sim=25 # Collector life in years & number of years for the simulation [years]
+    
     
     #--> Process parameters
     
@@ -123,171 +133,19 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     
     #%%
-    # BLOCK 1.3 - SIMULATION VARIABLES <><><><><><><><><><><><><><><><><><><><><><><><><><><>    
+    # BLOCK 1.3 - SYSTEM VARIABLES <><><><><><><><><><><><><><><><><><><><><><><><><><><>    
     
     #--> Simulation modifiers (useful to control extraordinary situations)
     mofINV=modificators['mofINV'] # Investment modificator to include: Subsidies, extra-costs, etc. [-]
     mofDNI=modificators['mofDNI'] # DNI modificator to take into correct Meteonorm data if necessary [-] 
     mofProd=modificators['mofProd'] # Production modificator to include: Dusty environments, shadows, etc. [-]
     
+    
     # --> Solar field
     num_loops=desginDict['num_loops'] # Number of loops of the solar plant [-]
     n_coll_loop=desginDict['n_coll_loop'] # Number of modules connected in series per loop [-]
     
-    # --> Balance of plant
-    type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
-    almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
-    
-    # --> User inputs (from front-end)
-    
-    if origin==-2: #Simulation called from front-end -> www.ressspi.com
-             
-        ## ENERGY DEMAND
-        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
-        # file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
-        file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_sin.csv", sep=',')   
-
-        
-        arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
-        inputs.update(arraysConsumption)
-        
-        ## PROCESS
-        fluidInput=inputs['fluid'] #Type of fluid 
-        T_process_in=inputs['outletTemp'] #HIGH - Process temperature [ºC]
-        T_process_out=inputs['inletTemp'] #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=P_op_bar #[bar]
-            
-        ## FINANCE
-        businessModel=inputs['businessModel'] #Type of business model
-        fuel=inputs['currentFuel'] #Type of fuel used
-        Fuel_price=inputs['fuelPrice']   #Price of fossil fuel [€/kWh]
-        co2TonPrice=inputs['co2TonPrice'] #[€/ton]
-        co2factor=inputs['co2factor'] #[-]
-         
-        ## METEO
-        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
-        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
-        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
-        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
-        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
-    
-    elif origin==-3: #Simulation called from CIMAV's front end
-    
-        ## ENERGY DEMAND 
-        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
-        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
-       
-        ## PROCESS
-        fluidInput=inputsDjango['fluid'] #Type of fluid 
-        T_process_in=inputsDjango['tempOUT'] #HIGH - Process temperature [ºC]
-        T_process_out=inputsDjango['tempIN'] #LOW - Temperature at the return of the process [ºC]
-        #P_op_bar=P_op_bar #[bar]
-        
-        ## FINANCE
-        businessModel=inputsDjango['businessModel'] #Type of business model
-        fuel=inputsDjango['fuel'] #Type of fuel used
-        Fuel_price=inputsDjango['fuelPrice'] #Price of fossil fuel [mxn/kWh] transformed the units in the views.py
-        co2TonPrice= inputsDjango['co2TonPrice'] #[mxn/ton]
-        co2factor=inputsDjango['co2factor'] #[-]
-        
-        ## METEO
-        localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
-        file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
-        file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
-        Lat,Huso,Positional_longitude=Lat_Huso(file_loc) #Calls a function wich reads only the line where the Lat and Timezone is and gives back theit values for the right city
-
-    elif origin==1: #Simulation called from external front-end. Available from 1 to inf+
-             
-        ## ENERGY DEMAND
-        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
-        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
-       
-        arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
-        inputs.update(arraysConsumption)
-        
-        ## PROCESS
-        fluidInput=inputs['fluid'] #Type of fluid 
-        T_process_in=inputs['outletTemp'] #HIGH - Process temperature [ºC]
-        T_process_out=inputs['inletTemp'] #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=P_op_bar #[bar]
-            
-        ## FINANCE
-        businessModel=inputs['businessModel'] #Type of business model
-        fuel=inputs['currentFuel'] #Type of fuel used
-        Fuel_price=inputs['fuelPrice']   #Price of fossil fuel [€/kWh]
-        co2TonPrice=inputs['co2TonPrice'] #[€/ton]
-        co2factor=inputs['co2factor'] #[-]
-         
-        ## METEO (free available meteo sets)
-        locationFromFrontEnd=inputs['location']
-        
-        meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
-        file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
-        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
-                  
-    elif origin==0:  #Simulation called from Python file (called from the terminal)
-        
-        ## ENERGY DEMAND
-#        dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
-        dayArray=[1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24] #24 hours day profile
-       
-        weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
-        monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=1500*8760 #[kWh]
-        file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
-        
-        ## PROCESS
-        fluidInput="moltenSalt" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=560 #HIGH - Process temperature [ºC]
-        T_process_out=270 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=6 #[bar] 
-        
-        # Not implemented yet
-        distanceInput=15 #From the solar plant to the network integration point [m]
-        surfaceAvailable=500 #Surface available for the solar plant [m2]
-        
-        ## FINANCE
-        businessModel="turnkey"
-        fuel="Gasoil-B" #Type of fuel
-        Fuel_price=0.05 #Price of fossil fuel [€/kWh]
-        co2TonPrice=0 #[€/TonCo2]
-        co2factor=1 #Default value 1, after it will be modified [-]
-
-        ## METEO
-        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
-            meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
-            file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
-            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
-        else:
-            meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
-            file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
-            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
-     
-        #CO2 factors of the different fuels availables (Usually it is taken care by the front-end but here, since the simulation is not called from a front-end, it has to be calculated)
-        if fuel in ["NG","LNG"]:
-            co2factor=.2/1000 #[TonCo2/kWh]  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
-        if fuel in ['Fueloil2','Fueloil3','Gasoil-B','Gasoil-C']:
-            co2factor=.27/1000 #[TonCo2/kWh]       #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html    
-        if fuel in ['Electricity']:
-            co2factor=.385/1000 #[TonCo2/kWh]  #https://www.eia.gov/tools/faqs/faq.php?id=74&t=11
-        if fuel in ['Propane','Butane','Air-propane']:
-            co2factor=.22/1000 #[TonCo2/kWh]    #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html  
-        if fuel in ['Biomass']:
-            co2factor=.41/1000 #[TonCo2/kWh]  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
-
-    #Demand of energy before the boiler
-    Energy_Before=DemandData(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim) # [kWh]
-    Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
-    Demand=Boiler_eff*Energy_Before #Demand of energy after the boiler [kWh]
-
-
-    # --> Solar collector 
+        ## --> Solar collector 
         
     if sender=='solatom': #Using Solatom Collector
         
@@ -325,24 +183,204 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Area_total=Area*num_loops #Total area of aperture [m²] Used later
     num_modulos_tot=n_coll_loop*num_loops
     
-    # --> Financial variables
-
-    # Annual increase of the price of money [%]
-    if sender == 'CIMAV':
-        IPC=5 # 5 for México
-    else:
-        IPC=2.5 # 2.5 for Spain 
+        ## --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
         
-    incremento=IPC/100+fuelIncremento/100
+    orientation="NS"
+    inclination="flat" 
+    shadowInput="free"
+    terreno="clean_ground"
+
+    beta=0 #Pitch not implemented [rad]
+    orient_az_rad=0 #Orientation not implemented [rad]
+    roll=0 #Roll not implemented [rad]
+
+    
+    # --> Front-end inputs
+    
+    if origin==-2: #Simulation called from front-end -> www.ressspi.com
+        
+        #Retrieve front-end inputs
+        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
+         
+        ## METEO
+        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
+        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
+        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
+        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
+        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
+
+        ## INTEGRATION
+        type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
+        almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
+        
+        ## INDUSTRIAL APPLICATION
+            #>> PROCESS
+        fluidInput=inputs['fluid'] #Type of fluid 
+        T_process_in=inputs['outletTemp'] #HIGH - Process temperature [ºC]
+        T_process_out=inputs['inletTemp'] #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=P_op_bar #[bar]
+            
+            #>> ENERGY DEMAND
+       
+#        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
+
+        arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
+        inputs.update(arraysConsumption)
+            
+        ## FINANCE
+        businessModel=inputs['businessModel'] #Type of business model
+        fuel=inputs['currentFuel'] #Type of fuel used
+        Fuel_price=inputs['fuelPrice']   #Price of fossil fuel [€/kWh]
+        co2TonPrice=inputs['co2TonPrice'] #[€/ton]
+        co2factor=inputs['co2factor'] #[-]
+         
+    elif origin==-3: #Simulation called from CIMAV's front end
+        
+        #Retrieve front-end inputs
+        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
+        
+        ## METEO
+        localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
+        file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
+        file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
+        Lat,Huso,Positional_longitude=Lat_Huso(file_loc) #Calls a function wich reads only the line where the Lat and Timezone is and gives back theit values for the right city
+        
+        ## INTEGRATION
+        type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
+        almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
+        
+        ## INDUSTRIAL APPLICATION
+            #>> PROCESS
+        fluidInput=inputsDjango['fluid'] #Type of fluid 
+        T_process_in=inputsDjango['tempOUT'] #HIGH - Process temperature [ºC]
+        T_process_out=inputsDjango['tempIN'] #LOW - Temperature at the return of the process [ºC]
+        #P_op_bar=P_op_bar #[bar]
+        
+            #>> ENERGY DEMAND 
+        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+       
+        ## FINANCE
+        businessModel=inputsDjango['businessModel'] #Type of business model
+        fuel=inputsDjango['fuel'] #Type of fuel used
+        Fuel_price=inputsDjango['fuelPrice'] #Price of fossil fuel [mxn/kWh] transformed the units in the views.py
+        co2TonPrice= inputsDjango['co2TonPrice'] #[mxn/ton]
+        co2factor=inputsDjango['co2factor'] #[-]
+        
+    elif origin==1: #Simulation called from external front-end. Available from 1 to inf+
+        
+        #Retrieve front-end inputs 
+        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
+        
+        ## METEO (free available meteo sets)
+        locationFromFrontEnd=inputs['location']
+        
+        meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
+        file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
+        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        
+        ## INTEGRATION
+        type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
+        almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
+        
+        ## INDUSTRIAL APPLICATION
+            #>> PROCESS
+        fluidInput=inputs['fluid'] #Type of fluid 
+        T_process_in=inputs['outletTemp'] #HIGH - Process temperature [ºC]
+        T_process_out=inputs['inletTemp'] #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=P_op_bar #[bar]
+            
+            #>> ENERGY DEMAND
+        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+       
+        arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
+        inputs.update(arraysConsumption)
+            
+        ## FINANCE
+        businessModel=inputs['businessModel'] #Type of business model
+        fuel=inputs['currentFuel'] #Type of fuel used
+        Fuel_price=inputs['fuelPrice']   #Price of fossil fuel [€/kWh]
+        co2TonPrice=inputs['co2TonPrice'] #[€/ton]
+        co2factor=inputs['co2factor'] #[-]
+         
+                  
+    elif origin==0:  #Simulation called from Python file (called from the terminal)
+        
+        ## METEO
+        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
+        if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
+            meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
+            file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        else:
+            meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+            file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        
+        ## INTEGRATION
+        type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
+        almVolumen=desginDict['almVolumen'] # Storage capacity [litres]    
+        
+        ## INDUSTRIAL APPLICATION
+            #>> PROCESS
+        fluidInput="moltenSalt" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=560 #HIGH - Process temperature [ºC]
+        T_process_out=270 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=6 #[bar] 
+        
+        # Not implemented yet
+        distanceInput=15 #From the solar plant to the network integration point [m]
+        surfaceAvailable=500 #Surface available for the solar plant [m2]
+            
+        ## ENERGY DEMAND
+#        dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
+        dayArray=[1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24] #24 hours day profile
+       
+        weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
+        monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
+        totalConsumption=1500*8760 #[kWh]
+        file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
+        
+        ## FINANCE
+        businessModel="turnkey"
+        fuel="Gasoil-B" #Type of fuel
+        Fuel_price=0.05 #Price of fossil fuel [€/kWh]
+        co2TonPrice=0 #[€/TonCo2]
+        co2factor=1 #Default value 1, after it will be modified [-]
+
+        #CO2 factors of the different fuels availables (Usually it is taken care by the front-end but here, since the simulation is not called from a front-end, it has to be calculated)
+        if fuel in ["NG","LNG"]:
+            co2factor=.2/1000 #[TonCo2/kWh]  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
+        if fuel in ['Fueloil2','Fueloil3','Gasoil-B','Gasoil-C']:
+            co2factor=.27/1000 #[TonCo2/kWh]       #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html    
+        if fuel in ['Electricity']:
+            co2factor=.385/1000 #[TonCo2/kWh]  #https://www.eia.gov/tools/faqs/faq.php?id=74&t=11
+        if fuel in ['Propane','Butane','Air-propane']:
+            co2factor=.22/1000 #[TonCo2/kWh]    #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html  
+        if fuel in ['Biomass']:
+            co2factor=.41/1000 #[TonCo2/kWh]  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
+
+    #Demand of energy before the boiler
+    Energy_Before=DemandData(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim) # [kWh]
+    Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
+    Demand=Boiler_eff*Energy_Before #Demand of energy after the boiler [kWh]
+
     
     if co2TonPrice>0:
         CO2=1 #Flag to take into account co2 savings in terms of cost per ton emitted
     else:
         CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
     
+    
+    
     # --> Meteo variables
    
-    output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender)
+    output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender)
 
     """
     Output key:
@@ -363,26 +401,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
     SUN_ELV=output[:,5] # Sun elevation [rad]
     SUN_AZ=output[:,6] # Sun azimuth [rad]
-    DNI=output[:,9] *mofDNI # Direct Normal Irradiation [W/m²]
+    DNI=output[:,9] # Direct Normal Irradiation [W/m²]
     temp=output[:,10]+273 # Ambient temperature [K] 
     step_sim=output [:,11] #Array containing the simulation steps 
     steps_sim=len(output) # Number of steps in the simulation
 
+    
+    DNI=DNI*mofDNI # DNI modified if needed. This is necessary to take into account 
     meteoDict={'DNI':DNI.tolist(),'localMeteo':localMeteo}
-    
-    
-    # --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
-        
-    orientation="NS"
-    inclination="flat" 
-    shadowInput="free"
-    terreno="clean_ground"
-
-    beta=0 #Pitch not implemented [rad]
-    orient_az_rad=0 #Orientation not implemented [rad]
-    roll=0 #Roll not implemented [rad]
-       
-    
 
 #%%
 # ------------------------------------------------------------------------------------
@@ -1094,7 +1120,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         # Turnkey model   
         if businessModel=="Llave en mano" or businessModel=="Turnkey project" or businessModel=="turnkey":
             from Finance_modules.FinanceModels import Turn_key
-            [LCOE,IRR,IRR10,AmortYear,Acum_FCF,FCF,Energy_savings,OM_cost,fuelPrizeArray,Net_anual_savings]=Turn_key(Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,incremento,co2Savings)
+            [LCOE,IRR,IRR10,AmortYear,Acum_FCF,FCF,Energy_savings,OM_cost,fuelPrizeArray,Net_anual_savings]=Turn_key(Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,costRaise,co2Savings)
             if lang=="spa":        
                 TIRscript="TIR para el cliente"
                 Amortscript="<b>Amortización: </b> Año "+ str(AmortYear)
@@ -1109,7 +1135,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         if businessModel=="Compra de energia" or businessModel=="ESCO" or businessModel=="Renting":
              #From financing institution poit of view        
             from Finance_modules.FinanceModels import ESCO
-            [IRR,IRR10,AmortYear,Acum_FCF,FCF,BenefitESCO,OM_cost,fuelPrizeArray,Energy_savings,Net_anual_savings]=ESCO(priceReduction,Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,incremento,co2Savings)
+            [IRR,IRR10,AmortYear,Acum_FCF,FCF,BenefitESCO,OM_cost,fuelPrizeArray,Energy_savings,Net_anual_savings]=ESCO(priceReduction,Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,costRaise,co2Savings)
             if lang=="spa":    
                 TIRscript="TIR para la ESE"
                 Amortscript="<b>Ahorro en precio actual combustible: </b>"+str(round(100*(1-priceReduction)))+"%" 
@@ -1140,7 +1166,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
                  'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
                  'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
-                 'co2TonPrice':co2TonPrice,'fuelIncremento':fuelIncremento,'IPC':IPC,'Selling_price':Selling_price,
+                 'co2TonPrice':co2TonPrice,'fuelIncremento':fuelCostRaise,'IPC':CPI,'Selling_price':Selling_price,
                  'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList}
     
     else:
@@ -1309,13 +1335,13 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 
 finance_study=1
 
-mes_ini_sim=6
-dia_ini_sim=4
-hora_ini_sim=1
+month_ini_sim=6
+day_ini_sim=4
+hour_ini_sim=1
 
-mes_fin_sim=6
-dia_fin_sim=8
-hora_fin_sim=24
+month_fin_sim=6
+day_fin_sim=8
+hour_fin_sim=24
 
 
 
@@ -1343,7 +1369,7 @@ almVolumen=10000 #litros
 confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
-simControl={'finance_study':finance_study,'mes_ini_sim':mes_ini_sim,'dia_ini_sim':dia_ini_sim,'hora_ini_sim':hora_ini_sim,'mes_fin_sim':mes_fin_sim,'dia_fin_sim':dia_fin_sim,'hora_fin_sim':hora_fin_sim}    
+simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
 origin=0 #0 if new record; -2 if it comes from www.ressspi.com
