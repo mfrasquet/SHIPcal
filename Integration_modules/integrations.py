@@ -17,56 +17,56 @@ from Solar_modules.iteration_process import IT_temp
 from General_modules.func_General import thermalOil,moltenSalt
 from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C
 
-def offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,T_in_K_old):
+def offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,temp):
             
     bypass.append("OFF")
     
     if fluidInput=="water":
         if T_in_flag==1: # Closed circuit
-            T_in_K=T_in_K_old
+            T_in_K=temp
         else:
             T_in_K=T_in_C_AR+273 # Input from public water grid
     if fluidInput=="oil" or fluidInput=="moltenSalt" or fluidInput=="steam":
-        T_in_K=T_in_K_old
-    T_out_K=0+273
+        T_in_K=temp
+    T_out_K=temp
     Q_prod=0 # There's no production  
     return [T_out_K,Q_prod,T_in_K]
 
-def offOilSimple(bypass,T_in_K_old):
-         
-    bypass.append("OFF")
-    T_in_K=T_in_K_old
-    T_out_K=0+273
-    Q_prod=0 # There's no production   
-    return [T_out_K,Q_prod,T_in_K]
+#def offOilSimple(bypass,T_in_K_old):
+#         
+#    bypass.append("OFF")
+#    T_in_K=T_in_K_old
+#    T_out_K=0+273
+#    Q_prod=0 # There's no production   
+#    return [T_out_K,Q_prod,T_in_K]
 
-def offSteamSimple(bypass,T_in_K_old):
-         
-    bypass.append("OFF")
-    T_in_K=T_in_K_old
-    T_out_K=0+273
-    Q_prod=0 # There's no production   
-    return [T_out_K,Q_prod,T_in_K]
+#def offSteamSimple(bypass,T_in_K_old):
+#         
+#    bypass.append("OFF")
+#    T_in_K=T_in_K_old
+#    T_out_K=temp
+#    Q_prod=0 # There's no production   
+#    return [T_out_K,Q_prod,T_in_K]
 
-def offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,T_in_K_old,energStorageMax,energyStored):
+def offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,temp,energStorageMax,energyStored):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52             
     bypass.append("OFF")
     if fluidInput=="water":
         if T_in_flag==1:
-            T_in_K=T_in_K_old
+            T_in_K=temp
         else:
             T_in_K=T_in_C_AR+273
     if fluidInput=="oil" or fluidInput=="moltenSalt" or fluidInput=="steam":
-        T_in_K=T_in_K_old        
-    T_out_K=0+273
+        T_in_K=temp      
+    T_out_K=temp
     Q_prod=0 #No hay produccion
     SOC=100*energyStored/energStorageMax
     return [T_out_K,Q_prod,T_in_K,SOC]
-def offOnlyStorageSimple(T_in_K_old,energStorageMax,energyStored,T_K_alm_old,storage_energy_old,SOC_old):
+def offOnlyStorageSimple(temp,energStorageMax,energyStored,T_K_alm_old,storage_energy_old,SOC_old):
 
-    T_in_K=T_in_K_old
+    T_in_K=temp
 
-    T_out_K=0+273
+    T_out_K=temp
     Q_prod=0 #No hay produccion
 #    SOC=100*(T_K_alm_old-273)/(T_max_storage-273)
 #    SOC=100*energyStored/energStorageMax
@@ -131,7 +131,7 @@ def operationOilKettleSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypas
         #PRODUCCION
         if bypass_old=="REC":
             if Q_prod_rec_old>0:
-                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*FS #In kWh
+                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kWh
             else:
                 Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS#In kWh
         else:
@@ -250,7 +250,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
             h_out_kJkg=outlet.h
             if bypass_old=="REC":
                 if Q_prod_rec_old>0:
-                    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS+Q_prod_rec_old*FS #In kW
+                    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kW
                 else:
                     Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
             else:
@@ -259,7 +259,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         if fluidInput=="oil":
             if bypass_old=="REC":
                 if Q_prod_rec_old>0:
-                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*FS #In kWh
+                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kWh
                 else:
                     Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS#In kWh
             else:
@@ -268,7 +268,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         if fluidInput=="moltenSalt":
             if bypass_old=="REC":
                 if Q_prod_rec_old>0:
-                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*FS #In kWh
+                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kWh
                 else:
                     Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS#In kWh
             else:

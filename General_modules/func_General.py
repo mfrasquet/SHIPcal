@@ -158,6 +158,7 @@ def annualConsumpFromSHIPcal(activeHoursArray,activeDaysWeekArray,activeMonthsAr
     return consumo_anual_horario
     
 def waterFromGrid(T_in_C_AR_mes):
+    
     T_in_C_AR=np.zeros(8760)
     for ii in range(0,8760):
         if (ii<=744-1):
@@ -183,8 +184,30 @@ def waterFromGrid(T_in_C_AR_mes):
         if (ii>7296-1) and (ii<=8016-1):
             T_in_C_AR[ii]=T_in_C_AR_mes[10]
         if (ii>8016-1):
-            T_in_C_AR[ii]=T_in_C_AR_mes[11]
+            T_in_C_AR[ii]=T_in_C_AR_mes[11]      
+            
     return (T_in_C_AR)
+
+
+def waterFromGrid_trim(T_in_C_AR,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim):
+    
+    hour_year_ini=calc_hour_year(mes_ini_sim,dia_ini_sim,hora_ini_sim)#Calls a function within this same script yo calculate the corresponding hout in the year for the day/month/hour of start and end
+    hour_year_fin=calc_hour_year(mes_fin_sim,dia_fin_sim,hora_fin_sim)
+    
+    if hour_year_ini <= hour_year_fin: #Checks that the starting hour is before than the enfing hour
+        sim_steps=hour_year_fin-hour_year_ini #Stablishes the number of steps as the hours between the starting and ending hours
+    else:
+        raise ValueError('End time is smaller than start time')   
+    
+    T_in_C_AR_trim=np.zeros (sim_steps)
+    
+    step=0
+    for step in range(0,sim_steps):
+        T_in_C_AR_trim[step]=T_in_C_AR[hour_year_ini+step-1]
+        step+=1
+    
+    return (T_in_C_AR_trim)        
+        
 
 def waterFromGrid_v2(T_in_C_AR_mes):
     days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31] #days_in_the_month[month_number]=how many days are in the month number "month_number"

@@ -31,7 +31,7 @@ from iapws import IAPWS97
 
 #Place to import SHIPcal Libs
 
-from General_modules.func_General import DemandData,waterFromGrid,thermalOil,reportOutputOffline, moltenSalt,waterFromGrid_v3 
+from General_modules.func_General import DemandData,waterFromGrid,waterFromGrid_trim,thermalOil,reportOutputOffline, moltenSalt,waterFromGrid_v3 
 from General_modules.demandCreator_v1 import demandCreator
 from General_modules.fromDjangotoSHIPcal import djangoReport
 from Solar_modules.EQSolares import SolarData
@@ -328,9 +328,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="moltenSalt" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=560 #HIGH - Process temperature [ºC]
-        T_process_out=270 #LOW - Temperature at the return of the process [ºC]
+        fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=120 #HIGH - Process temperature [ºC]
+        T_process_out=60 #LOW - Temperature at the return of the process [ºC]
         P_op_bar=6 #[bar] 
         
         # Not implemented yet
@@ -343,7 +343,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=1500*8760 #[kWh]
+        totalConsumption=1200*8760 #[kWh]
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         
         ## FINANCE
@@ -436,21 +436,19 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     h_in=0
     h_out=0
     
-    T_in_flag=1 #Flag 1 si la temperatura es constante (circuito cerrado); 0 si se toma agua de red (circuito abierto con reposicion)
     
     #Temperature of the make-up water
-    if sender=='CIMAV':
-        T_in_C_AR=waterFromGrid_v3(file_loc,sender)
-    else:    
-        T_in_C_AR_mes=np.array([8,9,11,13,14,15,16,15,14,13,11,8]) # When input process is water from the grid. SHIPcal needs the monthly average temp of the water grid
-        T_in_C_AR=waterFromGrid(T_in_C_AR_mes) # [ºC]
+    T_in_C_AR=waterFromGrid_v3(file_loc,sender)
+    #Trim the T_in_C_AR [8760] to the simulation frame 
+    T_in_C_AR=waterFromGrid_trim(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim)
 
+    #By default water flows in closed loop
+    T_in_flag=1 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
         
     # --> Integrations: 
         # SL_L_RF Supply level with liquid heat transfer media solar return flow boost
         
     if type_integration=="SL_L_RF": 
-
 
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
@@ -500,7 +498,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         # PL_E_PM => Process level external HEX for heating of product or process medium
         
     if type_integration=="SL_L_P" or type_integration=="PL_E_PM":   
-        
+           
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
         T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
@@ -536,7 +534,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         # SL_L_S3 => Supply level with liquid heat transfer media solar heating of storages (Pasteurization case)
         
     if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
-
+        
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
         T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
@@ -635,7 +633,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         # SL_L_PS => Supply level with liquid heat transfer media parallel integration with storage
         
     if type_integration=="SL_L_PS":
-        
+              
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
         T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
@@ -682,13 +680,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         # SL_S_FW => Supply level with steam solar heating of boiler feed water
         
     if type_integration=="SL_S_FW":
- 
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
         T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
-
-
+        
         energStorageMax=0 #kWh
         energyStored=0 #kWh
         T_in_K=T_in_C+273
@@ -714,7 +710,93 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         out_s=outputState.s
         h_out=outputState.h
     
+    # ----------------------------------------
+    # SL_S_FWS => Supply level with steam solar heating of boiler feed water including storage
+    
     if type_integration=="SL_S_FWS":
+            
+        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+              
+        T_out_K=IAPWS97(P=P_op_Mpa, x=0).T #Heating point
+        T_out_C=T_out_K-273 
+        
+        outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
+        out_s=outputState.s
+        h_out=outputState.h
+        
+
+        T_in_K=T_in_C+273
+
+            
+        initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
+        h_in=initial.h #kJ/kg
+        in_s=initial.s
+        in_x=initial.x
+        sat_liq=IAPWS97(P=P_op_Mpa, x=0)
+        sat_vap=IAPWS97(P=P_op_Mpa, x=1)
+        h_sat_liq=sat_liq.h
+        h_sat_vap=sat_vap.h
+        sensiblePart=h_sat_liq-h_in
+        latentPart=h_sat_vap-h_sat_liq
+        PreHeatedPart=h_out-h_in
+        total=h_sat_vap-h_in
+        
+        porctSensible=sensiblePart/total
+        porctLatent=latentPart/total
+        porctPreHeated=PreHeatedPart/total
+        Demand2=Demand*porctPreHeated
+        
+        T_avg_K=(T_in_K+T_out_K)/2
+#        tempAlm=T_out_K-273
+        almacenamiento=IAPWS97(P=P_op_Mpa, T=T_avg_K) #Propiedades en el almacenamiento
+        almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
+        almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg
+        energStorageMax=almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K-T_in_K)/3600 #Storage capacity in kWh
+        energyStored=0 #Initial storage
+        
+    # ---------------------------------------- 
+        # SL_S_MW => Supply level with steam solar heating of boiler make-up water
+        
+    if type_integration=="SL_S_MW":
+ 
+        T_in_flag=0 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
+        
+        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        
+        energStorageMax=0 #kWh
+        energyStored=0 #kWh
+        T_in_K=T_in_C+273
+        initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
+        h_in=initial.h #kJ/kg
+        in_x=initial.x
+        sat_liq=IAPWS97(P=P_op_Mpa, x=0)
+        sat_vap=IAPWS97(P=P_op_Mpa, x=1)
+        h_sat_liq=sat_liq.h
+        h_sat_vap=sat_vap.h
+        sensiblePart=h_sat_liq-h_in
+        latentPart=h_sat_vap-h_sat_liq
+        total=h_sat_vap-h_in
+        porctSensible=sensiblePart/total
+        porctLatent=latentPart/total
+        Demand2=Demand*porctSensible
+        
+        T_out_K=IAPWS97(P=P_op_Mpa, x=0).T-5 #Heating point
+        T_out_C=T_out_K-273 
+          
+        in_s=initial.s
+        outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
+        out_s=outputState.s
+        h_out=outputState.h
+    
+    # ----------------------------------------
+    #SL_S_MWS => Supply level with steam solar heating of boiler make-up water including storage
+    
+    if type_integration=="SL_S_MWS":
+        
+        T_in_flag=0 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
@@ -749,8 +831,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         porctPreHeated=PreHeatedPart/total
         Demand2=Demand*porctPreHeated
         
-    
-        
         T_avg_K=(T_in_K+T_out_K)/2
 #        tempAlm=T_out_K-273
         almacenamiento=IAPWS97(P=P_op_Mpa, T=T_avg_K) #Propiedades en el almacenamiento
@@ -760,9 +840,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         energyStored=0 #Initial storage
     
     # ----------------------------------------
-        # SL_S_FW => Supply level with steam direct solar steam generation
+        # SL_S_PD => Supply level with steam direct solar steam generation
         
     if type_integration=="SL_S_PD":
+        
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
@@ -991,13 +1072,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     T_toProcess_C[i]=T_toProcess_K[i]-273                      
                     [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
 
-            elif type_integration=="SL_S_FW":
+            elif type_integration=="SL_S_FW" or type_integration=="SL_S_MW":
                 #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage              
                 
                 [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand2[i])
             
-            elif type_integration=="SL_S_FWS":
+            elif type_integration=="SL_S_FWS" or type_integration=="SL_S_MWS":
                 #SL_S_FW Supply level with steam for solar heating of boiler feed water with storage  
                 
                 [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
@@ -1022,31 +1103,31 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             elif type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
-                [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
+                [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
                 if Demand[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
                
             elif type_integration=="SL_L_P" or type_integration=="PL_E_PM" or type_integration=="SL_L_RF":
                 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
                 
-                [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+                [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i])
 
-            elif type_integration=="SL_S_FW":
+            elif type_integration=="SL_S_FW" or type_integration=="SL_S_MW":
                 #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage 
                 
-                [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+                [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i])
                 
-            elif type_integration=="SL_S_FWS":
+            elif type_integration=="SL_S_FWS" or type_integration=="SL_S_MWS":
                 #SL_S_FWS Supply level with steam for solar heating of boiler feed water with storage 
                 
-                [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1],energStorageMax,energyStored)
+                [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
                 if Demand2[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand2[i],energStorageMax)                         
             
             elif type_integration=="SL_S_PD":
                 #SL_S_PD Supply level with steam for direct steam generation
                 
-                [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],T_in_K[i-1])
+                [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i])
     
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
@@ -1335,12 +1416,12 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 
 finance_study=1
 
-month_ini_sim=6
-day_ini_sim=4
+month_ini_sim=1
+day_ini_sim=1
 hour_ini_sim=1
 
-month_fin_sim=6
-day_fin_sim=8
+month_fin_sim=12
+day_fin_sim=31
 hour_fin_sim=24
 
 
@@ -1351,7 +1432,7 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=8 
+num_loops=4 
 n_coll_loop=20
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1362,7 +1443,7 @@ n_coll_loop=20
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_PS"
+type_integration="SL_S_MWS"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1372,7 +1453,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1384,5 +1465,5 @@ else:
     last_reg=inputsDjango['last_reg']
     
 
-# [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
