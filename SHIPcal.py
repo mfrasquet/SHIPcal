@@ -1416,12 +1416,12 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 
 finance_study=1
 
-month_ini_sim=1
-day_ini_sim=1
+month_ini_sim=6
+day_ini_sim=7
 hour_ini_sim=1
 
-month_fin_sim=12
-day_fin_sim=31
+month_fin_sim=6
+day_fin_sim=8
 hour_fin_sim=24
 
 
@@ -1443,7 +1443,7 @@ n_coll_loop=20
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_S_MWS"
+type_integration="SL_L_P"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1453,7 +1453,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
+origin=0 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1465,5 +1465,5 @@ else:
     last_reg=inputsDjango['last_reg']
     
 
-#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
