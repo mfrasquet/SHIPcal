@@ -887,9 +887,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         x_design=0.4
 
-        energStorageMax=0 #kWh
-        energyStored=0 #kWh
         T_in_K=T_in_C+273 #Temp return of condensates
+        
         initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
         h_in=initial.h #kJ/kg
         in_s=initial.s

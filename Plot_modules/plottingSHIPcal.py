@@ -108,7 +108,7 @@ def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_
 
     processEntropy=[]
     processEntropy.append(in_s)
-    if type_integration=="SL_S_PD":
+    if type_integration=="SL_S_PD" or type_integration=="SL_S_PDS":
         processEntropy.append(sat_liq.s)
     processEntropy.append(out_s)
     processTemperature=[]
@@ -116,7 +116,7 @@ def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_
         processTemperature.append(T_in_C)
     else:
         processTemperature.append(np.average(T_in_C_AR))
-    if type_integration=="SL_S_PD":
+    if type_integration=="SL_S_PD" or type_integration=="SL_S_PDS":
         processTemperature.append(sat_liq.T-273)
     processTemperature.append(T_out_C)
     
@@ -137,7 +137,7 @@ def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_
         processEntropy2.append(outProcess_s)
         processTemperature2.append(T_out_C)
         processTemperature2.append(T_out_process_C)
-    if type_integration=="SL_S_PD":
+    if type_integration=="SL_S_PD" or type_integration=="SL_S_PDS":
         processEntropy2=[]
         processTemperature2=[]
         processEntropy2.append(out_s)
@@ -171,7 +171,7 @@ def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_
         plt.plot(processEntropy2,processTemperature2, color='m',lw=2,markersize=50,zorder=10 )
     if type_integration=="SL_L_RF":
         plt.plot(processEntropy2,processTemperature2, color='m',lw=2,markersize=50,zorder=10 )
-    if type_integration=="SL_S_PD":
+    if type_integration=="SL_S_PD" or type_integration=="SL_S_PDS":
         plt.plot(processEntropy2,processTemperature2, color='m',lw=2,markersize=50,zorder=10 )
     plt.plot(mollier[1],mollier[0],':',lw=2)
     plt.plot(isobar["s"],isobar["T"])
@@ -187,7 +187,7 @@ def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_
         else:
             plt.text(processEntropy[0]-1.5, processTemperature[0], "Input "+str(int(np.average(T_in_C_AR)))+"ºC", size=10, color='r', ha='center', va='center', horizontalalignment='center', verticalalignment='center', rotation= 0)   
    
-    if type_integration=="SL_S_PD":
+    if type_integration=="SL_S_PD" or type_integration=="SL_S_PDS":
         if lang=="spa":
             plt.text(processEntropy[2]-1, processTemperature[2]+20, "Salida "+str(int(P_op_bar))+"bar x="+str(x_design), size=10, color='r', ha='center', va='center', horizontalalignment='center', verticalalignment='center', rotation= 0)   
             plt.text(processEntropy2[1], processTemperature2[1]-15, "Salida "+str(int(P_op_bar))+"bar Sat.", size=10, color='m', ha='center', va='center', horizontalalignment='center', verticalalignment='center', rotation= 0)   
@@ -253,7 +253,7 @@ def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,o
     
     processEntropy=[]
     processEntropy.append(in_s)
-    if type_integration=="SL_S_PD":
+    if type_integration=="SL_S_PD" or type_integration=="SL_S_PDS":
         processEntropy.append(sat_liq.s)
     processEntropy.append(out_s)
 
@@ -261,7 +261,7 @@ def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,o
     
     processEnthalpy=[]
     processEnthalpy.append(h_in)
-    if type_integration=="SL_S_PD":
+    if type_integration=="SL_S_PD" or type_integration=="SL_S_PDS":
         processEnthalpy.append(sat_liq.h)
     processEnthalpy.append(h_out)
     
@@ -280,7 +280,7 @@ def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,o
         processEntropy2.append(outProcess_s)
         processEnthalpy2.append(h_out)
         processEnthalpy2.append(hProcess_out)
-    if type_integration=="SL_S_PD":
+    if type_integration=="SL_S_PD" or type_integration=="SL_S_PDS":
         processEntropy2=[]
         processEnthalpy2=[]
         processEntropy2.append(out_s)
@@ -312,7 +312,7 @@ def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,o
         plt.plot(processEntropy2,processEnthalpy2, color='m',lw=2,markersize=50,zorder=10 )
     if type_integration=="SL_L_RF":
         plt.plot(processEntropy2,processEnthalpy2, color='m',lw=2,markersize=50,zorder=10 )  
-    if type_integration=="SL_S_PD":
+    if type_integration=="SL_S_PD" or type_integration=="SL_S_PDS":
         plt.plot(processEntropy2,processEnthalpy2, color='m',lw=2,markersize=50,zorder=10 )         
     plt.plot(processEntropy,processEnthalpy, color='r',lw=3,markersize=50,zorder=10 )
     plt.plot(mollier[1],mollier[2],':',lw=2)
@@ -322,7 +322,7 @@ def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,o
     if lang=="eng":
         plt.text(processEntropy[0]-1.8, processEnthalpy[0]+100, "Inlet "+str(int(h_in))+" kJ/kg", size=10, color='r', ha='center', va='center', horizontalalignment='center', verticalalignment='center', rotation= 0)   
     
-    if type_integration=="SL_S_PD":
+    if type_integration=="SL_S_PD" or type_integration=="SL_S_PDS":
         if lang=="spa":
             plt.text(processEntropy[2]+1.8, processEnthalpy[2]-100, "Salida "+str(int(P_op_bar))+"bar x="+str(x_design), size=10, color='r', ha='center', va='center', horizontalalignment='center', verticalalignment='center', rotation= 0)   
             plt.text(processEntropy2[1]+1.8, processEnthalpy2[1]-100, "Salida "+str(int(P_op_bar))+"bar Sat.", size=10, color='m', ha='center', va='center', horizontalalignment='center', verticalalignment='center', rotation= 0)   
