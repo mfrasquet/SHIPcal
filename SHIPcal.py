@@ -213,7 +213,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## INTEGRATION
         type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
         almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
-        
+        type_integration="SL_S_PDS"
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput=inputs['fluid'] #Type of fluid 
@@ -310,7 +310,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif origin==0:  #Simulation called from Python file (called from the terminal)
         
         ## METEO
-        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
+#        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
+        localMeteo="Cadiz.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -329,9 +330,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=120 #HIGH - Process temperature [ºC]
-        T_process_out=60 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=6 #[bar] 
+        T_process_in=150 #HIGH - Process temperature [ºC]
+        T_process_out=20 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=4 #[bar] 
         
         # Not implemented yet
         distanceInput=15 #From the solar plant to the network integration point [m]
@@ -343,9 +344,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=1200*8760 #[kWh]
+        totalConsumption=900*8760 #[kWh]
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
-        
+        file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
+
         ## FINANCE
         businessModel="turnkey"
         fuel="Gasoil-B" #Type of fuel
@@ -877,6 +879,47 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_out_process_C=T_out_C #Not used
         T_out_HX_C=0 #Not used
         
+    if type_integration=="SL_S_PDS":
+        
+        
+        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+       
+        x_design=0.4
+
+        T_in_K=T_in_C+273 #Temp return of condensates
+        
+        initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
+        h_in=initial.h #kJ/kg
+        in_s=initial.s
+        sat_liq=IAPWS97(P=P_op_Mpa, x=0)
+        outputState=IAPWS97(P=P_op_Mpa, x=x_design)
+        T_out_K=outputState.T 
+        T_out_C=outputState.T-273 #Temperature of saturation at that level
+        
+        out_s=outputState.s
+        h_out=outputState.h
+        
+        outputProcessState=IAPWS97(P=P_op_Mpa, x=1)
+        outProcess_s=outputProcessState.s
+        outProcess_h=outputProcessState.h
+        hProcess_out=outProcess_h
+        
+        T_avg_K=(T_in_K+T_out_K)/2
+#        tempAlm=T_out_K-273
+        almacenamiento=IAPWS97(P=P_op_Mpa, T=T_avg_K) #Propiedades en el almacenamiento
+        almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
+        almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg
+        energStorageMax=almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K-T_in_K)/3600 #Storage capacity in kWh
+        energyStored=0 #Initial storage
+        
+        #Not used
+        porctSensible=0
+        sat_vap=0 #Not used
+        T_in_process_C=0 #Not used
+        T_out_process_C=T_out_C #Not used
+        T_out_HX_C=0 #Not used
+        
     integrationDesign={'x_design':x_design,'porctSensible':porctSensible,'almVolumen':almVolumen,'energStorageMax':energStorageMax,
                        'T_out_process_C':T_out_process_C,'T_in_process_C':T_in_process_C,'T_out_HX_C':T_out_HX_C}
     
@@ -1089,6 +1132,15 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 
                 [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+            
+            elif type_integration=="SL_S_PDS":
+                #SL_S_PDS Supply level with steam for direct steam generation with water storage
+                
+                [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1])
+#                [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
+            
+        
         
         else: # Status: OFF -> There's not enough DNI to put the solar plant in production     
             
@@ -1126,8 +1178,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             
             elif type_integration=="SL_S_PD":
                 #SL_S_PD Supply level with steam for direct steam generation
-                
                 [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i])
+            
+            elif type_integration=="SL_S_PDS":
+                #SL_S_PD Supply level with steam for direct steam generation with water storage
+                [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
+                if Demand[i]>0:
+                    [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
+               
     
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
@@ -1429,11 +1487,11 @@ hour_fin_sim=24
 # -------------------- FINE TUNNING CONTROL ---------
 mofINV=1 #Sobre el coste de inversion
 mofDNI=1  #Corrección a fichero Meteonorm
-mofProd=1 #Factor de seguridad a la producción de los módulos
+mofProd=.9 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=4 
-n_coll_loop=20
+num_loops=2 
+n_coll_loop=16
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1443,7 +1501,7 @@ n_coll_loop=20
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
+type_integration="SL_S_PDS"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
