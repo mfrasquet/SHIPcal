@@ -297,17 +297,18 @@ def operationDSG(T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_c
           
         h_out_kJkg=(((DNI*IAM*Area*rho_optic_0-Q_loss_rec[0]*n_coll_loop*Long)/flow_rate_kgs)/1000)+inlet.h
         x_out=IAPWS97(P=P_op_Mpa, h=h_out_kJkg).x
-        Q_prod=(DNI*IAM*Area*rho_optic_0-Q_loss_rec[0]*n_coll_loop*Long)*FS/1000
-
+        Q_prod=(DNI*IAM*Area*rho_optic_0-Q_loss_rec[0]*n_coll_loop*Long)*num_loops*FS/1000
+        T_out_K=IAPWS97(P=P_op_Mpa, h=h_out_kJkg).T
         
     else:
         Q_prod=flow_rate_kgs*(outlet.h-h_inlet_KJkg)*num_loops*FS #In kW
         x_out=0.4
+        T_out_K=IAPWS97(P=P_op_Mpa, x=x_out).T
     
 
     # Perd_termicas=Q_loss_rec*n_coll_loop*Long
     Perd_termicas=Q_loss_rec[0]*n_coll_loop*Long/1000
-    return [flow_rate_kgs,Perd_termicas,Q_prod,x_out]
+    return [flow_rate_kgs,Perd_termicas,Q_prod,x_out,T_out_K]
 
 
 def outputKettle(P_op_Mpa,almVolumen,T_alm_K_old,Q_prod,T_in_C_AR):
