@@ -16,6 +16,7 @@ from Solar_modules.iteration_process import flow_calc, flow_calcHTF
 from Solar_modules.iteration_process import IT_temp
 from General_modules.func_General import thermalOil,moltenSalt
 from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C
+from Collector_modules.receivers import Rec_loss
 
 def offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,temp):
             
@@ -280,6 +281,33 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         newBypass="PROD"
     return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
 
+
+def operationDSG(T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,x_desing):
+#SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
+    outlet=IAPWS97(P=P_op_Mpa, x=x_desing) #Design conditions
+    inlet=IAPWS97(P=P_op_Mpa, T=T_in_K)
+    h_inlet_KJkg=inlet.h
+    
+    DELTA_T_loss=outlet.T-temp
+    Q_loss_rec=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI) #W/m
+    flow_rate_kgs=(DNI*IAM*Area*rho_optic_0-Q_loss_rec[0]*n_coll_loop*Long)/((outlet.h-inlet.h)*1000)
+
+    if flow_rate_kgs<=m_dot_min_kgs: 
+        flow_rate_kgs=m_dot_min_kgs*coef_flow_rec
+          
+        h_out_kJkg=(((DNI*IAM*Area*rho_optic_0-Q_loss_rec[0]*n_coll_loop*Long)/flow_rate_kgs)/1000)+inlet.h
+        x_out=IAPWS97(P=P_op_Mpa, h=h_out_kJkg).x
+        Q_prod=(DNI*IAM*Area*rho_optic_0-Q_loss_rec[0]*n_coll_loop*Long)*FS/1000
+
+        
+    else:
+        Q_prod=flow_rate_kgs*(outlet.h-h_inlet_KJkg)*num_loops*FS #In kW
+        x_out=0.4
+    
+
+    # Perd_termicas=Q_loss_rec*n_coll_loop*Long
+    Perd_termicas=Q_loss_rec[0]*n_coll_loop*Long/1000
+    return [flow_rate_kgs,Perd_termicas,Q_prod,x_out]
 
 
 def outputKettle(P_op_Mpa,almVolumen,T_alm_K_old,Q_prod,T_in_C_AR):
