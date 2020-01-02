@@ -982,7 +982,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
         if sender=='solatom': #Using Solatom's IAMs
             if SUN_ELV[i]>0:
-                theta_transv_deg[i],theta_i_deg[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+                theta_transv_deg[i],theta_i_deg[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad)
                 theta_i_deg[i]=abs(theta_i_deg[i])
                 IAM[i]=optic_efficiency_N(theta_transv_deg[i],theta_i_deg[i],n_coll_loop) #(theta_transv_deg[i],theta_i_deg[i],n_coll_loop):
             else:
@@ -1478,12 +1478,12 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 
 finance_study=1
 
-month_ini_sim=6
-day_ini_sim=7
+month_ini_sim=1
+day_ini_sim=1
 hour_ini_sim=1
 
-month_fin_sim=6
-day_fin_sim=8
+month_fin_sim=12
+day_fin_sim=31
 hour_fin_sim=24
 
 
@@ -1491,11 +1491,11 @@ hour_fin_sim=24
 # -------------------- FINE TUNNING CONTROL ---------
 mofINV=1 #Sobre el coste de inversion
 mofDNI=1  #Corrección a fichero Meteonorm
-mofProd=.9 #Factor de seguridad a la producción de los módulos
+mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
 num_loops=2 
-n_coll_loop=16
+n_coll_loop=8
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1505,17 +1505,17 @@ n_coll_loop=16
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_S_PDS"
+type_integration="SL_S_PD"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'solatom2','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
