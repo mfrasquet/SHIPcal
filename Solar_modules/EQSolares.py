@@ -73,16 +73,16 @@ def theta_IAMs(SUN_AZ_DP,SUN_ELV_DP,beta,orient_az_rad):
     #Caso general 
 
     theta_i_rad=np.arccos(np.sqrt(1-(np.cos(SUN_ELV_DP-beta)-np.cos(beta)*np.cos(SUN_ELV_DP)*(1-np.cos(azimuth_solar_corr_rad-orient_az_rad)))**2))
-    #theta_i_deg=theta_i_rad*180/np.pi
+    theta_i_deg=theta_i_rad*180/np.pi
     # ------------------------------------------------------
     
     # ANGULO TRANSVERSAL
     
     #Caso general
     theta_transv_rad=np.arctan((np.cos(SUN_ELV_DP)*np.sin(azimuth_solar_corr_rad-orient_az_rad))/(np.sin(SUN_ELV_DP-beta)+np.sin(beta)*np.cos(SUN_ELV_DP)*(1-np.cos(azimuth_solar_corr_rad-orient_az_rad))))
-    #theta_transv_deg=theta_transv_rad*180/np.pi
+    theta_transv_deg=theta_transv_rad*180/np.pi
     # -----------------------------------------------------
-    return [theta_transv_rad,theta_i_rad]
+    return [theta_transv_deg,theta_i_deg]
 
 def theta_IAMs_v2(SUN_AZ,SUN_ELV,LONG_INCL,HEAD,ROLL):
    
