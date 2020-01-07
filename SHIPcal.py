@@ -1535,6 +1535,43 @@ if origin==0:
     #To perform simulations from command line using hardcoded inputs
     inputsDjango={}
     last_reg=666
+elif origin==-3:
+    inputsDjango={'businessModel': 'turnkey',
+                  'co2TonPrice': 0.0,
+                  'co2factor': 0.00027,
+                  'collector_type': 'BOSCH SKW2.txt',
+                  'connection': 'storage',
+                  'date': '2019-12-16 17:00:S',
+                  'demand': 15000.0,
+                  'demandUnit': '1',
+                  'distance': 10.0,
+                  'email': 'juanshifu2.5@hotmail.com',
+                  'fluid': 'water',
+                  'fuel': 'gas_natural',
+                  'fuelPrice': 1045.0433015627268,
+                  'fuelUnit': '87.0869417968939',
+                  'hourEND': 19,
+                  'hourINI': 10,
+                  'inclination': 'flat',
+                  'industry': 'Nombredelaindustria',
+                  'last_reg': 95,
+                  'location': 'Celaya.dat',
+                  'location_aux': '',
+                  'name': 'Juan Antonio Aramburo Pasapera',
+                  'orientation': 'NS',
+                  'pais': 'México',
+                  'pressure': 5.0,
+                  'pressureUnit': '1',
+                  'process': '',
+                  'sectorIndustry': 'Food_beverages',
+                  'semana': ['0', '1', '2', '3', '4'],
+                  'shadows': 'free',
+                  'surface': 1000.0,
+                  'tempIN': 10.0,
+                  'tempOUT': 19.0,
+                  'terrain': 'clean_ground',
+                  'year': ['1', '2', '3', '4', '5', '6', '7', '8', '9']}
+    last_reg=inputsDjango['last_reg']
 else:
     #To perform simulations from command line using inputs like if they were from django
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
