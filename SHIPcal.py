@@ -108,6 +108,20 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # Annual increase of the price of money through Consumer Price Index [%]
     if sender == 'CIMAV':
         CPI=5 # 5 for México
+        
+        #Some specific fuels increase
+        if inputsDjango['fuel'] == 'electricidad':
+            fuelCostRaise=7.09 #[%] From thesis :“Análisis térmico de la envolvente de naves industriales con incorporación de tecnología solar fotovoltaica” by CARLOS ARMANDO ESPINO REYES May 2019
+        elif inputsDjango['fuel'] == 'gas_natural':
+            fuelCostRaise=11.47 #[%] From thesis :“Análisis térmico de la envolvente de naves industriales con incorporación de tecnología solar fotovoltaica” by CARLOS ARMANDO ESPINO REYES May 2019
+        elif inputsDjango['fuel'] == 'diesel':
+            fuelCostRaise=6.52 # [%] Information from http://www.intermodalmexico.com.mx/Portal/AjusteCombustible/Historico#
+        elif inputsDjango['fuel'] == 'gasolina_nafta':
+            fuelCostRaise=9.76 # [%] Information from https://datos.gob.mx/busca/dataset/ubicacion-de-gasolineras-y-precios-comerciales-de-gasolina-y-diesel-por-estacion
+        elif inputsDjango['fuel'] == 'gas_licuado_petroleo':
+            fuelCostRaise=3 #[%] Information from https://datos.gob.mx/busca/dataset/precios-maximos-de-venta-de-primera-mano-en-materia-de-gas-lp
+        #elif fuel == 'coque_carbon':
+            #fuelCostRaise= #[%] Information from
     else:
         CPI=2.5 # 2.5 for Spain 
         
