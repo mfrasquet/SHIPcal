@@ -31,15 +31,15 @@ from iapws import IAPWS97
 
 #Place to import SHIPcal Libs
 
-from General_modules.func_General import DemandData,waterFromGrid,waterFromGrid_trim,thermalOil,reportOutputOffline, moltenSalt,waterFromGrid_v3 
+from General_modules.func_General import DemandData,waterFromGrid_trim,thermalOil,reportOutputOffline, moltenSalt,waterFromGrid_v3 
 from General_modules.demandCreator_v1 import demandCreator
 from General_modules.fromDjangotoSHIPcal import djangoReport
 from Solar_modules.EQSolares import SolarData
 from Solar_modules.EQSolares import theta_IAMs
 from Solar_modules.EQSolares import IAM_calc
 from Finance_modules.FinanceModels import SP_plant_costFunctions
-from Integration_modules.integrations import *
-from Plot_modules.plottingSHIPcal import *
+from Integration_modules.integrations import offStorageSimple, offOnlyStorageSimple, operationOnlyStorageSimple, operationSimple, operationDSG, outputOnlyStorageSimple, outputWithoutStorageSimple
+from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageAnnual, financePlot, prodMonths, savingsMonths, outputStorageSimple, offSimple
 
 
 def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
@@ -83,6 +83,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
         from CIMAV.CIMAV_modules.incidence_angle import theta_IAMs_v2 as theta_IAMs_CIMAV
         from CIMAV.CIMAV_modules.CIMAV_financeModels import Turn_key,ESCO,CIMAV_plant_costFunctions
+    else:
+        from Finance_modules.FinanceModels import Turn_key, ESCO
     
     #-->  Simulation options
     finance_study=simControl['finance_study'] #In order to include the financial study. 1-> Yes ; 0-> No
@@ -126,6 +128,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         CPI=2.5 # 2.5 for Spain 
         
     costRaise=CPI/100+fuelCostRaise/100
+    priceReduction=10 #[%] UNUSED
     
     n_years_sim=25 # Collector life in years & number of years for the simulation [years]
     
@@ -198,11 +201,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     num_modulos_tot=n_coll_loop*num_loops
     
         ## --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
-        
+    """    
     orientation="NS"
     inclination="flat" 
     shadowInput="free"
     terreno="clean_ground"
+    """
 
     beta=0 #Pitch not implemented [rad]
     orient_az_rad=0 #Orientation not implemented [rad]
@@ -349,8 +353,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         P_op_bar=4 #[bar] 
         
         # Not implemented yet
+        """
         distanceInput=15 #From the solar plant to the network integration point [m]
         surfaceAvailable=500 #Surface available for the solar plant [m2]
+        """
             
         ## ENERGY DEMAND
 #        dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
@@ -833,6 +839,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         h_in=initial.h #kJ/kg
         in_s=initial.s
         in_x=initial.x
+        in_x=in_x
         sat_liq=IAPWS97(P=P_op_Mpa, x=0)
         sat_vap=IAPWS97(P=P_op_Mpa, x=1)
         h_sat_liq=sat_liq.h
@@ -844,6 +851,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         porctSensible=sensiblePart/total
         porctLatent=latentPart/total
+        porctLatent=porctLatent
         porctPreHeated=PreHeatedPart/total
         Demand2=Demand*porctPreHeated
         
@@ -941,6 +949,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # --> Simulation Loop variable init
     
     theta_transv_rad=np.zeros(steps_sim)
+    theta_transv_rad=theta_transv_rad
     theta_i_rad=np.zeros(steps_sim)
     theta_i_deg=np.zeros(steps_sim)
     theta_transv_deg=np.zeros(steps_sim)
@@ -954,6 +963,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     flow_rate_rec=np.zeros(steps_sim)
     bypass=list()
     h_in_kJkg=np.zeros(steps_sim)
+    h_in_kJkg=h_in_kJkg
     Q_prod=np.zeros(steps_sim)
     Q_prod_lim=np.zeros(steps_sim)
     Q_prod_rec=np.zeros(steps_sim)
@@ -963,6 +973,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Q_discharg=np.zeros(steps_sim)
     Q_useful=np.zeros(steps_sim)
     h_out_kJkg=np.zeros(steps_sim)
+    h_out_kJkg=h_out_kJkg
     flowToHx=np.zeros(steps_sim)
     flowToMix=np.zeros(steps_sim)
     flowDemand=np.zeros(steps_sim)
@@ -1016,7 +1027,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             
             IAM[i]=IAM_long[i]*IAM_t[i]
             Tm_Ta=0.5*(T_in_C+T_out_C)-(temp[i]-273)#Calculates Tm-Ta in order to calculate the minimum DNI for the colector at that ambient temperature 
-            lim_inf_DNI=-(eta1*Tm_Ta + eta2*Tm_Ta**2)/rho_optic_0 
+            lim_inf_DNI=-(eta1*Tm_Ta + eta2*Tm_Ta**2)/rho_optic_0
             
         else:               # Using default's IAMs 
             if SUN_ELV[i]>0:
@@ -1215,7 +1226,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
     #DataFRame summary of the simulation (only for SL_L_S)
     simulationDF=pd.DataFrame({'DNI':DNI,'Q_prod':Q_prod,'Q_charg':Q_charg,'Q_discharg':Q_discharg,'Q_defocus':Q_defocus,'Demand':Demand,'storage_energy':storage_energy,'SOC':SOC,'T_alm_K':T_alm_K-273})
-        
+    simulationDF=simulationDF
     
     #%%
     # BLOCK 2.2 - ANUAL INTEGRATION <><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -1258,7 +1269,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
         elif origin==-3: #Use the CIMAV's costs functions
             destination=[Lat,Positional_longitude]
-            [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput,type_coll,destination,inputsDjango['distance']) #Returns all the prices in mxn
+            [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,num_loops,type_integration,almVolumen,fluidInput,type_coll,destination,inputsDjango['distance']) #Returns all the prices in mxn
 
         else: #If othe collector is selected, it uses default cost functions
             #This function calls the standard cost functions, if necessary, please modify them within the function
@@ -1276,7 +1287,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         # Turnkey model   
         if businessModel=="Llave en mano" or businessModel=="Turnkey project" or businessModel=="turnkey":
-            from Finance_modules.FinanceModels import Turn_key
             [LCOE,IRR,IRR10,AmortYear,Acum_FCF,FCF,Energy_savings,OM_cost,fuelPrizeArray,Net_anual_savings]=Turn_key(Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,costRaise,co2Savings)
             if lang=="spa":        
                 TIRscript="TIR para el cliente"
@@ -1291,7 +1301,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         # ESCO Energy service company model    
         if businessModel=="Compra de energia" or businessModel=="ESCO" or businessModel=="Renting":
              #From financing institution poit of view        
-            from Finance_modules.FinanceModels import ESCO
             [IRR,IRR10,AmortYear,Acum_FCF,FCF,BenefitESCO,OM_cost,fuelPrizeArray,Energy_savings,Net_anual_savings]=ESCO(priceReduction,Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,costRaise,co2Savings)
             if lang=="spa":    
                 TIRscript="TIR para la ESE"
@@ -1370,8 +1379,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
         if plots[4]==1: #(4) Plot Prod months
             output_excel=prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
+            output_excel=output_excel
         if plots[15]==1: #(14) Plot Month savings
             output_excel2=savingsMonths(sender,origin,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
+            output_excel2=output_excel2
 
     
     # Plots for non-annual simulatios (With annual simuations you cannot see anything)
