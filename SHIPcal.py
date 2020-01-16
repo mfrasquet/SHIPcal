@@ -1044,7 +1044,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 IAM[i]=IAM_long[i]*IAM_t[i]
 
             
-        if DNI[i]>lim_inf_DNI and DNI[i]>0:# Status: ON -> There's enough DNI to start the system
+        if DNI[i]>lim_inf_DNI and DNI[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system
            
             if type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
