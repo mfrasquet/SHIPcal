@@ -138,7 +138,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #--> Process parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.03 # Minimum flowrate before re-circulation [kg/s]
+    m_dot_min_kgs=0.06 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
@@ -350,8 +350,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=150 #HIGH - Process temperature [ºC]
-        T_process_out=60 #LOW - Temperature at the return of the process [ºC]
+        T_process_in=90 #HIGH - Process temperature [ºC]
+        T_process_out=20 #LOW - Temperature at the return of the process [ºC]
         P_op_bar=4 #[bar] 
         
         # Not implemented yet
@@ -1520,7 +1520,7 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=2 
+num_loops=1 
 n_coll_loop=8
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1531,7 +1531,7 @@ n_coll_loop=8
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_S_PD"
+type_integration="SL_L_P"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
