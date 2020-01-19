@@ -334,6 +334,7 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
                 Q_prod=0
                 T_out_K=outlet.T
                 Q_prod_rec=Q_prod_rec*num_loops*FS # Total Q_prod_rec in the field
+        Q_prod_rec=Q_prod_rec+Q_prod_rec_old   
         bypass.append("REC")
         newBypass="REC" 
     else:    

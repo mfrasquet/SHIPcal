@@ -138,8 +138,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #--> Process parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.08 # Minimum flowrate before re-circulation [kg/s]
-    coef_flow_rec=2 # Multiplier for flowrate when recirculating [-]
+    m_dot_min_kgs=0.03 # Minimum flowrate before re-circulation [kg/s]
+    coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
         ## SL_L_RF
@@ -1504,12 +1504,12 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 
 finance_study=1
 
-month_ini_sim=6
-day_ini_sim=18
+month_ini_sim=1
+day_ini_sim=1
 hour_ini_sim=1
 
-month_fin_sim=6
-day_fin_sim=18
+month_fin_sim=12
+day_fin_sim=31
 hour_fin_sim=24
 
 
