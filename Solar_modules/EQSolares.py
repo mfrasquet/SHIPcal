@@ -163,12 +163,15 @@ def IAM_calc(ang_target,IAM_type,file_loc):
             IAM=IAMdata1+incre_IAM_target
     return [IAM]
 
-def Meteo_data (file_meteo,sender='notCIMAV'): #This function exports the TMY file to 'data', the DNI and temperature array of values for  each hour in the year from the file_meteo path to file
+def Meteo_data (file_meteo,sender='notCIMAV', collector='plane'): #This function exports the TMY file to 'data', the DNI and temperature array of values for  each hour in the year from the file_meteo path to file
     #Only if the optional argument sender is received and is == 'CIMAV'
     if sender == 'CIMAV':
         data = np.loadtxt(file_meteo, delimiter="\t", skiprows=4) #Will read this format, since the first 4 rows has the place, location and headings data
-        DNI=data[:,5]
-        temp=data[:,6]
+        if collector=='concentrator':
+            DNI=data[:,5]#If the collector is a concentrator type collector this variable will carry the DNI
+        else:
+            DNI=data[:,6]#But if it is not a concentrator tipe it will carry the global radiation
+        temp=data[:,7]
     else:
         data = np.loadtxt(file_meteo, delimiter="\t")
         DNI=data[:,8]
