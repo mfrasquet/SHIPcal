@@ -286,33 +286,74 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
 
 
-def operationDSG(T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,x_desing):
+def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,x_desing,Q_prod_rec_old):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
+
+    T_in_K=T_in_C+273 #Normal operation
+    if bypass_old=="REC" and T_out_K_old>(T_in_C+273):
+        T_in_K=T_out_K_old
+
+        
     outlet=IAPWS97(P=P_op_Mpa, x=x_desing) #Design conditions
     inlet=IAPWS97(P=P_op_Mpa, T=T_in_K)
-    h_inlet_KJkg=inlet.h
+    h_in_kJkg=inlet.h
     
-    DELTA_T_loss=outlet.T-temp
-    Q_loss_rec=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI) #W/m
-    flow_rate_kgs=(DNI*IAM*Area*rho_optic_0-Q_loss_rec[0]*n_coll_loop*Long)/((outlet.h-inlet.h)*1000)
+    Q_loss_rec=Rec_loss(REC_type,IAM,theta_i_rad,DNI) #W/m
+    # Q_loss_rec=Q_loss_rec[0]/(n_coll_loop*Long*n_loops)
+    Q_loss_rec=Q_loss_rec[0]
+    flow_rate_kgs=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/((outlet.h-inlet.h)*1000)
 
-    if flow_rate_kgs<=m_dot_min_kgs: 
-        flow_rate_kgs=m_dot_min_kgs*coef_flow_rec
-          
-        h_out_kJkg=(((DNI*IAM*Area*rho_optic_0-Q_loss_rec[0]*n_coll_loop*Long)/flow_rate_kgs)/1000)+inlet.h
+    if flow_rate_kgs<=m_dot_min_kgs: #Recirculación
+        flow_rate_rec=m_dot_min_kgs*coef_flow_rec #New flow_rate
+        #New enthalpy at the output  
+        h_out_kJkg=(((DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/flow_rate_rec)/1000)+inlet.h
         x_out=IAPWS97(P=P_op_Mpa, h=h_out_kJkg).x
-        Q_prod=(DNI*IAM*Area*rho_optic_0-Q_loss_rec[0]*n_coll_loop*Long)*num_loops*FS/1000
-        T_out_K=IAPWS97(P=P_op_Mpa, h=h_out_kJkg).T
-        
-    else:
-        Q_prod=flow_rate_kgs*(outlet.h-h_inlet_KJkg)*num_loops*FS #In kW
-        x_out=0.4
+        if h_out_kJkg<h_in_kJkg: #The recirculation generates losses
+            h_out_kJkg=h_in_kJkg
+            x_out=IAPWS97(P=P_op_Mpa, h=h_out_kJkg).x
+            Q_prod=0
+            Q_prod_rec=0
+            T_out_K=T_in_K
+            flow_rate_kgs=0
+        else:
+            if x_out<=0: #After the recirculation the fluid still liquid
+                Q_prod=0
+                # Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*num_loops*FS/1000
+                T_out_K,Perd_termicas=IT_temp("steam",T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
+                outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
+                h_out_kJkg=outlet.h
+                Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)*num_loops*FS
+                
+            else: #After the recirculation the fluid is biphasic and this could generate problems with the pump
+                outlet=IAPWS97(P=P_op_Mpa, x=0)
+                h_out_kJkg=outlet.h
+                Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*FS/1000 #Q_prod_rec to calculate flow_rate inside the loop
+                flow_rate_rec=Q_prod_rec/(h_out_kJkg-h_in_kJkg)
+                Q_prod=0
+                T_out_K=outlet.T
+                Q_prod_rec=Q_prod_rec*num_loops # Total Q_prod_rec in the field
+        bypass.append("REC")
+        newBypass="REC" 
+    else:    
+        if bypass_old=="REC":
+            if Q_prod_rec_old>0:
+                Q_prod=flow_rate_kgs*(outlet.h-h_in_kJkg)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kW
+            else:
+                Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
+        else:
+            x_out=x_desing
+            outlet=IAPWS97(P=P_op_Mpa, x=x_out)
+            Q_prod=flow_rate_kgs*(outlet.h-h_in_kJkg)*num_loops*FS #In kW
+                
+        x_out=x_desing
         T_out_K=IAPWS97(P=P_op_Mpa, x=x_out).T
-    
+        Q_prod_rec=0
+        flow_rate_rec=0
+        bypass.append("PROD")
+        newBypass="PROD" 
+    Perd_termicas=Q_loss_rec*n_coll_loop*Long
 
-    # Perd_termicas=Q_loss_rec*n_coll_loop*Long
-    Perd_termicas=Q_loss_rec[0]*n_coll_loop*Long/1000
-    return [flow_rate_kgs,Perd_termicas,Q_prod,x_out,T_out_K]
+    return [flow_rate_kgs,Perd_termicas,Q_prod,x_out,T_out_K,flow_rate_rec,Q_prod_rec,bypass]
 
 
 def outputKettle(P_op_Mpa,almVolumen,T_alm_K_old,Q_prod,T_in_C_AR):
