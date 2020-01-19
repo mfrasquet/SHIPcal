@@ -288,7 +288,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
 
 def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,x_desing,Q_prod_rec_old):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
-
+    Perd_termicas=0
     T_in_K=T_in_C+273 #Normal operation
     if bypass_old=="REC" and T_out_K_old>(T_in_C+273):
         T_in_K=T_out_K_old
@@ -298,7 +298,8 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
     inlet=IAPWS97(P=P_op_Mpa, T=T_in_K)
     h_in_kJkg=inlet.h
     
-    Q_loss_rec=Rec_loss(REC_type,IAM,theta_i_rad,DNI) #W/m
+    DELTA_T_loss=outlet.T-temp
+    Q_loss_rec=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI) #W/m
     # Q_loss_rec=Q_loss_rec[0]/(n_coll_loop*Long*n_loops)
     Q_loss_rec=Q_loss_rec[0]
     flow_rate_kgs=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/((outlet.h-inlet.h)*1000)
@@ -320,6 +321,7 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
                 Q_prod=0
                 # Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*num_loops*FS/1000
                 T_out_K,Perd_termicas=IT_temp("steam",T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
+                Perd_termicas=Perd_termicas/1000
                 outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
                 h_out_kJkg=outlet.h
                 Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)*num_loops*FS
@@ -331,13 +333,13 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
                 flow_rate_rec=Q_prod_rec/(h_out_kJkg-h_in_kJkg)
                 Q_prod=0
                 T_out_K=outlet.T
-                Q_prod_rec=Q_prod_rec*num_loops # Total Q_prod_rec in the field
+                Q_prod_rec=Q_prod_rec*num_loops*FS # Total Q_prod_rec in the field
         bypass.append("REC")
         newBypass="REC" 
     else:    
         if bypass_old=="REC":
             if Q_prod_rec_old>0:
-                Q_prod=flow_rate_kgs*(outlet.h-h_in_kJkg)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kW
+                Q_prod=flow_rate_kgs*(outlet.h-h_in_kJkg)*num_loops*FS+Q_prod_rec_old #In kW
             else:
                 Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
         else:
@@ -351,7 +353,8 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
         flow_rate_rec=0
         bypass.append("PROD")
         newBypass="PROD" 
-    Perd_termicas=Q_loss_rec*n_coll_loop*Long
+    if Perd_termicas==0:
+        Perd_termicas=Q_loss_rec*n_coll_loop*Long/1000
 
     return [flow_rate_kgs,Perd_termicas,Q_prod,x_out,T_out_K,flow_rate_rec,Q_prod_rec,bypass]
 
