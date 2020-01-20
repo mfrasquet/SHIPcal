@@ -78,6 +78,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         from Solatom_modules.solatom_param import solatom_param
         from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
         from Solatom_modules.templateSolatom import reportOutput
+        from Finance_modules.FinanceModels import Turn_key, ESCO
     elif sender=='CIMAV': #The request comes from CIMAV front-end
         from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
         from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso
@@ -137,8 +138,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #--> Process parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.08 # Minimum flowrate before re-circulation [kg/s]
-    coef_flow_rec=2 # Multiplier for flowrate when recirculating [-]
+    m_dot_min_kgs=0.06 # Minimum flowrate before re-circulation [kg/s]
+    coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
         ## SL_L_RF
@@ -350,8 +351,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             #>> PROCESS
         fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
         T_process_in=150 #HIGH - Process temperature [ºC]
-        T_process_out=20 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=4 #[bar] 
+        T_process_out=60 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=6 #[bar] 
         
         # Not implemented yet
         """
@@ -1158,17 +1159,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             elif type_integration=="SL_S_PD":
                 #SL_S_PD Supply level with steam for direct steam generation
                 
-                # [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,type_coll)
-                T_in_K[i]=T_in_C+273
-                [flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],x_out[i],T_out_K[i]]=operationDSG(T_in_K[i],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design)
+                [flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],x_out[i],T_out_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1])
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
             
             elif type_integration=="SL_S_PDS":
                 #SL_S_PDS Supply level with steam for direct steam generation with water storage
                 
-                T_in_K[i]=T_in_C+273
-                [flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],x_out[i],T_out_K[i]]=operationDSG(T_in_K[i],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design)
-                # [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                [flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],x_out[i],T_out_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1])
+                 # [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
                 [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
             
         
@@ -1521,7 +1519,7 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=2 
+num_loops=1 
 n_coll_loop=8
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1532,17 +1530,17 @@ n_coll_loop=8
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
+type_integration="SL_S_PDS"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=-3 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-0 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1590,5 +1588,5 @@ else:
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
     
-[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+# [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
