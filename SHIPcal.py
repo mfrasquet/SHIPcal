@@ -349,10 +349,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="water" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=90 #HIGH - Process temperature [ºC]
-        T_process_out=20 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=4 #[bar] 
+        fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=150 #HIGH - Process temperature [ºC]
+        T_process_out=60 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=6 #[bar] 
         
         # Not implemented yet
         """
@@ -1165,9 +1165,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             elif type_integration=="SL_S_PDS":
                 #SL_S_PDS Supply level with steam for direct steam generation with water storage
                 
-                T_in_K[i]=T_in_C+273
-                [flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],x_out[i],T_out_K[i]]=operationDSG(T_in_K[i],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design)
-                # [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                [flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],x_out[i],T_out_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1])
+                 # [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
                 [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
             
         
@@ -1531,7 +1530,7 @@ n_coll_loop=8
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_PS"
+type_integration="SL_S_PDS"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
