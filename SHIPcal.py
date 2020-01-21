@@ -1005,8 +1005,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     for i in range(1,steps_sim): #--> <><><><>< ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
         
-    # --> IAM calculation           
-
+    # --> IAM calculation
         if sender=='solatom': #Using Solatom's IAMs
             if SUN_ELV[i]>0:
                 theta_transv_deg[i],theta_i_deg[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad)
@@ -1045,7 +1044,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
             
         if DNI[i]>lim_inf_DNI and DNI[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system
-           
             if type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 

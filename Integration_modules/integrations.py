@@ -205,8 +205,8 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     if fluidInput=="water" or fluidInput=="steam":
         #Calculo el flowrate necesario para poder dar el salto de temp necesario
         if sender == 'CIMAV':
-            from CIMAV.CIMAV_modules.iteration_process import flow_calc
-            flow_rate_kgs,Perd_termicas=flow_calc(T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,type_coll)
+            from CIMAV.CIMAV_modules.iteration_process import flow_calc_v2
+            flow_rate_kgs,Perd_termicas=flow_calc_v2(T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,type_coll)
         else:
             flow_rate_kgs,Perd_termicas=flow_calc(T_out_K,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
     

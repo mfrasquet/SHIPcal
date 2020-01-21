@@ -25,7 +25,7 @@ def SolarEQ_simple (Month,Day,Hour,Lat,Huso): #Returns the hour angle (W) [rad],
     DECL_deg=DECL/gr;
     
     #Hour
-    W_deg=(Hour-12-Huso)*15;
+    W_deg=(Hour-12)*15;
     W=W_deg*gr;
     
     #Sun elevation
@@ -244,7 +244,7 @@ def SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim
         temp_sim[step]=temp[hour_year_ini+step-1]
     
         #Posicion solar
-        W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN=SolarEQ_simple (month_sim[step],day_sim[step] ,hour_sim[step],Lat,Huso) #calls another unction in within this script that calculates the solar positional angles for the specfied hour of the day and month
+        W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN=SolarEQ_simple (month_sim[step],day_sim[step] ,hour_sim[step],Lat,Huso) #calls another function in within this script that calculates the solar positional angles for the specfied hour of the day and month
         W_sim[step]=W
         SUN_ELV_sim[step]=SUN_ELV   #rad
         SUN_AZ_sim[step]=SUN_AZ     #rad
