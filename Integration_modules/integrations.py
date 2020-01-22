@@ -194,38 +194,41 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     if fluidInput=="water" or fluidInput=="steam":
         [h_in_kJkg,T_in_K]=inputsWithDNIWaterSimple(T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old)
-    if fluidInput=="oil":
+    elif fluidInput=="oil":
         [T_in_K]=inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)
-    if fluidInput=="moltenSalt":
+    elif fluidInput=="moltenSalt":
         [T_in_K]=inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)  
     
-    
     T_out_K=T_out_C+273 #Target temp
-
-    if fluidInput=="water" or fluidInput=="steam":
-        #Calculo el flowrate necesario para poder dar el salto de temp necesario
-        if sender == 'CIMAV':
-            from CIMAV.CIMAV_modules.iteration_process import flow_calc_v2
-            flow_rate_kgs,Perd_termicas=flow_calc_v2(T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,type_coll)
-        else:
+    
+    if sender == 'CIMAV':
+        from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV,IT_temp
+        flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,type_coll)
+        
+    else:
+        if fluidInput=="water" or fluidInput=="steam":
+            #Calculo el flowrate necesario para poder dar el salto de temp necesario
             flow_rate_kgs,Perd_termicas=flow_calc(T_out_K,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
-    
-    if fluidInput=="oil":
-        T_av_K=(T_in_K+T_out_K)/2
-        [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
-        [flow_rate_kgs,Perd_termicas]=flow_calcHTF(T_out_K,T_in_K,Cp_av,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
-    
-    if fluidInput=="moltenSalt":
-        T_av_K=(T_in_K+T_out_K)/2
-        [rho_av,Cp_av,k_av,Dv_av]=moltenSalt(T_av_K)
-        [flow_rate_kgs,Perd_termicas]=flow_calcHTF (T_out_K,T_in_K,Cp_av,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
+        
+        elif fluidInput=="oil":
+            T_av_K=(T_in_K+T_out_K)/2
+            [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
+            [flow_rate_kgs,Perd_termicas]=flow_calcHTF(T_out_K,T_in_K,Cp_av,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
+        
+        elif fluidInput=="moltenSalt":
+            T_av_K=(T_in_K+T_out_K)/2
+            [rho_av,Cp_av,k_av,Dv_av]=moltenSalt(T_av_K)
+            [flow_rate_kgs,Perd_termicas]=flow_calcHTF (T_out_K,T_in_K,Cp_av,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
 
     
 
     if flow_rate_kgs<=m_dot_min_kgs and T_out_K>T_in_K: #El caudal necesario para obtener la temp de salida es inferior al mínimo
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
-        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
+        if sender == 'CIMAV':
+            T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,type_coll,DNI,IAM,Area,n_coll_loop,flow_rate_rec)
+        else:
+            T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
         Q_prod=0 #No hay produccion
         
         if fluidInput=="water" or fluidInput=="steam":
@@ -233,12 +236,12 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
             h_out_kJkg=outlet.h
             Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)
         
-        if fluidInput=="oil":
+        elif fluidInput=="oil":
             T_av_K=(T_in_K+T_out_K)/2
             [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
             Q_prod_rec=flow_rate_rec*Cp_av*(T_out_K-T_in_K)
         
-        if fluidInput=="moltenSalt":
+        elif fluidInput=="moltenSalt":
             T_av_K=(T_in_K+T_out_K)/2
             [rho_av,Cp_av,k_av,Dv_av]=moltenSalt(T_av_K)
             Q_prod_rec=flow_rate_rec*Cp_av*(T_out_K-T_in_K)
