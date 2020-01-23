@@ -19,7 +19,7 @@ import PIL
 from PIL import Image
 
 
-def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath):
+def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath,**kwargs):
 
     #Proportions for Sankey
     
@@ -38,7 +38,7 @@ def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,
 
 
     fig = plt.figure(figsize=(8, 8))
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
         
     if lang=="spa":
@@ -87,7 +87,7 @@ def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,
     plt.tight_layout()
        
 
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -100,7 +100,7 @@ def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,
     if origin==0:
         return 0,sankeyDict 
     
-def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty):
+def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty,**kwargs):
     P_op_Mpa=P_op_bar/10
     sat_liq=IAPWS97(P=P_op_Mpa, x=0)
     sat_vap=IAPWS97(P=P_op_Mpa, x=1)
@@ -159,7 +159,7 @@ def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_
        s=s+s_step
        i=i+1
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     plt.text(7.5, 350, str(int(P_isobar))+"bar", size=10, color='k', ha='center', va='center', horizontalalignment='center', verticalalignment='center', rotation= 0)   
     if lang=="spa":    
@@ -233,7 +233,7 @@ def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_
     axes.set_ylim([0,400])
     axes.set_xlim([-3,11])
         
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -244,7 +244,7 @@ def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_
         fig.savefig(str(plotPath)+'Mollier.png', format='png', dpi=imageQlty) #Save image for the report for the report
        
 
-def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty):    
+def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty,**kwargs):
     mollier=pd.read_csv(os.path.dirname(__file__)+'/mollierWater.csv',sep=',',encoding = "ISO-8859-1",header=None)  
 
     P_op_Mpa=P_op_bar/10
@@ -301,7 +301,7 @@ def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,o
        s=s+s_step
        i=i+1
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     plt.text(5, IAPWS97(P=bar_MPa(P_isobar),s=5).h-500, str(int(P_isobar))+"bar", size=10, color='k', ha='center', va='center', horizontalalignment='center', verticalalignment='center', rotation= 0)   
     if lang=="spa":        
@@ -370,7 +370,7 @@ def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,o
     axes.set_ylim([0,3000])
     axes.set_xlim([-3,11])
    
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -381,20 +381,20 @@ def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,o
         fig.savefig(str(plotPath)+'Mollier2.png', format='png', dpi=imageQlty) #Save for the report
         
     
-def thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty):
+def thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     fig.suptitle('Ángulos theta', fontsize=14, fontweight='bold')
     ax1 = fig.add_subplot(111)  
     ax1 .plot(step_sim, theta_i_deg,'.r-',label="Ang_incidencia")
     ax1 .plot(step_sim, theta_transv_deg,'.b-',label="Incidencia_transversal")
     ax1 .axhline(y=0,xmin=0,xmax=steps_sim,c="blue",linewidth=0.5,zorder=0)
-    ax1.set_xlabel('simulación (hora del año)')
+    ax1.set_xlabel('Simulación (hora del año)')
     ax1.set_ylabel('Grados')
     plt.legend( loc='upper left', borderaxespad=0.)
     
-    if origin==-2:     
+    if origin==-2 or origin == -3:     
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -404,20 +404,20 @@ def thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_de
     if origin==-1:
         fig.savefig(str(plotPath)+'tetha.png', format='png', dpi=imageQlty)
 
-def IAMAnglesPlot(sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty):    
+def IAMAnglesPlot(sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     fig.suptitle('IAMs', fontsize=14, fontweight='bold')
     ax2 = fig.add_subplot(111)         
     ax2 .plot(step_sim, IAM_long,'.-',color = 'b',label="IAM_long")
     ax2 .plot(step_sim, IAM_t,'.-',color = 'r',label="IAM_transv")
     ax2 .plot(step_sim, IAM,'.-',color = '#39B8E3',label="IAM")
-    ax2.set_xlabel('simulación (hora del año)')
+    ax2.set_xlabel('Simulación (hora del año)')
     ax2.set_ylabel('Grados')
     plt.legend(loc='upper left', borderaxespad=0.)
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -427,9 +427,9 @@ def IAMAnglesPlot(sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty):
     if origin==-1:
         fig.savefig(str(plotPath)+'IAM.png', format='png', dpi=imageQlty)
     
-def demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty):
+def demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa": 
         fig.suptitle('Demanda vs Radiación solar', fontsize=14, fontweight='bold')
@@ -439,7 +439,7 @@ def demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_pro
         ax1 .plot(step_sim, Q_prod_lim,'.b-',label="Produccion util")
         ax1 .plot(step_sim, Q_prod_rec,'.g-',label="Produccion Rec")
         ax1 .axhline(y=0,xmin=0,xmax=steps_sim,c="blue",linewidth=0.5,zorder=0)
-        ax1.set_xlabel('simulación (hora del año)')
+        ax1.set_xlabel('Simulación (hora del año)')
         ax1.set_ylabel('Demanda - kWh',color="blue")
         ax1.set_ylim([0,max(np.max(Q_prod),np.max(Demand))*1.2])
         plt.legend(loc='upper left', borderaxespad=0.)
@@ -465,7 +465,7 @@ def demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_pro
         ax2.set_ylabel('Solar Radiaton - W/m2',color='red')
         plt.legend(loc='upper right', borderaxespad=0.)
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -475,7 +475,7 @@ def demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_pro
     if origin==-1:
         fig.savefig(str(plotPath)+'demandProduction.png', format='png', dpi=imageQlty)
 
-def rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty):    
+def rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
     rhoList=[]
     CpList=[]
     T_step=[]
@@ -486,7 +486,7 @@ def rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty):
         CpList.append(Cp)
     
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa":     
         fig.suptitle('Propiedades de las sales fundidas', fontsize=14, fontweight='bold')
@@ -518,7 +518,7 @@ def rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty):
         plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -528,7 +528,7 @@ def rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty):
     if origin==-1:
         fig.savefig(str(plotPath)+'Salt.png', format='png', dpi=imageQlty)    
 
-def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):    
+def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
     rhoList=[]
     CpList=[]
     T_step=[]
@@ -539,7 +539,7 @@ def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):
         CpList.append(Cp)
     
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa":     
         fig.suptitle('Propiedades del Aceite térmico', fontsize=14, fontweight='bold')
@@ -571,7 +571,7 @@ def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):
         plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -581,7 +581,7 @@ def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):
     if origin==-1:
         fig.savefig(str(plotPath)+'Oil.png', format='png', dpi=imageQlty)
 
-def viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty): 
+def viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
     DvList=[]
     T_step=[]
     for T in range(100+273,600+273,5):
@@ -591,7 +591,7 @@ def viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty):
     
     DvList=DvList[4:]
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa":    
         fig.suptitle('Viscosidad de las sales fudidas', fontsize=14, fontweight='bold')
@@ -620,7 +620,7 @@ def viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty):
         ax1.set_ylabel('Dynamic viscosity*1e3  - Ns/m2')
         ax1.set_yscale('log')
            
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -630,7 +630,7 @@ def viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty):
     if origin==-1:
         fig.savefig(str(plotPath)+'Salt2.png', format='png', dpi=imageQlty)
         
-def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty): 
+def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
     DvList=[]
     KvList=[]
     T_step=[]
@@ -643,7 +643,7 @@ def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):
     DvList=DvList[4:]
     KvList=KvList[4:]
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa":    
         fig.suptitle('Viscosidad del Aceite térmico', fontsize=14, fontweight='bold')
@@ -683,7 +683,7 @@ def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):
         plt .hlines(y=Kv*1e6,xmin=min(range(len(DvList)), key=lambda i: abs(DvList[i]-Dv*1e3))+4,xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -693,9 +693,9 @@ def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty):
     if origin==-1:
         fig.savefig(str(plotPath)+'Oil2.png', format='png', dpi=imageQlty)
         
-def flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty):
+def flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     fig.suptitle('Caudales & temperaturas', fontsize=14, fontweight='bold')
     ax1 = fig.add_subplot(111)  
@@ -708,7 +708,7 @@ def flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,n
     ax1 .plot(step_sim, flowToMix,'.g-',label="Caudal flowToMix")
     ax1 .axhline(y=m_dot_min_kgs,xmin=0,xmax=steps_sim,c="black",linewidth=0.5,zorder=0)
     ax1.set_ylim([0,(np.max(flow_rate_kgs*num_loops))*1.1])
-    ax1.set_xlabel('simulación (hora del año)')
+    ax1.set_xlabel('Simulación (hora del año)')
     ax1.set_ylabel('Caudal - kg/s')
     plt.legend(bbox_to_anchor=(1.15, .5), loc=2, borderaxespad=0.)
     ax2 = ax1.twinx()          
@@ -728,7 +728,7 @@ def flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,n
 #    output3.columns=['T_out_K']
 #    output_excel_FlowratesTemps=pd.concat([output1,output2,output3], axis=1)
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -738,16 +738,16 @@ def flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,n
     if origin==-1:
         fig.savefig(str(plotPath)+'flowrates.png', format='png', dpi=imageQlty)
     
-def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty):
+def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
         
     if lang=="spa": 
         fig.suptitle('Producción solar primera semana Enero', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)
         ax1 .plot(np.arange(167), DNI[0:167],'.r-',label="Radiación solar")
-        ax1.set_xlabel('simulación (hora del año)')
+        ax1.set_xlabel('Simulación (hora del año)')
         ax1.set_ylabel('Radiación Solar - W/m2')
         ax1.set_ylim([0,1200])
         plt.legend(loc='upper left', borderaxespad=0.,frameon=False)
@@ -792,7 +792,7 @@ def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
 #    output6.columns=['Q_prod']
 #    output_excel_Prod_wee_Jan=pd.concat([output1,output2,output3,output4,output5,output6], axis=1)
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -802,16 +802,16 @@ def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
     if origin==-1:
         fig.savefig(str(plotPath)+'produccion_solar1weekWinter.png', format='png', dpi=imageQlty)
  
-def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty):  
+def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
         
     if lang=="spa":         
         fig.suptitle('Producción solar primera semana Junio', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)
         ax1 .plot((np.arange(3624,3624+167,1)), DNI[3624:3791],'.r-',label="Radiación solar")
-        ax1.set_xlabel('simulación (hora del año)')
+        ax1.set_xlabel('Simulación (hora del año)')
         ax1.set_ylabel('Radiación Solar - W/m2')
         ax1.set_ylim([0,1200])
         plt.legend(loc='upper left', borderaxespad=0.,frameon=False)
@@ -858,7 +858,7 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
 #    
 #    output_excel_Prod_week_Jun=pd.concat([output1,output2,output3,output4,output5,output6], axis=1)
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -869,16 +869,16 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
         fig.savefig(str(plotPath)+'produccion_solar1weekSummer.png', format='png', dpi=imageQlty)
  
     
-def productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty):
+def productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty,**kwargs):
     fig = plt.figure(figsize=(14, 3.5))
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa": 
         fig.suptitle('Producción anual', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)  
         ax1 .plot(step_sim, DNI,'.r-',label="Radiación solar")
 #        ax1 .axhline(y=m_dot_min_kgs,xmin=0,xmax=steps_sim,c="black",linewidth=0.5,zorder=0)
-        ax1.set_xlabel('simulación (hora del año)')
+        ax1.set_xlabel('Simulación (hora del año)')
         ax1.set_ylabel('Solar radiation - W/m2',color='red')
         legend =plt.legend(bbox_to_anchor=(0.12, -.07), loc=1, borderaxespad=0.)
         ax2 = ax1.twinx()          
@@ -927,7 +927,7 @@ def productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Dema
     #    output_excel_Prod_annual=pd.concat([output1,output2,output3,output4,output5,output6], axis=1)
     #    fig.savefig('/home/miguel/Desktop/Python_files/PLAT_VIRT/fresnel/Report/images/produccion_solar.png', format='png', dpi=imageQlty)
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -938,9 +938,9 @@ def productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Dema
         fig.savefig(str(plotPath)+'produccion_solar.png', format='png', dpi=imageQlty)
        
     
-def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty):
+def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty,**kwargs):
     fig = plt.figure(figsize=(14, 3.5))
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa":
         fig.suptitle('Almacenamiento primera semana Enero', fontsize=14, fontweight='bold',y=1)
@@ -966,7 +966,7 @@ def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
             ax2 .plot(np.arange(167), np.array(T_alm_K[0:167])-273,'r',label="Temperatura",linewidth=2.0)
         ax2 .plot(np.arange(167), SOC[0:167],'r:',label="Carga del almacenamiento",linewidth=2.0)
-        ax2.set_xlabel('simulación (hora del año)')
+        ax2.set_xlabel('Simulación (hora del año)')
         ax2.set_ylabel('Estado de carga almacenamiento %',color = 'red')
         ax2.set_ylim([0,101])
         ax2.set_xlim([0,167])
@@ -1006,7 +1006,7 @@ def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
     plt.tight_layout()
     
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1016,10 +1016,10 @@ def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
     if origin==-1:
         fig.savefig(str(plotPath)+'almacenamiento_Enero.png', format='png', dpi=imageQlty)
 
-def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty):
+def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty,**kwargs):
     fig = plt.figure(figsize=(14, 3.5))
     #np.array(in list) is because Django need it since Q_prod, Q_prod_lim,.. are passed as lists
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa":
         fig.suptitle('Almacenamiento primera semana Junio', fontsize=14, fontweight='bold',y=1)
@@ -1047,7 +1047,7 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
              ax2 .plot((np.arange(3624,3624+167,1)), np.array(T_alm_K[3624:3791])-273,'r',label="Carga del almacenamiento",linewidth=2.0,zorder=11)
         ax2 .plot((np.arange(3624,3624+167,1)), SOC[3624:3791],'r:',label="Carga del almacenamiento",linewidth=2.0,zorder=11)
-        ax2.set_xlabel('simulación (hora del año)')
+        ax2.set_xlabel('Simulación (hora del año)')
         ax2.set_ylabel('Estado de carga almacenamiento %',color = 'red')
         ax2.set_ylim([0,101])
         ax2.set_xlim([3624,3624+167])
@@ -1084,7 +1084,7 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
     plt.tight_layout()
     
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1094,9 +1094,9 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
     if origin==-1:
         fig.savefig(str(plotPath)+'almacenamiento_Junio.png', format='png', dpi=imageQlty)
 
-def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty):
+def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty,**kwargs):
     fig = plt.figure(figsize=(14, 3.5))
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     fig.suptitle('Almacenamiento', fontsize=14, fontweight='bold',y=1)
     ax1 = fig.add_subplot(111)  
@@ -1119,7 +1119,7 @@ def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,
     
     ax2 = ax1.twinx()  
     ax2 .plot(step_sim, SOC,'.r-',label="Carga del almacenamiento")
-    ax2.set_xlabel('simulación (hora del año)')
+    ax2.set_xlabel('Simulación (hora del año)')
     ax2.set_ylabel('Estado de carga almacenamiento %',color = 'red')
     ax2.set_ylim([0,101])
     ax2.set_xlim([0,steps_sim])
@@ -1127,7 +1127,7 @@ def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,
     plt.tight_layout()
     
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1137,9 +1137,9 @@ def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,
     if origin==-1:
         fig.savefig(str(plotPath)+'almacenamiento_Anual.png', format='png', dpi=imageQlty)
 
-def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty):
+def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa":
         fig.suptitle('Estudio financiero', fontsize=14, fontweight='bold')
@@ -1148,7 +1148,10 @@ def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_
         ax1 .plot(np.arange(n_years_sim), FCF,'.b-',label="Cash Flow")
         ax1 .axhline(y=m_dot_min_kgs,xmin=0,xmax=steps_sim,c="black",linewidth=0.5,zorder=0)
         ax1.set_xlabel('años')
-        ax1.set_ylabel('€')
+        if origin == -3:
+            ax1.set_ylabel('$')
+        else:
+            ax1.set_ylabel('€')
         plt.legend(bbox_to_anchor=(1.15, .5), loc=2, borderaxespad=0.)
         plt.text(int(AmortYear),-Selling_price, "Año de retorno= "+str(int(AmortYear)))
     if lang=="eng":    
@@ -1158,7 +1161,10 @@ def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_
         ax1 .plot(np.arange(n_years_sim), FCF,'.b-',label="Free Cash Flows")
         ax1 .axhline(y=m_dot_min_kgs,xmin=0,xmax=steps_sim,c="black",linewidth=0.5,zorder=0)
         ax1.set_xlabel('years')
-        ax1.set_ylabel('€')
+        if origin == -3:
+            ax1.set_ylabel('$')
+        else:
+            ax1.set_ylabel('€')
         plt.legend(bbox_to_anchor=(1.15, .5), loc=2, borderaxespad=0.)
         plt.text(int(AmortYear),-Selling_price, "Payback period= "+str(int(AmortYear)))    
     
@@ -1177,7 +1183,7 @@ def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_
         
     plt.legend(bbox_to_anchor=(0, 1), loc=2, borderaxespad=0.)
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1188,7 +1194,7 @@ def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_
         fig.savefig(str(plotPath)+'finance.png', format='png', dpi=imageQlty)
         
 
-def arraysMonth(Q_prod,Q_prod_lim,DNI,Demand):
+def arraysMonth(Q_prod,Q_prod_lim,DNI,Demand,**kwargs):
  #Para resumen mensual      
     Ene_prod=np.zeros(8760)
     Feb_prod=np.zeros(8760)
@@ -1308,7 +1314,7 @@ def arraysMonth(Q_prod,Q_prod_lim,DNI,Demand):
 
     return array_de_meses,array_de_meses_lim,array_de_DNI,array_de_demd,array_de_fraction
 
-def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty):    
+def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty,**kwargs):
     array_de_meses,array_de_meses_lim,array_de_DNI,array_de_demd,array_de_fraction=arraysMonth(Q_prod,Q_prod_lim,DNI,Demand)
     for m in range(0,12):
         if array_de_demd[m]==0:
@@ -1331,7 +1337,7 @@ def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlt
     meses_index=np.arange(0,12)
     fig,ax = plt.subplots()
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa":
         meses=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec"]
@@ -1365,7 +1371,7 @@ def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlt
         plt.legend(loc='upper right', borderaxespad=0.,frameon=True)        
       
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1378,7 +1384,7 @@ def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlt
         plt.show()
         return output_excel
 
-def arrays_Savings_Month(Q_prod_lim,Demand,fuel_cost,boiler_eff):
+def arrays_Savings_Month(Q_prod_lim,Demand,Fuel_price,Boiler_eff,**kwargs):
  #Para resumen mensual      
 
     Ene_sav_lim=np.zeros(8760)
@@ -1420,53 +1426,89 @@ def arrays_Savings_Month(Q_prod_lim,Demand,fuel_cost,boiler_eff):
 
     for i in range(0,8759):
         if (i<=744-1):
-            Ene_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Ene_demd[i]=fuel_cost*Demand[i]
-            Ene_frac[i]=Ene_sav_lim[i]/Ene_demd[i]
+            Ene_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Ene_demd[i]=Fuel_price*Demand[i]
+            if Ene_demd[i] == 0:
+                Ene_frac[i] = 0
+            else:
+                Ene_frac[i]=Ene_sav_lim[i]/Ene_demd[i]
         if (i>744-1) and (i<=1416-1):
-            Feb_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Feb_demd[i]=fuel_cost*Demand[i]
-            Feb_frac[i]=Feb_sav_lim[i]/Feb_demd[i]
+            Feb_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Feb_demd[i]=Fuel_price*Demand[i]
+            if Feb_demd[i] == 0:
+                Feb_frac[i] = 0
+            else:
+                Feb_frac[i]=Feb_sav_lim[i]/Feb_demd[i]
         if (i>1416-1) and (i<=2160-1):
-            Mar_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Mar_demd[i]=fuel_cost*Demand[i]
-            Mar_frac[i]=Mar_sav_lim[i]/Mar_demd[i]
+            Mar_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Mar_demd[i]=Fuel_price*Demand[i]
+            if Mar_demd[i] == 0:
+                Mar_frac[i] = 0
+            else:
+                Mar_frac[i]=Mar_sav_lim[i]/Mar_demd[i]
         if (i>2160-1) and (i<=2880-1):
-            Abr_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Abr_demd[i]=fuel_cost*Demand[i]
-            Abr_frac[i]=Abr_sav_lim[i]/Abr_demd[i]
+            Abr_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Abr_demd[i]=Fuel_price*Demand[i]
+            if Abr_demd[i] == 0:
+                Abr_frac[i] = 0
+            else:
+                Abr_frac[i]=Abr_sav_lim[i]/Abr_demd[i]
         if (i>2880-1) and (i<=3624-1):
-            May_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            May_demd[i]=fuel_cost*Demand[i]
-            May_frac[i]=May_sav_lim[i]/May_demd[i]
+            May_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            May_demd[i]=Fuel_price*Demand[i]
+            if May_demd[i] == 0:
+                May_frac[i] = 0
+            else:
+                May_frac[i]=May_sav_lim[i]/May_demd[i]
         if (i>3624-1) and (i<=4344-1):
-            Jun_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Jun_demd[i]=fuel_cost*Demand[i]
-            Jun_frac[i]=Jun_sav_lim[i]/Jun_demd[i]
+            Jun_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Jun_demd[i]=Fuel_price*Demand[i]
+            if Jun_demd[i] == 0:
+                Jun_frac[i] = 0
+            else:
+                Jun_frac[i]=Jun_sav_lim[i]/Jun_demd[i]
         if (i>4344-1) and (i<=5088-1):
-            Jul_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Jul_demd[i]=fuel_cost*Demand[i]
-            Jul_frac[i]=Jul_sav_lim[i]/Jul_demd[i]
+            Jul_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Jul_demd[i]=Fuel_price*Demand[i]
+            if Jul_demd[i] == 0:
+                Jul_frac[i] = 0
+            else:
+                Jul_frac[i]=Jul_sav_lim[i]/Jul_demd[i]
         if (i>5088-1) and (i<=5832-1):
-            Ago_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Ago_demd[i]=fuel_cost*Demand[i]
-            Ago_frac[i]=Ago_sav_lim[i]/Ago_demd[i]
+            Ago_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Ago_demd[i]=Fuel_price*Demand[i]
+            if Ago_demd[i] == 0:
+                Ago_frac[i] = 0
+            else:
+                Ago_frac[i]=Ago_sav_lim[i]/Ago_demd[i]
         if (i>5832-1) and (i<=6552-1):
-            Sep_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Sep_demd[i]=fuel_cost*Demand[i]
-            Sep_frac[i]=Sep_sav_lim[i]/Sep_demd[i]
+            Sep_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Sep_demd[i]=Fuel_price*Demand[i]
+            if Sep_demd[i] == 0:
+                Sep_frac[i] = 0
+            else:
+                Sep_frac[i]=Sep_sav_lim[i]/Sep_demd[i]
         if (i>6552-1) and (i<=7296-1):
-            Oct_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Oct_demd[i]=fuel_cost*Demand[i]
-            Oct_frac[i]=Oct_sav_lim[i]/Oct_demd[i]
+            Oct_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Oct_demd[i]=Fuel_price*Demand[i]
+            if Oct_demd[i] == 0:
+                Oct_frac[i] = 0
+            else:
+                Oct_frac[i]=Oct_sav_lim[i]/Oct_demd[i]
         if (i>7296-1) and (i<=8016-1):
-            Nov_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Nov_demd[i]=fuel_cost*Demand[i]
-            Nov_frac[i]=Nov_sav_lim[i]/Nov_demd[i]
+            Nov_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Nov_demd[i]=Fuel_price*Demand[i]
+            if Nov_demd[i] == 0:
+                Nov_frac[i] = 0
+            else:
+                Nov_frac[i]=Nov_sav_lim[i]/Nov_demd[i]
         if (i>8016-1):
-            Dic_sav_lim[i]=fuel_cost*Q_prod_lim[i]/boiler_eff
-            Dic_demd[i]=fuel_cost*Demand[i]
-            Dic_frac[i]=Dic_sav_lim[i]/Dic_demd[i]
+            Dic_sav_lim[i]=Fuel_price*Q_prod_lim[i]/Boiler_eff
+            Dic_demd[i]=Fuel_price*Demand[i]
+            if Dic_demd[i] == 0:
+                Dic_frac[i] = 0
+            else:
+                Dic_frac[i]=Dic_sav_lim[i]/Dic_demd[i]
 
     array_de_meses_lim=[np.sum(Ene_sav_lim),np.sum(Feb_sav_lim),np.sum(Mar_sav_lim),np.sum(Abr_sav_lim),np.sum(May_sav_lim),np.sum(Jun_sav_lim),np.sum(Jul_sav_lim),np.sum(Ago_sav_lim),np.sum(Sep_sav_lim),np.sum(Oct_sav_lim),np.sum(Nov_sav_lim),np.sum(Dic_sav_lim)]   
     array_de_demd=[np.sum(Ene_demd),np.sum(Feb_demd),np.sum(Mar_demd),np.sum(Abr_demd),np.sum(May_demd),np.sum(Jun_demd),np.sum(Jul_demd),np.sum(Ago_demd),np.sum(Sep_demd),np.sum(Oct_demd),np.sum(Nov_demd),np.sum(Dic_demd)]
@@ -1475,8 +1517,8 @@ def arrays_Savings_Month(Q_prod_lim,Demand,fuel_cost,boiler_eff):
     return array_de_meses_lim,array_de_demd,array_de_fraction
 
     
-def savingsMonths(sender,origin,Q_prod_lim,Demand,fuel_cost,boiler_eff,lang,plotPath,imageQlty):    
-    array_de_meses_lim,array_de_demd,array_de_fraction=arrays_Savings_Month(Q_prod_lim,Demand,fuel_cost,boiler_eff)
+def savingsMonths(sender,origin,Q_prod_lim,Demand,Fuel_price,Boiler_eff,lang,plotPath,imageQlty,**kwargs):
+    array_de_meses_lim,array_de_demd,array_de_fraction=arrays_Savings_Month(Q_prod_lim,Demand,Fuel_price,Boiler_eff)
   
     output2=pd.DataFrame(array_de_fraction)
     output2.columns=['Fraccion']
@@ -1494,12 +1536,15 @@ def savingsMonths(sender,origin,Q_prod_lim,Demand,fuel_cost,boiler_eff,lang,plot
 #    fig,ax = plt.subplots()
 
     ax = fig.add_subplot(111) 
-    if origin==-2:
+    if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa":
         meses=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec"]
         fig.suptitle('Ahorro solar', fontsize=14, fontweight='bold')
-        ax.set_ylabel('Ahorro solar / Factura actual €') 
+        if origin == -3:
+            ax.set_ylabel('Ahorro solar / Factura actual $') 
+        else:
+            ax.set_ylabel('Ahorro solar / Factura actual €') 
         ax.bar(meses_index, output3['Demanda'], width=0.8, color='#362510',label="Factura mensual")
         ax.bar(meses_index, output4['Ahorro mensual'], width=0.8, color='blue',label="Ahorro solar")
         ax.set_xticks(meses_index) 
@@ -1510,7 +1555,10 @@ def savingsMonths(sender,origin,Q_prod_lim,Demand,fuel_cost,boiler_eff,lang,plot
     if lang=="eng":
         meses=["Jan","Feb","Mar","Abr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
         fig.suptitle('Solar savings', fontsize=14, fontweight='bold')
-        ax.set_ylabel('Solar savings / Monthly energy cost €') 
+        if origin == -3:
+            ax.set_ylabel('Solar savings / Monthly energy cost $') 
+        else:
+            ax.set_ylabel('Solar savings / Monthly energy cost €') 
         ax.bar(meses_index, output3['Demanda'], width=0.8, color='#362510',label="Monthly energy cost")
         ax.bar(meses_index, output4['Ahorro mensual'], width=0.8, color='blue',label="Solar savings")
         ax.set_xticks(meses_index)  
@@ -1519,7 +1567,7 @@ def savingsMonths(sender,origin,Q_prod_lim,Demand,fuel_cost,boiler_eff,lang,plot
 
       
     
-    if origin==-2:
+    if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()

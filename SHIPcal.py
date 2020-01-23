@@ -66,7 +66,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     if origin==-2: #Simulation called from ReSSSPI front-end
         plotPath=os.path.dirname(os.path.dirname(__file__))+'/ressspi/ressspiForm/static/results/' #FilePath for images when called by www.ressspi.com
     elif origin==-3:
-        plotPath=os.path.dirname(os.path.realpath(__file__))+'/CIMAV/results' #FilePath for images when called cimav
+        plotPath=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+'/CIMAV/results' #FilePath for images when called cimav
     elif origin==0:
         plotPath=""
     elif origin==1: #Simulation called from other front-ends (use positive integers)
@@ -1357,7 +1357,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
               'T_in_C':T_in_C,'T_in_C_AR':T_in_C_AR.tolist(),'T_out_C':T_out_C,
               'outProcess_s':outProcess_s,'T_out_process_C':T_out_process_C,'P_op_bar':P_op_bar,
               'x_design':x_design,'h_in':h_in,'h_out':h_out,'hProcess_out':hProcess_out,'outProcess_h':outProcess_h,
-              'Break_cost':Break_cost}
+              'Break_cost':Break_cost,'sender':sender,'origin':origin}
     
     # Plot functions
     
@@ -1479,7 +1479,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -1517,8 +1517,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=1 
-n_coll_loop=8
+num_loops=20
+n_coll_loop=100
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1528,17 +1528,17 @@ n_coll_loop=8
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_S_PDS"
+type_integration="SL_L_P"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=-0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-3 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1550,41 +1550,42 @@ elif origin==-3:
                   'co2factor': 0.00027,
                   'collector_type': 'BOSCH SKW2.txt',
                   'connection': 'storage',
-                  'date': '2019-12-16 17:00:S',
-                  'demand': 15000.0,
-                  'demandUnit': '1',
-                  'distance': 10.0,
+                  'date': '2020-01-22 12:43:S',
+                  'demand': 559999000.0,
+                  'demandUnit': '0.000278',
+                  'distance': 530.0,
                   'email': 'juanshifu2.5@hotmail.com',
                   'fluid': 'water',
                   'fuel': 'gas_natural',
-                  'fuelPrice': 1045.0433015627268,
+                  'fuelPrice': 696.6955343751512,
                   'fuelUnit': '87.0869417968939',
-                  'hourEND': 19,
-                  'hourINI': 10,
+                  'hourEND': 23,
+                  'hourINI': 2,
                   'inclination': 'flat',
-                  'industry': 'Nombredelaindustria',
-                  'last_reg': 95,
-                  'location': 'Celaya.dat',
+                  'industry': 'inventivepower',
+                  'last_reg': 131,
+                  'location': 'Oaxaca de Juárez.dat',
                   'location_aux': '',
                   'name': 'Juan Antonio Aramburo Pasapera',
                   'orientation': 'NS',
                   'pais': 'México',
-                  'pressure': 5.0,
+                  'pressure': 10.0,
                   'pressureUnit': '1',
                   'process': '',
                   'sectorIndustry': 'Food_beverages',
-                  'semana': ['0', '1', '2', '3', '4'],
+                  'semana': ['0', '1', '2', '3', '4', '5'],
                   'shadows': 'free',
                   'surface': 1000.0,
-                  'tempIN': 10.0,
-                  'tempOUT': 19.0,
+                  'tempIN': 35.0,
+                  'tempOUT': 120.0,
                   'terrain': 'clean_ground',
-                  'year': ['1', '2', '3', '4', '5', '6', '7', '8', '9']}
+                  'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
     last_reg=inputsDjango['last_reg']
 else:
     #To perform simulations from command line using inputs like if they were from django
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
     
-# [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+#savingsofthemonth = savingsMonths(**plotVars)
 

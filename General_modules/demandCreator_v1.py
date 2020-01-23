@@ -11,9 +11,6 @@ Funcion para crear un consumo horario anual con 4 inputs:
 
 """
 import numpy as np
-import glob
-from matplotlib import pyplot as plt
-import pandas as pd
 
 # -------------------------------------------------------------------------
 # -------------------------------  CONSOLE  -------------------------------
