@@ -143,13 +143,18 @@ def operationOilKettleSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypas
         newBypass="PROD"
     return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
     
-def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,flow_rate_kgs):
+def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,flow_rate_kgs,type_coll,sender):
 #SL_L_S Supply level with liquid heat transfer media just for heat a storage
+    
+    if sender == 'CIMAV':
+        from CIMAV.CIMAV_modules.iteration_process import IT_temp
+        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,T_max_storage,P_op_Mpa,temp,type_coll,DNI,IAM,Area,n_coll_loop,flow_rate_kgs)
+    else:
+        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
     
     if fluidInput =="water":
         inlet=IAPWS97(P=P_op_Mpa, T=T_in_K_old)
         h_in_kJkg=inlet.h
-        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
     
         if T_out_K>=T_max_storage:
                 outlet=IAPWS97(P=P_op_Mpa, T=T_out_K) 
@@ -162,28 +167,20 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
             outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
             h_out_kJkg=outlet.h
             
-    if fluidInput =="oil":
-        [SF_inlet_rho,SF_inlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_in_K_old)
-           
-    if fluidInput =="moltenSalt":
-        [rho,SF_inlet_Cp,k,Dv]=moltenSalt(T_in_K_old)
-        
-    T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
-    
-    
-    if fluidInput =="water":    
         Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
-    
-    if fluidInput =="oil":    
-        [SF_outlet_rho,SF_outlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_out_K)    
-        SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
-        Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
-    
-    if fluidInput =="moltenSalt":     
-        [rho,SF_outlet_Cp,k,Dv]=moltenSalt(T_out_K)
         
+    elif fluidInput =="oil":
+        [SF_inlet_rho,SF_inlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_in_K_old)
+        [SF_outlet_rho,SF_outlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_out_K)
         SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
         Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
+        
+    elif fluidInput =="moltenSalt":
+        [rho,SF_inlet_Cp,k,Dv]=moltenSalt(T_in_K_old)
+        [rho,SF_outlet_Cp,k,Dv]=moltenSalt(T_out_K)
+        SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
+        Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
+        
         
     T_out_K=T_max_storage    #Not used
     
@@ -203,7 +200,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     
     if sender == 'CIMAV':
         from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV,IT_temp
-        flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,type_coll)
+        flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,type_coll) #Works for moltensalts,water,thermaloil
         
     else:
         if fluidInput=="water" or fluidInput=="steam":
@@ -421,11 +418,10 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
             if fluidInput=="water":
                 storage=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Storage properties
                 storage_Cp=storage.cp #Specific Heat KJ/kg/K
-                storage_V=storage.v #Specific Volume m3/kg
-                storage_rho=1/storage_V
-            if fluidInput=="oil":
+                storage_rho=storage.rho #Storage density [kg/m2]
+            elif fluidInput=="oil":
                 [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
-            if fluidInput=="moltenSalt":
+            elif fluidInput=="moltenSalt":
                 [storage_rho,storage_Cp,k,Dv]=moltenSalt(T_alm_K_old)
             
             T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
@@ -476,11 +472,10 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
             if fluidInput=="water":
                 storage=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Storage properties
                 storage_Cp=storage.cp #Specific Heat KJ/kg/K
-                storage_V=storage.v #Specific Volume m3/kg
-                storage_rho=1/storage_V
-            if fluidInput=="oil":
+                storage_rho=storage.rho #Storage density [kg/m2]
+            elif fluidInput=="oil":
                 [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
-            if fluidInput=="moltenSalt":
+            elif fluidInput=="moltenSalt":
                 [storage_rho,storage_Cp,k,Dv]=moltenSalt(T_alm_K_old)
             
             T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
@@ -503,11 +498,10 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
                 if fluidInput=="water":
                     storage=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Storage properties
                     storage_Cp=storage.cp #Specific Heat KJ/kg/K
-                    storage_V=storage.v #Specific Volume m3/kg
-                    storage_rho=1/storage_V
-                if fluidInput=="oil":
+                    storage_rho=storage.rho #Storage density [kg/m2]
+                elif fluidInput=="oil":
                     [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
-                if fluidInput=="moltenSalt":
+                elif fluidInput=="moltenSalt":
                     [storage_rho,storage_Cp,k,Dv]=moltenSalt(T_alm_K_old)
             
                 T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
@@ -550,7 +544,7 @@ def outputStorageSimple(Q_prod,energyStored,Demand,energStorageMax):
         Q_defoscus=0
        
         
-    if (Q_prod<Demand) and (Q_prod+energyStored>Demand): #Partial discharge
+    elif (Q_prod<Demand) and (Q_prod+energyStored>Demand): #Partial discharge
         
         energyStored=energyStored-(Demand-Q_prod)#New state of the storage
         Q_charg=0
@@ -560,7 +554,7 @@ def outputStorageSimple(Q_prod,energyStored,Demand,energStorageMax):
         SOC=100*energyStored/energStorageMax
         Q_defoscus=0
             
-    if (Q_prod>=Demand): #Charging
+    elif (Q_prod>=Demand): #Charging
         if ((Q_prod-Demand)+energyStored)<energStorageMax: #Still room in the storage
             Q_useful=Q_prod
             energyStored=energyStored+(Q_prod-Demand) #New state of the storage
