@@ -753,8 +753,8 @@ def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
         plt.legend(loc='upper left', borderaxespad=0.,frameon=False)
         ax2 = ax1.twinx()          
         ax2 .plot(np.arange(167), Demand[0:167],'.-',color = '#362510',label="Demanda")
-        ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = '#831896',label="Producción solar")
-        ax2 .plot(np.arange(167), Q_prod_lim[0:167],'.-',color = 'blue',label="Producción útil")
+        ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'grey',label="Desenfoque")
+        ax2 .plot(np.arange(167), Q_prod_lim[0:167],'.-',color = 'blue',label="Producción solar")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot(np.arange(167), Q_charg[0:167],'.-',color = '#FFAE00',label="Carga")
             ax2 .plot(np.arange(167), Q_discharg[0:167],'.-',color = '#2EAD23',label="Descarga")
@@ -773,8 +773,8 @@ def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
         plt.legend(loc='upper left', borderaxespad=0.,frameon=False)
         ax2 = ax1.twinx()          
         ax2 .plot(np.arange(167), Demand[0:167],'.-',color = '#362510',label="Demand")
-        ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = '#831896',label="Solar Production")
-        ax2 .plot(np.arange(167), Q_prod_lim[0:167],'.-',color = 'blue',label="Net production")
+        ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'grey',label="Defocused")
+        ax2 .plot(np.arange(167), Q_prod_lim[0:167],'.-',color = 'blue',label="Solar production")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot(np.arange(167), Q_charg[0:167],'.-',color = '#FFAE00',label="Charge")
             ax2 .plot(np.arange(167), Q_discharg[0:167],'.-',color = '#2EAD23',label="Discharge")
@@ -817,8 +817,8 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
         plt.legend(loc='upper left', borderaxespad=0.,frameon=False)
         ax2 = ax1.twinx()          
         ax2 .plot((np.arange(3624,3624+167,1)), Demand[3624:3791],'.-',color = '#362510',label="Demanda")
-        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = '#831896',label="Producción solar")
-        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod_lim[3624:3791],'.-',color = 'blue',label="Producción útil")
+        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'grey',label="Desenfoque")
+        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod_lim[3624:3791],'.-',color = 'blue',label="Producción solar")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot((np.arange(3624,3624+167,1)), Q_charg[3624:3791],'.-',color = '#FFAE00',label="Carga")
             ax2 .plot((np.arange(3624,3624+167,1)), Q_discharg[3624:3791],'.-',color = '#2EAD23',label="Descarga")
@@ -838,8 +838,8 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
         plt.legend(loc='upper left', borderaxespad=0.,frameon=False)
         ax2 = ax1.twinx()          
         ax2 .plot((np.arange(3624,3624+167,1)), Demand[3624:3791],'.-',color = '#362510',label="Demand")
-        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = '#831896',label="Solar Production")
-        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod_lim[3624:3791],'.-',color = 'blue',label="Net Production")
+        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'grey',label="Defocused")
+        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod_lim[3624:3791],'.-',color = 'blue',label="Solar Production")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot((np.arange(3624,3624+167,1)), Q_charg[3624:3791],'.-',color = '#FFAE00',label="Charge")
             ax2 .plot((np.arange(3624,3624+167,1)), Q_discharg[3624:3791],'.-',color = '#2EAD23',label="Discharge")
