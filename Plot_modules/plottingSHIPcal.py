@@ -837,7 +837,7 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
 
         fig.suptitle('Solar production first week of June', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)
-        plt.fill_between( np.arange(3624,3624+167,1), Demand[3624:3791], color="grey", alpha=0.2)
+       
         ax1 .plot((np.arange(3624,3624+167,1)), DNI[3624:3791],color='#CA6A16',linestyle='solid',label="Solar Radiation")
         ax1.set_xlabel('simulation time (hour of the year)')
         ax1.set_ylabel('Solar Radiation - W/m2')
