@@ -746,14 +746,16 @@ def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
     if lang=="spa": 
         fig.suptitle('Producción solar primera semana Enero', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)
-        ax1 .plot(np.arange(167), DNI[0:167],'.r-',label="Radiación solar")
+        
+        ax1 .plot(np.arange(167), DNI[0:167],color='#CA6A16',linestyle='solid',label="Radiación solar")
         ax1.set_xlabel('simulación (hora del año)')
         ax1.set_ylabel('Radiación Solar - W/m2')
         ax1.set_ylim([0,1200])
         plt.legend(loc='upper left', borderaxespad=0.,frameon=False)
-        ax2 = ax1.twinx()          
+        ax2 = ax1.twinx()   
+        ax2.fill_between( np.arange(167), Demand[0:167], color="grey", alpha=0.2,label="Demanda")
         ax2 .plot(np.arange(167), Demand[0:167],'.-',color = '#362510',label="Demanda")
-        ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'grey',label="Desenfoque")
+        ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'red',label="Desenfoque")
         ax2 .plot(np.arange(167), Q_prod_lim[0:167],'.-',color = 'blue',label="Producción solar")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot(np.arange(167), Q_charg[0:167],'.-',color = '#FFAE00',label="Carga")
@@ -766,14 +768,16 @@ def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
     if lang=="eng": 
         fig.suptitle('Solar production first week January', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)
-        ax1 .plot(np.arange(167), DNI[0:167],'.r-',label="Solar Radiation")
+        
+        ax1 .plot(np.arange(167), DNI[0:167],color='#CA6A16',linestyle='solid',label="Solar Radiation")
         ax1.set_xlabel('simulation time (hour of the year)')
         ax1.set_ylabel('Solar Radiation - W/m2')
         ax1.set_ylim([0,1200])
         plt.legend(loc='upper left', borderaxespad=0.,frameon=False)
-        ax2 = ax1.twinx()          
+        ax2 = ax1.twinx()
+        plt.fill_between( np.arange(167), Demand[0:167], color="grey", alpha=0.2,label="Demand")          
         ax2 .plot(np.arange(167), Demand[0:167],'.-',color = '#362510',label="Demand")
-        ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'grey',label="Defocused")
+        ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'red',label="Defocused")
         ax2 .plot(np.arange(167), Q_prod_lim[0:167],'.-',color = 'blue',label="Solar production")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot(np.arange(167), Q_charg[0:167],'.-',color = '#FFAE00',label="Charge")
@@ -810,14 +814,16 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
     if lang=="spa":         
         fig.suptitle('Producción solar primera semana Junio', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)
-        ax1 .plot((np.arange(3624,3624+167,1)), DNI[3624:3791],'.r-',label="Radiación solar")
+        
+        ax1 .plot((np.arange(3624,3624+167,1)), DNI[3624:3791],color='#CA6A16',linestyle='solid',label="Radiación solar")
         ax1.set_xlabel('simulación (hora del año)')
         ax1.set_ylabel('Radiación Solar - W/m2')
         ax1.set_ylim([0,1200])
         plt.legend(loc='upper left', borderaxespad=0.,frameon=False)
-        ax2 = ax1.twinx()          
+        ax2 = ax1.twinx()   
+        ax2.fill_between( np.arange(3624,3624+167,1), Demand[3624:3791], color="grey", alpha=0.2,label="Demanda")
         ax2 .plot((np.arange(3624,3624+167,1)), Demand[3624:3791],'.-',color = '#362510',label="Demanda")
-        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'grey',label="Desenfoque")
+        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'red',label="Desenfoque")
         ax2 .plot((np.arange(3624,3624+167,1)), Q_prod_lim[3624:3791],'.-',color = 'blue',label="Producción solar")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot((np.arange(3624,3624+167,1)), Q_charg[3624:3791],'.-',color = '#FFAE00',label="Carga")
@@ -831,14 +837,16 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
 
         fig.suptitle('Solar production first week of June', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)
-        ax1 .plot((np.arange(3624,3624+167,1)), DNI[3624:3791],'.r-',label="Solar Radiation")
+        plt.fill_between( np.arange(3624,3624+167,1), Demand[3624:3791], color="grey", alpha=0.2)
+        ax1 .plot((np.arange(3624,3624+167,1)), DNI[3624:3791],color='#CA6A16',linestyle='solid',label="Solar Radiation")
         ax1.set_xlabel('simulation time (hour of the year)')
         ax1.set_ylabel('Solar Radiation - W/m2')
         ax1.set_ylim([0,1200])
         plt.legend(loc='upper left', borderaxespad=0.,frameon=False)
-        ax2 = ax1.twinx()          
+        ax2 = ax1.twinx()
+        ax2.fill_between( np.arange(3624,3624+167,1), Demand[3624:3791], color="grey", alpha=0.2,label="Demand")          
         ax2 .plot((np.arange(3624,3624+167,1)), Demand[3624:3791],'.-',color = '#362510',label="Demand")
-        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'grey',label="Defocused")
+        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'red',label="Defocused")
         ax2 .plot((np.arange(3624,3624+167,1)), Q_prod_lim[3624:3791],'.-',color = 'blue',label="Solar Production")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot((np.arange(3624,3624+167,1)), Q_charg[3624:3791],'.-',color = '#FFAE00',label="Charge")
@@ -945,13 +953,14 @@ def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
     if lang=="spa":
         fig.suptitle('Almacenamiento primera semana Enero', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)  
-    
+        plt.fill_between( np.arange(167), Demand[0:167], color="grey", alpha=0.2)
+        
         plt.bar(np.arange(167), np.array(Q_prod[0:167])-np.array(Q_charg[0:167]),color = 'blue',label="Producción Solar",align='center')
 #        ax1 .plot(np.arange(167), Q_prod_lim[0:167],color = 'blue',label="Energía suministrada",linewidth=4)
 #        ax1 .plot(np.arange(167), Q_useful[0:167],color = 'green',label="Energía útil",linewidth=2)
         
         ax1 .plot(np.arange(167), Demand[0:167],color = '#362510',label="Demanda",linewidth=2.0)
-        plt.bar(np.arange(167), Q_defocus[0:167],color = '#A2A9AB',label="Desenfoque",bottom=np.array(Q_prod[0:167])-np.array(Q_defocus[0:167]),align='center')
+        plt.bar(np.arange(167), Q_defocus[0:167],color = 'red',label="Desenfoque",bottom=np.array(Q_prod[0:167])-np.array(Q_defocus[0:167]),align='center')
            
         plt.bar(np.arange(167), Q_charg[0:167],color = '#FFAE00',label="Carga",bottom=np.array(Q_prod[0:167])-np.array(Q_charg[0:167])-np.array(Q_defocus[0:167]),align='center')
     
@@ -965,22 +974,22 @@ def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         ax2 = ax1.twinx()  
         if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
             ax2 .plot(np.arange(167), np.array(T_alm_K[0:167])-273,'r',label="Temperatura",linewidth=2.0)
-        ax2 .plot(np.arange(167), SOC[0:167],'r:',label="Carga del almacenamiento",linewidth=2.0)
+        ax2 .plot(np.arange(167), SOC[0:167],color='orange',linestyle=':',label="Carga del almacenamiento",linewidth=2.0)
         ax2.set_xlabel('simulación (hora del año)')
-        ax2.set_ylabel('Estado de carga almacenamiento %',color = 'red')
+        ax2.set_ylabel('Estado de carga almacenamiento %',color = '#CA6A16')
         ax2.set_ylim([0,101])
         ax2.set_xlim([0,167])
 
     if lang=="eng":
         fig.suptitle('Storage during the first week of January', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)  
-    
+        plt.fill_between( np.arange(167), Demand[0:167], color="grey", alpha=0.2)
         plt.bar(np.arange(167), np.array(Q_prod[0:167])-np.array(Q_charg[0:167]),color = 'blue',label="Solar Production",align='center')
 #        ax1 .plot(np.arange(167), Q_prod_lim[0:167],color = 'blue',label="Net production",linewidth=4)
 #        ax1 .plot(np.arange(167), Q_useful[0:167],color = 'green',label="Useful energy",linewidth=2)
         
         ax1 .plot(np.arange(167), Demand[0:167],color = '#362510',label="Demand",linewidth=2.0)
-        plt.bar(np.arange(167), Q_defocus[0:167],color = '#A2A9AB',label="Defocus",bottom=np.array(Q_prod[0:167])-np.array(Q_defocus[0:167]),align='center')
+        plt.bar(np.arange(167), Q_defocus[0:167],color = 'red',label="Defocused",bottom=np.array(Q_prod[0:167])-np.array(Q_defocus[0:167]),align='center')
            
         plt.bar(np.arange(167), Q_charg[0:167],color = '#FFAE00',label="Charge",bottom=np.array(Q_prod[0:167])-np.array(Q_charg[0:167])-np.array(Q_defocus[0:167]),align='center')
     
@@ -996,9 +1005,9 @@ def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
             ax2 .plot(np.arange(167), np.array(T_alm_K[0:167])-273,'r',label="Temperature",linewidth=2.0)
       
-        ax2 .plot(np.arange(167), SOC[0:167],'r:',label="Storage's state of charge",linewidth=2.0)
+        ax2 .plot(np.arange(167), SOC[0:167],color='orange',linestyle=':',label="Storage's state of charge",linewidth=2.0)
         ax2.set_xlabel('simulation time (hour of the year)')
-        ax2.set_ylabel("Storage's state of charge %",color = 'red')
+        ax2.set_ylabel("Storage's state of charge %",color = '#CA6A16')
         ax2.set_ylim([0,101])
         ax2.set_xlim([0,167])
 
@@ -1025,12 +1034,14 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         fig.suptitle('Almacenamiento primera semana Junio', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)  
     
+        plt.fill_between( np.arange(3624,3624+167,1), Demand[3624:3791], color="grey", alpha=0.2)
+
         plt.bar((np.arange(3624,3624+167,1)), np.array(Q_prod[3624:3791])-np.array(Q_charg[3624:3791]),color = 'blue',label="Producción Solar",align='center')
         #ax1 .plot((np.arange(3624,3624+167,1)), Q_prod_lim[3624:3791],color = 'blue',label="Energía suministrada",linewidth=4)
         #ax1 .plot((np.arange(3624,3624+167,1)), Q_useful[3624:3791],color = 'green',label="Energía útil",linewidth=2)
         
         ax1 .plot((np.arange(3624,3624+167,1)), Demand[3624:3791],color = '#362510',label="Demanda",linewidth=2.0)
-        plt.bar((np.arange(3624,3624+167,1)), Q_defocus[3624:3791],color = '#A2A9AB',label="Desenfoque",bottom=np.array(Q_prod[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
+        plt.bar((np.arange(3624,3624+167,1)), Q_defocus[3624:3791],color = 'red',label="Desenfoque",bottom=np.array(Q_prod[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
            
         plt.bar((np.arange(3624,3624+167,1)), Q_charg[3624:3791],color = '#FFAE00',label="Carga",bottom=np.array(Q_prod[3624:3791])-np.array(Q_charg[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
     
@@ -1046,9 +1057,9 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         ax2 = ax1.twinx()
         if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
              ax2 .plot((np.arange(3624,3624+167,1)), np.array(T_alm_K[3624:3791])-273,'r',label="Carga del almacenamiento",linewidth=2.0,zorder=11)
-        ax2 .plot((np.arange(3624,3624+167,1)), SOC[3624:3791],'r:',label="Carga del almacenamiento",linewidth=2.0,zorder=11)
+        ax2 .plot((np.arange(3624,3624+167,1)), SOC[3624:3791],color='orange',linestyle=':',label="Carga del almacenamiento",linewidth=2.0,zorder=11)
         ax2.set_xlabel('simulación (hora del año)')
-        ax2.set_ylabel('Estado de carga almacenamiento %',color = 'red')
+        ax2.set_ylabel('Estado de carga almacenamiento %',color = '#CA6A16')
         ax2.set_ylim([0,101])
         ax2.set_xlim([3624,3624+167])
         
@@ -1056,13 +1067,13 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
     if lang=="eng":
         fig.suptitle('Storage during the first week of June', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)  
-    
+        plt.fill_between( np.arange(3624,3624+167,1), Demand[3624:3791], color="grey", alpha=0.2)
         plt.bar((np.arange(3624,3624+167,1)), np.array(Q_prod[3624:3791])-np.array(Q_charg[3624:3791]),color = 'blue',label="Solar Production",align='center')
         #ax1 .plot((np.arange(3624,3624+167,1)), Q_prod_lim[3624:3791],color = 'blue',label="Net Production",linewidth=4)
         #ax1 .plot((np.arange(3624,3624+167,1)), Q_useful[3624:3791],color = 'green',label="Useful energy",linewidth=2)
         
         ax1 .plot((np.arange(3624,3624+167,1)), Demand[3624:3791],color = '#362510',label="Demand",linewidth=2.0)
-        plt.bar((np.arange(3624,3624+167,1)), Q_defocus[3624:3791],color = '#A2A9AB',label="Defocus",bottom=np.array(Q_prod[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
+        plt.bar((np.arange(3624,3624+167,1)), Q_defocus[3624:3791],color = 'red',label="Defocused",bottom=np.array(Q_prod[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
            
         plt.bar((np.arange(3624,3624+167,1)), Q_charg[3624:3791],color = '#FFAE00',label="Charge",bottom=np.array(Q_prod[3624:3791])-np.array(Q_charg[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
     
@@ -1075,9 +1086,9 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         plt.legend(loc='upper left', borderaxespad=0.)
         
         ax2 = ax1.twinx()  
-        ax2 .plot((np.arange(3624,3624+167,1)), SOC[3624:3791],'r:',label="Storage's state of charge %",linewidth=2.0)
+        ax2 .plot((np.arange(3624,3624+167,1)), SOC[3624:3791],color='orange',linestyle=':',label="Storage's state of charge %",linewidth=2.0)
         ax2.set_xlabel('simulation time (hour of the year)')
-        ax2.set_ylabel("Storage's state of charge %",color = 'red')
+        ax2.set_ylabel("Storage's state of charge %",color = '#CA6A16')
         ax2.set_ylim([0,101])
         ax2.set_xlim([3624,3624+167])
     
@@ -1105,7 +1116,7 @@ def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,
     ax1 .plot(step_sim, Q_prod_lim,color = 'blue',label="Energía suministrada",linewidth=4)
     ax1 .plot(step_sim, Q_useful,color = 'green',label="Energía útil",linewidth=2)
     ax1 .plot(step_sim, Demand,color = '#362510',label="Demanda")
-    plt.bar(step_sim, Q_defocus,color = '#A2A9AB',label="Desenfoque",bottom=Q_prod-Q_defocus,align='center')
+    plt.bar(step_sim, Q_defocus,color = 'red',label="Desenfoque",bottom=Q_prod-Q_defocus,align='center')
        
     plt.bar(step_sim, Q_charg,color = '#FFAE00',label="Carga",bottom=Q_prod-Q_charg-Q_defocus,align='center')
 
@@ -1120,7 +1131,7 @@ def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,
     ax2 = ax1.twinx()  
     ax2 .plot(step_sim, SOC,'.r-',label="Carga del almacenamiento")
     ax2.set_xlabel('simulación (hora del año)')
-    ax2.set_ylabel('Estado de carga almacenamiento %',color = 'red')
+    ax2.set_ylabel('Estado de carga almacenamiento %',color = '#CA6A16')
     ax2.set_ylim([0,101])
     ax2.set_xlim([0,steps_sim])
    
@@ -1339,12 +1350,12 @@ def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlt
         
         ax.set_ylabel('Producción y Demanda en kWh',color = 'black')
         ax.bar(meses_index, output3['Demanda'], width=0.8, color='#362510',label="Demanda")
-        ax.bar(meses_index, output1['Prod.mensual'], width=0.8, color='grey',label="Desenfocada")
+        ax.bar(meses_index, output1['Prod.mensual'], width=0.8, color='red',label="Desenfocada")
         ax.bar(meses_index, output4['Prod.mensual_lim'], width=0.8, color='blue',label="Producción solar")
         plt.legend(loc=9, bbox_to_anchor=(0.5, -0.05), ncol=3)     
         ax2 = ax.twinx()          
-        ax2 .plot([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5], output2['DNI'],'-',color = 'red',label="Radiación solar",linewidth=2.0)
-        ax2.set_ylabel('Radiacion solar [kWh/m2]',color = 'red')    
+        ax2 .plot([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5], output2['DNI'],'-',color = '#CA6A16',label="Radiación solar",linewidth=2.0)
+        ax2.set_ylabel('Radiacion solar [kWh/m2]',color = '#CA6A16')    
         ax.set_xticks(meses_index+.4)  # set the x ticks to be at the middle of each bar since the width of each bar is 0.8
         ax.set_xticklabels(meses)  #replace the name of the x ticks with your Groups name 
         plt.legend(loc='upper right', borderaxespad=0.,frameon=True)
@@ -1354,12 +1365,12 @@ def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlt
         fig.suptitle('Production & Demand process energy', fontsize=14, fontweight='bold')
         ax.set_ylabel('Production & Demand kWh',color = 'black')
         ax.bar(meses_index, output3['Demanda'], width=0.8, color='#362510',label="Demand")
-        ax.bar(meses_index, output1['Prod.mensual'], width=0.8, color='grey',label="Defocused")
+        ax.bar(meses_index, output1['Prod.mensual'], width=0.8, color='red',label="Defocused")
         ax.bar(meses_index, output4['Prod.mensual_lim'], width=0.8, color='blue',label="Solar production")
         plt.legend(loc=9, bbox_to_anchor=(0.5, -0.05), ncol=3)         
         ax2 = ax.twinx()          
-        ax2 .plot([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5], output2['DNI'],'-',color = 'red',label="Solar Radiation",linewidth=2.0)
-        ax2.set_ylabel('Solar Radiation [kWh/m2]',color = 'red')    
+        ax2 .plot([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5,10.5,11.5], output2['DNI'],'-',color = '#CA6A16',label="Solar Radiation",linewidth=2.0)
+        ax2.set_ylabel('Solar Radiation [kWh/m2]',color = '#CA6A16')    
         ax.set_xticks(meses_index+.4)  # set the x ticks to be at the middle of each bar since the width of each bar is 0.8
         ax.set_xticklabels(meses)  #replace the name of the x ticks with your Groups name  
         plt.legend(loc='upper right', borderaxespad=0.,frameon=True)        
