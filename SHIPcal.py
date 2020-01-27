@@ -477,7 +477,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
         T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
-
+        
         
         T_in_K=T_in_C+273
         T_in_process_C=T_in_C
@@ -485,7 +485,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         inputProcessState=IAPWS97(P=P_op_Mpa, T=T_in_process_K)
         hProcess_in=inputProcessState.h
     
-        #Heat Exchanger design DELTAT    
+        #Heat Exchanger design DELTA T    
         T_in_C=T_in_C+DELTA_T_HX
         T_in_K=T_in_C+273
         
@@ -986,6 +986,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     x_out=np.zeros(steps_sim)
     
     if sender=='CIMAV':
+        T_in_flag=inputsDjango['T_in_flag'] #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
         blong,nlong = IAM_fiteq(type_coll,1)
         btrans,ntrans = IAM_fiteq(type_coll,2)
         lim_inf_DNI_list=[0]
@@ -1079,25 +1080,20 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,type_coll)
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
                                     
-            elif type_integration=="SL_L_RF":            
-                #SL_L_RF Supply level with liquid heat transfer media return boost integration pg52 
+            elif type_integration=="SL_L_RF":
+                #SL_L_RF Supply level with liquid heat transfer media return boost integration pg52
                 
                 if fluidInput=="water":
-                    flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)                    
+                    flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)
                     [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,type_coll)
                     if newBypass=="REC":
-                        flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating                         
-
+                        flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating
+                        T_toProcess_K[i]=T_in_process_K
                     else:
                         #HX simulation
                         Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
                         flowToHx[i]=Q_prodProcessSide/(hHX_out-hProcess_in)  
                         Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
-                    
-                    flowToMix[i]=flowDemand[i]-flowToHx[i]
-                    if flowToHx[i]==0:
-                        T_toProcess_K[i]=T_in_process_K
-                    else:
                         #Branch from HX to mix                        
                         toMixstate=IAPWS97(P=P_op_Mpa, T=T_out_K[i]-DELTA_T_HX)
                         #Mix
@@ -1108,6 +1104,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                             T_toProcess_C[i]=0
                         else:
                             T_toProcess_C[i]=(flowToMix[i]*hProcess_in+flowToHx[i]*toMixstate.h)/(flowDemand[i]*toProcessstate.cp)
+                            
+                    flowToMix[i]=flowDemand[i]-flowToHx[i]
                     T_toProcess_K[i]=T_toProcess_K[i]+273
                     [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
                 
