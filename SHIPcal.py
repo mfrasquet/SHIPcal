@@ -468,7 +468,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
     #By default water flows in closed loop
     T_in_flag=1 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
-        
+    
+    if sender=='CIMAV':
+        T_in_flag=inputsDjango['T_in_flag'] #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
+        if T_in_flag == 0:        
+            T_process_out = np.average(T_in_C_AR)
     # --> Integrations: 
         # SL_L_RF Supply level with liquid heat transfer media solar return flow boost
         
@@ -986,7 +990,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     x_out=np.zeros(steps_sim)
     
     if sender=='CIMAV':
-        T_in_flag=inputsDjango['T_in_flag'] #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
         blong,nlong = IAM_fiteq(type_coll,1)
         btrans,ntrans = IAM_fiteq(type_coll,2)
         lim_inf_DNI_list=[0]
