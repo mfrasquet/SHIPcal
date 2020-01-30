@@ -148,7 +148,7 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
     
     if sender == 'CIMAV':
         from CIMAV.CIMAV_modules.iteration_process import IT_temp
-        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,T_max_storage,P_op_Mpa,temp,type_coll,DNI,IAM,Area,n_coll_loop,flow_rate_kgs)
+        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,T_max_storage,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll)
     else:
         T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
     
@@ -187,7 +187,7 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
     return [T_out_K,Perd_termicas,Q_prod,T_in_K_old,flow_rate_kgs]
 
 
-def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old, sender,type_coll):
+def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old, sender,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     if fluidInput=="water" or fluidInput=="steam":
         [h_in_kJkg,T_in_K]=inputsWithDNIWaterSimple(T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old)
@@ -200,7 +200,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     
     if sender == 'CIMAV':
         from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV,IT_temp
-        flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,type_coll) #Works for moltensalts,water,thermaloil
+        flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll) #Works for moltensalts,water,thermaloil
         
     else:
         if fluidInput=="water" or fluidInput=="steam":
@@ -223,9 +223,9 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
         if sender == 'CIMAV':
-            T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,type_coll,DNI,IAM,Area,n_coll_loop,flow_rate_rec)
+            T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll)
         else:
-            T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
+            T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
         Q_prod=0 #No hay produccion
         
         if fluidInput=="water" or fluidInput=="steam":
