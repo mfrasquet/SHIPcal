@@ -42,7 +42,7 @@ from Integration_modules.integrations import offStorageSimple, offOnlyStorageSim
 from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageAnnual, financePlot, prodMonths, savingsMonths
 
 
-def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
+def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simControl,pk):
     
 #%%
 # ------------------------------------------------------------------------------------
@@ -52,7 +52,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # BLOCK 1.1 - SIMULATION CONTROL <><><><><><><><><><><><><><><><><><><><><><><><><><><>
     
     version="1.1.10" #SHIPcal version
-    lang=confReport['lang'] #Language
     sender=confReport['sender'] #Sender identity. Needed for use customized modules or generic modules (Solar collectors, finance, etc.)
 
     
@@ -65,26 +64,30 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
     if origin==-2: #Simulation called from ReSSSPI front-end
         plotPath=os.path.dirname(os.path.dirname(__file__))+'/ressspi/ressspiForm/static/results/' #FilePath for images when called by www.ressspi.com
-    elif origin==-3:
-        plotPath=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+'/CIMAV/results' #FilePath for images when called cimav
     elif origin==0:
         plotPath=""
     elif origin==1: #Simulation called from other front-ends (use positive integers)
         plotPath=""
-        
+    
+    plots_param = {'plotPath':plotPath}
+    
+    global Turn_key, ESCO
     #-->  Propetary libs
     if sender=='solatom': #The request comes from Solatom's front-end www.ressspi.com
+        global optic_efficiency_N,solatom_param,SOL_plant_costFunctions,reportOutput
         from Solatom_modules.solatom_param import optic_efficiency_N
         from Solatom_modules.solatom_param import solatom_param
         from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
         from Solatom_modules.templateSolatom import reportOutput
         from Finance_modules.FinanceModels import Turn_key, ESCO
     elif sender=='CIMAV': #The request comes from CIMAV front-end
+        global djangoReportCIMAV,CIMAV_collectors,IAM_fiteq,IAM_calculator,theta_IAMs_CIMAV,CIMAV_plant_costFunctions,equiv_coll_series_o1
         from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
         from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso
         from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
         from CIMAV.CIMAV_modules.incidence_angle import theta_IAMs_v2 as theta_IAMs_CIMAV
         from CIMAV.CIMAV_modules.CIMAV_financeModels import Turn_key,ESCO,CIMAV_plant_costFunctions
+        from CIMAV.CIMAV_modules.iteration_process import equiv_coll_series_o1
     else:
         from Finance_modules.FinanceModels import Turn_key, ESCO
     
@@ -134,7 +137,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     n_years_sim=25 # Collector life in years & number of years for the simulation [years]
     
-    
+    financial_param = {'finance_study':finance_study,'costRaise':costRaise,'fuelCostRaise':fuelCostRaise,'CPI':CPI,'priceReduction':priceReduction,'n_years_sim':n_years_sim }
     #--> Process parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
@@ -142,27 +145,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
-        ## SL_L_RF
-    heatFactor=.5 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
-    DELTA_T_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
-    HX_eff=0.9 # Simplification for HX efficiency
-        ## SL_L_S
-    DELTA_ST=30 # Temperature delta over the design process temp for the storage
-    flow_rate_design_kgs=2 # Design flow rate (fix value for SL_L_S)
-    
+    process_param= {'lim_inf_DNI':lim_inf_DNI,'m_dot_min_kgs':m_dot_min_kgs,'coef_flow_rec':coef_flow_rec,'Boiler_eff':Boiler_eff}
     
     #%%
     # BLOCK 1.3 - SYSTEM VARIABLES <><><><><><><><><><><><><><><><><><><><><><><><><><><>    
     
     #--> Simulation modifiers (useful to control extraordinary situations)
-    mofINV=modificators['mofINV'] # Investment modificator to include: Subsidies, extra-costs, etc. [-]
     mofDNI=modificators['mofDNI'] # DNI modificator to take into correct Meteonorm data if necessary [-] 
-    mofProd=modificators['mofProd'] # Production modificator to include: Dusty environments, shadows, etc. [-]
-    
-    
-    # --> Solar field
-    num_loops=desginDict['num_loops'] # Number of loops of the solar plant [-]
-    n_coll_loop=desginDict['n_coll_loop'] # Number of modules connected in series per loop [-]
     
         ## --> Solar collector 
         
@@ -180,10 +169,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
-        Area_coll,rho_optic_0,eta1,eta2,mdot_test,Long,weight=CIMAV_collectors(type_coll) 
-        IAM_file='defaultCollector.csv' #Se puede borrar despues 
-        REC_type=1#Se puede borrar despues 
-        IAM_folder=os.path.dirname(os.path.realpath(__file__))+"/Collector_modules/"
+        Area_coll,rho_optic_0,eta1,eta2,mdot_test,Long,weight=CIMAV_collectors(type_coll)
     
     else: #Using other collectors (to be filled with customized data)
         
@@ -198,10 +184,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         rho_optic_0=0.75583 #Optical eff. at incidence angle=0 [º]
         Long=5.28 #Longitude of each module [m]
         
-    Area=Area_coll*n_coll_loop #Area of aperture per loop [m²] Used later
-    Area_total=Area*num_loops #Total area of aperture [m²] Used later
-    num_modulos_tot=n_coll_loop*num_loops
-    
         ## --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
     """    
     orientation="NS"
@@ -220,7 +202,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     if origin==-2: #Simulation called from front-end -> www.ressspi.com
         
         #Retrieve front-end inputs
-        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
+        [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
          
         ## METEO
         meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
@@ -259,7 +241,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif origin==-3: #Simulation called from CIMAV's front end
         
         #Retrieve front-end inputs
-        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
+        [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
         
         ## METEO
         localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
@@ -291,7 +273,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif origin==1: #Simulation called from external front-end. Available from 1 to inf+
         
         #Retrieve front-end inputs 
-        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
+        [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
         
         ## METEO (free available meteo sets)
         locationFromFrontEnd=inputs['location']
@@ -477,7 +459,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         # SL_L_RF Supply level with liquid heat transfer media solar return flow boost
         
     if type_integration=="SL_L_RF": 
-
+        
+        heatFactor=.5 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
+        DELTA_T_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
+        HX_eff=0.9 # Simplification for HX efficiency
+        
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
         T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
@@ -562,6 +548,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         # SL_L_S3 => Supply level with liquid heat transfer media solar heating of storages (Pasteurization case)
         
     elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+        
+        DELTA_ST=30 # Temperature delta over the design process temp for the storage
+        flow_rate_design_kgs=2 # Design flow rate (fix value for SL_L_S)
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
@@ -993,6 +982,19 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         blong,nlong = IAM_fiteq(type_coll,1)
         btrans,ntrans = IAM_fiteq(type_coll,2)
         lim_inf_DNI_list=[0]
+    
+    financial_param = {}
+    coll_par = {}
+    tmy = {}
+    return version, tmy, coll_par, inputsDjango, financial_param, plots_param, process_param
+    #Put in the tmy and coll_par the necessary info to perform the sim via variable** as argument in SHIPcal
+    #      (origin, inputsDjango, plots, imageQlty, confReport, **modificators, **desginDict, process_param, pk)
+def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,pk):
+    lang=confReport['lang'] #Language
+    
+    Area=Area_coll*n_coll_loop #Area of aperture per loop [m²] Used later
+    Area_total=Area*num_loops #Total area of aperture [m²] Used later
+    num_modulos_tot=n_coll_loop*num_loops
     
     # BLOCK 2.2 - SIMULATION ANNUAL LOOP <><><><><><><><><><><><><><><><><><><><><><><><><><><>        
     
@@ -1429,9 +1431,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
     if steps_sim==8759: #The report is only available when annual simulation is performed
         if origin==-2:
-            fileName="results"+str(reg)
+            fileName="results"+str(pk)
             reportsVar={'logo_output':'no_logo','date':inputs['date'],'type_integration':type_integration,
-                        'fileName':fileName,'reg':reg,
+                        'fileName':fileName,'reg':pk,
                         'Area_total':Area_total,'n_coll_loop':n_coll_loop,
                         'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs}
 

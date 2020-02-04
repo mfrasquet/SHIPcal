@@ -89,6 +89,6 @@ def djangoReport(inputsDjango):
             "annualProfile":'',
             'localInput':''}
 
-    return (inputs,annualConsumptionkWh,inputsDjango['last_reg'],P_op_bar,monthArray,weekArray,dayArray)
+    return (inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray)
 
 
