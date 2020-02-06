@@ -407,7 +407,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     outProcess_h=0 #Not used
     energStorageMax=0 #kWh
     porctSensible=0 #Not used
-    #T_out_HX_C=0 #Not used 
+    T_out_HX_C=0 #Not used 
     outProcess_s=0 #Not used
     hProcess_out=0 #Not used
     in_s=0
@@ -429,7 +429,8 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
             T_process_out_C = np.average(T_in_C_AR)
     
     integration_Dict = {'x_design':x_design,'outProcess_h':outProcess_h,'energStorageMax':energStorageMax,'T_in_flag':T_in_flag,
-                        'outProcess_s':outProcess_s,'hProcess_out':hProcess_out,'in_s':in_s,'out_s':out_s,'h_in':h_in,'h_out':h_out}
+                        'outProcess_s':outProcess_s,'hProcess_out':hProcess_out,'in_s':in_s,'out_s':out_s,'h_in':h_in,'h_out':h_out,
+                        'T_out_HX_C':T_out_HX_C,'porctSensible':porctSensible}
     ## INTEGRATION
     type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
     almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
@@ -1127,6 +1128,10 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
         outProcess_h=initial_variables_dict['outProcess_h']
         x_design=initial_variables_dict['x_design']
         energStorageMax=initial_variables_dict['energStorageMax']
+        
+    meteoDict={'DNI':DNI.tolist(),'localMeteo':localMeteo}
+    integrationDesign={'x_design':x_design,'porctSensible':initial_variables_dict['porctSensible'],'almVolumen':almVolumen,'energStorageMax':energStorageMax,
+                       'T_out_process_C':T_out_C,'T_in_process_C':T_in_C,'T_out_HX_C':initial_variables_dict['T_out_HX_C']}
     
     Area=Area_coll*n_coll_loop #Area of aperture per loop [m²] Used later
     Area_total=Area*num_loops #Total area of aperture [m²] Used later
@@ -1722,7 +1727,10 @@ else:
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
     
-#version,initial_variables = SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simControl)
-                                          #SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,desginDict,pk):
-#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+
+version, initial_variables_dict = SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simControl)
+
+[jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,last_reg)
+
+#[jSonResults,plotVars,reportsVar,version] = SHIPcal     (origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
