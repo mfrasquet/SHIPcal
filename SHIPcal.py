@@ -42,7 +42,7 @@ from Integration_modules.integrations import offStorageSimple, offOnlyStorageSim
 from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageAnnual, financePlot, prodMonths, savingsMonths
 
 
-def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simControl,pk):
+def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simControl):
     
 #%%
 # ------------------------------------------------------------------------------------
@@ -170,7 +170,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         btrans,ntrans = IAM_fiteq(type_coll,2)
         REC_type = 1 #Death variable to avoid crashes with the previous code
         
-        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test':mdot_test,'Long':Long,'weight':weight,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans}
+        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans}
     
     else: #Using other collectors (to be filled with customized data)
         
@@ -214,10 +214,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
         Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
 
-        ## INTEGRATION
-        type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
-        almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
-
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput=inputs['fluid'] #Type of fluid 
@@ -249,10 +245,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
         file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
         
-        ## INTEGRATION
-        type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
-        almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
-        
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput=inputsDjango['fluid'] #Type of fluid 
@@ -282,10 +274,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
         Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
         Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
-        
-        ## INTEGRATION
-        type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
-        almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
@@ -323,10 +311,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
             file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
-        
-        ## INTEGRATION
-        type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
-        almVolumen=desginDict['almVolumen'] # Storage capacity [litres]    
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
@@ -423,7 +407,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     outProcess_h=0 #Not used
     energStorageMax=0 #kWh
     porctSensible=0 #Not used
-    T_out_HX_C=0 #Not used 
+    #T_out_HX_C=0 #Not used 
     outProcess_s=0 #Not used
     hProcess_out=0 #Not used
     in_s=0
@@ -446,6 +430,9 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     
     integration_Dict = {'x_design':x_design,'outProcess_h':outProcess_h,'energStorageMax':energStorageMax,'T_in_flag':T_in_flag,
                         'outProcess_s':outProcess_s,'hProcess_out':hProcess_out,'in_s':in_s,'out_s':out_s,'h_in':h_in,'h_out':h_out}
+    ## INTEGRATION
+    type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
+    almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
     
     # --> Integrations: 
         # SL_L_RF Supply level with liquid heat transfer media solar return flow boost
@@ -478,7 +465,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         hProcess_out=outputProcessState.h
         
         T_out_HX_K=(T_in_K+(T_out_K-T_in_K)*heatFactor)
-        T_out_HX_C=T_out_HX_K-273
         outputHXState=IAPWS97(P=P_op_Mpa, T=T_out_HX_K)
         hHX_out=outputHXState.h
         
@@ -494,9 +480,9 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         h_out=outputState.h
         
         integration_Dict.update({'DELTA_T_HX':DELTA_T_HX,'HX_eff':HX_eff,'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,
-                                 'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,'hProcess_in':hProcess_in,
+                                 'T_out_C':T_out_C,'hProcess_in':hProcess_in,
                                  'outProcess_s':outProcess_s,'hProcess_out':hProcess_out,'T_out_HX_K':T_out_HX_K,
-                                 'T_out_HX_C':T_out_HX_C,'hHX_out':hHX_out,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
+                                 'hHX_out':hHX_out,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
         
     # ----------------------------------------
         # SL_L_P => Supply level with liquid heat transfer media parallel integration
@@ -529,7 +515,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
             out_s=outputState.s
             h_out=outputState.h
             
-        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,
+        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'hProcess_in':hProcess_in,'outProcess_s':outProcess_s,'hProcess_out':hProcess_out,
                                  'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
         
@@ -632,7 +618,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
             energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
     
         integration_Dict.update({'flow_rate_design_kgs':flow_rate_design_kgs,'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,
-                                 'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,'T_min_storage':T_min_storage,'T_max_storage':T_max_storage,
+                                 'T_out_C':T_out_C,'T_min_storage':T_min_storage,'T_max_storage':T_max_storage,
                                  'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'storage_max_energy':storage_max_energy,
                                  'storage_ini_energy':storage_ini_energy, 'storage_min_energy':storage_min_energy,'energStorageUseful':energStorageUseful,
                                  'energStorageMax':energStorageMax,'T_ini_storage':T_ini_storage})
@@ -680,7 +666,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
             [rho_av,Cp_av,k,Dv]=moltenSalt(T_av_K)
             energStorageMax=(almVolumen*(1/1000)*(rho_av)*Cp_av*(T_out_K-T_in_K))/3600 #Storage capacity in kWh
             
-        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,
+        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'storage_max_energy':storage_max_energy,
                                  'energStorageMax':energStorageMax})
                 
@@ -716,7 +702,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         out_s=outputState.s
         h_out=outputState.h
         
-        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,
+        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'Demand2':Demand2})
         
     # ----------------------------------------
@@ -757,7 +743,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg
         energStorageMax=almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K-T_in_K)/3600 #Storage capacity in kWh
         
-        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,
+        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'Demand2':Demand2,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,
                                  'energStorageMax':energStorageMax})
         
@@ -796,7 +782,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         out_s=outputState.s
         h_out=outputState.h
         
-        integration_Dict.update({'T_in_flag':T_in_flag,'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,
+        integration_Dict.update({'T_in_flag':T_in_flag,'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'Demand2':Demand2,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
     
     # ----------------------------------------
@@ -845,7 +831,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg
         energStorageMax=almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K-T_in_K)/3600 #Storage capacity in kWh
         
-        integration_Dict.update({'T_in_flag':T_in_flag,'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,
+        integration_Dict.update({'T_in_flag':T_in_flag,'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'Demand2':Demand2,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'energStorageMax':energStorageMax})
     
     # ----------------------------------------
@@ -876,7 +862,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         outProcess_h=outputProcessState.h
         hProcess_out=outProcess_h
         
-        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,
+        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'outProcess_s':outProcess_s,
                                  'outProcess_h':outProcess_h,'hProcess_out':hProcess_out,'x_design':x_design})
         
@@ -916,9 +902,8 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         #Not used
         porctSensible=0
         sat_vap=0 #Not used
-        T_out_HX_C=0 #Not used
         
-        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,
+        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'outProcess_s':outProcess_s,
                                  'outProcess_h':outProcess_h,'hProcess_out':hProcess_out,'x_design':x_design,
                                  'energStorageMax':energStorageMax})
@@ -963,15 +948,182 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     meteoDict={'DNI':DNI,'localMeteo':localMeteo,'Lat':Lat,'Positional_longitude':Positional_longitude,'SUN_ELV':SUN_ELV,'SUN_AZ':SUN_AZ, 'temp':temp, 'T_in_C_AR':T_in_C_AR}
     financial_param = {'businessModel':businessModel,'Fuel_price':Fuel_price,'co2TonPrice':co2TonPrice,'co2factor':co2factor,'finance_study':finance_study,'costRaise':costRaise,'fuelCostRaise':fuelCostRaise,'CPI':CPI,'priceReduction':priceReduction,'n_years_sim':n_years_sim }
     process_param= {'lim_inf_DNI':lim_inf_DNI,'m_dot_min_kgs':m_dot_min_kgs,'coef_flow_rec':coef_flow_rec,'Boiler_eff':Boiler_eff,
-                    'sender':sender,'P_op_bar':P_op_bar,'fluidInput':fluidInput,'T_process_in_C':T_process_in_C,'T_process_out_C':T_process_out_C,
+                    'fluidInput':fluidInput,
                     'steps_sim':steps_sim,'step_sim':step_sim,'plotPath':plotPath, 'Energy_Before':Energy_Before, 'Energy_Before_annual':Energy_Before_annual,
                     'Demand':Demand}
+    initial_arrays = {'theta_i_rad':theta_i_rad,'theta_i_deg':theta_i_deg,'theta_transv_deg':theta_transv_deg,'IAM_long':IAM_long,'IAM_t':IAM_t,'IAM':IAM,'T_in_K':T_in_K,'T_out_K':T_out_K,
+                      'flow_rate_kgs':flow_rate_kgs,'Perd_termicas':Perd_termicas,'flow_rate_rec':flow_rate_rec,'bypass':bypass,'Q_prod':Q_prod,'Q_prod_lim':Q_prod_lim,
+                      'Q_prod_rec':Q_prod_rec,'Q_defocus':Q_defocus,'SOC':SOC,'Q_charg':Q_charg,'Q_discharg':Q_discharg,'Q_useful':Q_useful,'flowToHx':flowToHx,'flowToMix':flowToMix,
+                      'flowDemand':flowDemand,'T_toProcess_K':T_toProcess_K,'T_toProcess_C':T_toProcess_C,'T_alm_K':T_alm_K,'storage_energy':storage_energy,'x_out':x_out}
+    initial_variables_dict = {}
+    initial_variables_dict.update(coll_par)
+    initial_variables_dict.update(integration_Dict)
+    initial_variables_dict.update(meteoDict)
+    initial_variables_dict.update(financial_param)
+    initial_variables_dict.update(process_param)
+    initial_variables_dict.update(initial_arrays)
+    initial_variables_dict.update(modificators)
     
-    return version, meteoDict, coll_par, inputsDjango, financial_param, process_param,integration_Dict
+    return version, initial_variables_dict
     #Put in the tmy and coll_par the necessary info to perform the sim via variable** as argument in SHIPcal
-    #      (origin, inputsDjango, plots, imageQlty, confReport, **modificators, **desginDict, process_param, pk, **meteoDict)
-def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,pk):
+    #           (origin, inputsDjango, plots, imageQlty, confReport, **desginDict, process_param, pk, **meteoDict)
+def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,pk):
+    
+    version = "1.1.10"
+    sender=confReport['sender']
     lang=confReport['lang'] #Language
+    
+    type_integration=desginDict['type_integration']
+    
+    #Defined the variables from the initial_variables_dict
+    
+    DNI=initial_variables_dict['DNI']
+    localMeteo=initial_variables_dict['localMeteo']
+    Lat=initial_variables_dict['Lat']
+    Positional_longitude=initial_variables_dict['Positional_longitude']
+    SUN_ELV=initial_variables_dict['SUN_ELV']
+    SUN_AZ=initial_variables_dict['SUN_AZ']
+    temp=initial_variables_dict['temp']
+    T_in_C_AR=initial_variables_dict['T_in_C_AR']
+    businessModel=initial_variables_dict['businessModel']
+    Fuel_price=initial_variables_dict['Fuel_price']
+    co2TonPrice=initial_variables_dict['co2TonPrice']
+    co2factor=initial_variables_dict['co2factor']
+    finance_study=initial_variables_dict['finance_study']
+    costRaise=initial_variables_dict['costRaise']
+    fuelCostRaise=initial_variables_dict['fuelCostRaise']
+    CPI=initial_variables_dict['CPI']
+    priceReduction=initial_variables_dict['priceReduction']
+    n_years_sim=initial_variables_dict['n_years_sim']
+    lim_inf_DNI=initial_variables_dict['lim_inf_DNI']
+    m_dot_min_kgs=initial_variables_dict['m_dot_min_kgs']
+    coef_flow_rec=initial_variables_dict['coef_flow_rec']
+    Boiler_eff=initial_variables_dict['Boiler_eff']
+    fluidInput=initial_variables_dict['fluidInput']
+    steps_sim=initial_variables_dict['steps_sim']
+    step_sim=initial_variables_dict['step_sim']
+    plotPath=initial_variables_dict['plotPath']
+    Energy_Before=initial_variables_dict['Energy_Before']
+    Energy_Before_annual=initial_variables_dict['Energy_Before_annual']
+    Demand=initial_variables_dict['Demand']
+    theta_i_rad=initial_variables_dict['theta_i_rad']
+    theta_i_deg=initial_variables_dict['theta_i_deg']
+    theta_transv_deg=initial_variables_dict['theta_transv_deg']
+    IAM_long=initial_variables_dict['IAM_long']
+    IAM_t=initial_variables_dict['IAM_t']
+    IAM=initial_variables_dict['IAM']
+    T_in_K=initial_variables_dict['T_in_K']
+    T_out_K=initial_variables_dict['T_out_K']
+    flow_rate_kgs=initial_variables_dict['flow_rate_kgs']
+    Perd_termicas=initial_variables_dict['Perd_termicas']
+    flow_rate_rec=initial_variables_dict['flow_rate_rec']
+    bypass=initial_variables_dict['bypass']
+    Q_prod=initial_variables_dict['Q_prod']
+    Q_prod_lim=initial_variables_dict['Q_prod_lim']
+    Q_prod_rec=initial_variables_dict['Q_prod_rec']
+    Q_defocus=initial_variables_dict['Q_defocus']
+    SOC=initial_variables_dict['SOC']
+    Q_charg=initial_variables_dict['Q_charg']
+    Q_discharg=initial_variables_dict['Q_discharg']
+    Q_useful=initial_variables_dict['Q_useful']
+    flowToHx=initial_variables_dict['flowToHx']
+    flowToMix=initial_variables_dict['flowToMix']
+    flowDemand=initial_variables_dict['flowDemand']
+    T_toProcess_K=initial_variables_dict['T_toProcess_K']
+    T_toProcess_C=initial_variables_dict['T_toProcess_C']
+    T_alm_K=initial_variables_dict['T_alm_K']
+    storage_energy=initial_variables_dict['storage_energy']
+    x_out=initial_variables_dict['x_out']
+    
+    #Collectors
+    type_coll=initial_variables_dict['type_coll']
+    REC_type=initial_variables_dict['REC_type']
+    Area_coll=initial_variables_dict['Area_coll']
+    rho_optic_0=initial_variables_dict['rho_optic_0']
+    Long=initial_variables_dict['Long']
+    beta=initial_variables_dict['beta']
+    orient_az_rad=initial_variables_dict['orient_az_rad']
+    roll=initial_variables_dict['roll']
+    
+    #Sender dependent
+    
+    if sender == 'CIMAV':
+        eta1=initial_variables_dict['eta1']
+        eta2=initial_variables_dict['eta2']
+        mdot_test=initial_variables_dict['mdot_test']
+        blong=initial_variables_dict['blong']
+        nlong=initial_variables_dict['nlong']
+        btrans=initial_variables_dict['btrans']
+        ntrans=initial_variables_dict['ntrans']
+    else:
+        IAMfile_loc=initial_variables_dict['IAMfile_loc']
+        
+        
+    #Integration
+    x_design=initial_variables_dict['x_design']
+    outProcess_h=initial_variables_dict['outProcess_h']
+    energStorageMax=initial_variables_dict['energStorageMax']
+    T_in_flag=initial_variables_dict['T_in_flag']
+    outProcess_s=initial_variables_dict['outProcess_s']
+    hProcess_out=initial_variables_dict['hProcess_out']
+    in_s=initial_variables_dict['in_s']
+    out_s=initial_variables_dict['out_s']
+    h_in=initial_variables_dict['h_in']
+    h_out=initial_variables_dict['h_out']
+    P_op_Mpa=initial_variables_dict['P_op_Mpa']
+    T_in_C=initial_variables_dict['T_in_C']
+    T_out_C=initial_variables_dict['T_out_C']
+    #Integration dependent
+    
+    if type_integration=="SL_L_RF": 
+        DELTA_T_HX=initial_variables_dict['DELTA_T_HX']
+        HX_eff=initial_variables_dict['HX_eff']
+        hProcess_in=initial_variables_dict['hProcess_in']
+        T_out_HX_K=initial_variables_dict['T_out_HX_K']
+        hHX_out=initial_variables_dict['hHX_out']
+    
+    elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":
+        hProcess_in=initial_variables_dict['hProcess_in']
+    
+    elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+        flow_rate_design_kgs=initial_variables_dict['flow_rate_design_kgs']
+        T_min_storage=initial_variables_dict['T_min_storage']
+        T_max_storage=initial_variables_dict['T_max_storage']
+        storage_max_energy=initial_variables_dict['storage_max_energy']
+        storage_ini_energy=initial_variables_dict['storage_ini_energy']
+        storage_min_energy=initial_variables_dict['storage_min_energy']
+        energStorageUseful=initial_variables_dict['energStorageUseful']
+        energStorageMax=initial_variables_dict['energStorageMax']
+        T_ini_storage=initial_variables_dict['T_ini_storage']
+        
+    elif type_integration=="SL_L_PS":
+        storage_max_energy=initial_variables_dict['storage_max_energy']
+        energStorageMax=initial_variables_dict['energStorageMax']
+    
+    elif type_integration=="SL_S_FW":
+        Demand2=initial_variables_dict['Demand2']
+        
+    elif type_integration=="SL_S_FWS":
+        Demand2=initial_variables_dict['Demand2']
+        energStorageMax=initial_variables_dict['energStorageMax']
+    
+    elif type_integration=="SL_S_MW":
+        T_in_flag=initial_variables_dict['T_in_flag']
+        Demand2=initial_variables_dict['Demand2']
+    
+    elif type_integration=="SL_S_MWS":
+        T_in_flag=initial_variables_dict['T_in_flag']
+        Demand2=initial_variables_dict['Demand2']
+        energStorageMax=initial_variables_dict['energStorageMax']
+    
+    elif type_integration=="SL_S_PD":
+        outProcess_h=initial_variables_dict['outProcess_h']
+        x_design=initial_variables_dict['x_design']
+    
+    elif type_integration=="SL_S_PDS":
+        outProcess_h=initial_variables_dict['outProcess_h']
+        x_design=initial_variables_dict['x_design']
+        energStorageMax=initial_variables_dict['energStorageMax']
     
     Area=Area_coll*n_coll_loop #Area of aperture per loop [m²] Used later
     Area_total=Area*num_loops #Total area of aperture [m²] Used later
@@ -1567,5 +1719,7 @@ else:
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
     
+#version,initial_variables = SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simControl)
+                                          #SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,desginDict,pk):
 #[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
