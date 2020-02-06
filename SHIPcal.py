@@ -64,6 +64,9 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
 
     if origin==-2: #Simulation called from ReSSSPI front-end
         plotPath=os.path.dirname(os.path.dirname(__file__))+'/ressspi/ressspiForm/static/results/' #FilePath for images when called by www.ressspi.com
+    elif origin==-3:
+        plotPath=os.path.dirname(os.path.dirname(__file__))+'/CIMAV/results/'
+        print(plotPath)
     elif origin==0:
         plotPath=""
     elif origin==1: #Simulation called from other front-ends (use positive integers)
