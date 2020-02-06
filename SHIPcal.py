@@ -910,38 +910,41 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     
     
     # --> Simulation Loop variable init
+    array_zeros=np.zeros(steps_sim)
     
-    #theta_transv_rad=np.zeros(steps_sim)
-    #h_out_kJkg=np.zeros(steps_sim)
-    #h_in_kJkg=np.zeros(steps_sim)
-    theta_i_rad=np.zeros(steps_sim)
-    theta_i_deg=np.zeros(steps_sim)
-    theta_transv_deg=np.zeros(steps_sim)
-    IAM_long=np.zeros(steps_sim)
-    IAM_t=np.zeros(steps_sim)
-    IAM=np.zeros(steps_sim)
-    T_in_K=np.zeros(steps_sim)
-    T_out_K=np.zeros(steps_sim)
-    flow_rate_kgs=np.zeros(steps_sim)
-    Perd_termicas=np.zeros(steps_sim)
-    flow_rate_rec=np.zeros(steps_sim)
-    bypass=list()
-    Q_prod=np.zeros(steps_sim)
-    Q_prod_lim=np.zeros(steps_sim)
-    Q_prod_rec=np.zeros(steps_sim)
-    Q_defocus=np.zeros(steps_sim)
-    SOC=np.zeros(steps_sim)
-    Q_charg=np.zeros(steps_sim)
-    Q_discharg=np.zeros(steps_sim)
-    Q_useful=np.zeros(steps_sim)
-    flowToHx=np.zeros(steps_sim)
-    flowToMix=np.zeros(steps_sim)
-    flowDemand=np.zeros(steps_sim)
-    T_toProcess_K=np.zeros(steps_sim)
-    T_toProcess_C=np.zeros(steps_sim)
-    T_alm_K=np.zeros(steps_sim)
-    storage_energy=np.zeros(steps_sim)
-    x_out=np.zeros(steps_sim)
+    """
+    # #theta_transv_rad=np.zeros(steps_sim)
+    # #h_out_kJkg=np.zeros(steps_sim)
+    # #h_in_kJkg=np.zeros(steps_sim)
+    # theta_i_rad=np.zeros(steps_sim)
+    # theta_i_deg=np.zeros(steps_sim)
+    # theta_transv_deg=np.zeros(steps_sim)
+    # IAM_long=np.zeros(steps_sim)
+    # IAM_t=np.zeros(steps_sim)
+    # IAM=np.zeros(steps_sim)
+    # T_in_K=np.zeros(steps_sim)
+    # T_out_K=np.zeros(steps_sim)
+    # flow_rate_kgs=np.zeros(steps_sim)
+    # Perd_termicas=np.zeros(steps_sim)
+    # flow_rate_rec=np.zeros(steps_sim)
+    # bypass=list()
+    # Q_prod=np.zeros(steps_sim)
+    # Q_prod_lim=np.zeros(steps_sim)
+    # Q_prod_rec=np.zeros(steps_sim)
+    # Q_defocus=np.zeros(steps_sim)
+    # SOC=np.zeros(steps_sim)
+    # Q_charg=np.zeros(steps_sim)
+    # Q_discharg=np.zeros(steps_sim)
+    # Q_useful=np.zeros(steps_sim)
+    # flowToHx=np.zeros(steps_sim)
+    # flowToMix=np.zeros(steps_sim)
+    # flowDemand=np.zeros(steps_sim)
+    # T_toProcess_K=np.zeros(steps_sim)
+    # T_toProcess_C=np.zeros(steps_sim)
+    # T_alm_K=np.zeros(steps_sim)
+    # storage_energy=np.zeros(steps_sim)
+    # x_out=np.zeros(steps_sim)
+    """
     
     #coll_par depends of the sender so it is defined above
     #integration_Dict depends of the integration method so it is calculated before.
@@ -951,10 +954,10 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
                     'fluidInput':fluidInput,
                     'steps_sim':steps_sim,'step_sim':step_sim,'plotPath':plotPath, 'Energy_Before':Energy_Before, 'Energy_Before_annual':Energy_Before_annual,
                     'Demand':Demand}
-    initial_arrays = {'theta_i_rad':theta_i_rad,'theta_i_deg':theta_i_deg,'theta_transv_deg':theta_transv_deg,'IAM_long':IAM_long,'IAM_t':IAM_t,'IAM':IAM,'T_in_K':T_in_K,'T_out_K':T_out_K,
-                      'flow_rate_kgs':flow_rate_kgs,'Perd_termicas':Perd_termicas,'flow_rate_rec':flow_rate_rec,'bypass':bypass,'Q_prod':Q_prod,'Q_prod_lim':Q_prod_lim,
-                      'Q_prod_rec':Q_prod_rec,'Q_defocus':Q_defocus,'SOC':SOC,'Q_charg':Q_charg,'Q_discharg':Q_discharg,'Q_useful':Q_useful,'flowToHx':flowToHx,'flowToMix':flowToMix,
-                      'flowDemand':flowDemand,'T_toProcess_K':T_toProcess_K,'T_toProcess_C':T_toProcess_C,'T_alm_K':T_alm_K,'storage_energy':storage_energy,'x_out':x_out}
+    initial_arrays = {'theta_i_rad':array_zeros.copy(),'theta_i_deg':array_zeros.copy(),'theta_transv_deg':array_zeros.copy(),'IAM_long':array_zeros.copy(),'IAM_t':array_zeros.copy(),'IAM':array_zeros.copy(),'T_in_K':array_zeros.copy(),'T_out_K':array_zeros.copy(),
+                      'flow_rate_kgs':array_zeros.copy(),'Perd_termicas':array_zeros.copy(),'flow_rate_rec':array_zeros.copy(),'bypass':list(),'Q_prod':array_zeros.copy(),'Q_prod_lim':array_zeros.copy(),
+                      'Q_prod_rec':array_zeros.copy(),'Q_defocus':array_zeros.copy(),'SOC':array_zeros.copy(),'Q_charg':array_zeros.copy(),'Q_discharg':array_zeros.copy(),'Q_useful':array_zeros.copy(),'flowToHx':array_zeros.copy(),'flowToMix':array_zeros.copy(),
+                      'flowDemand':array_zeros.copy(),'T_toProcess_K':array_zeros.copy(),'T_toProcess_C':array_zeros.copy(),'T_alm_K':array_zeros.copy(),'storage_energy':array_zeros.copy(),'x_out':array_zeros.copy()}
     initial_variables_dict = {}
     initial_variables_dict.update(coll_par)
     initial_variables_dict.update(integration_Dict)
