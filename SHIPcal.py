@@ -703,7 +703,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         h_sat_liq=sat_liq.h
         h_sat_vap=sat_vap.h
         sensiblePart=h_sat_liq-h_in
-        latentPart=h_sat_vap-h_sat_liq
+        #latentPart=h_sat_vap-h_sat_liq
         total=h_sat_vap-h_in
         porctSensible=sensiblePart/total
         #porctLatent=latentPart/total
@@ -858,9 +858,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
        
         x_design=0.4
-
-        almVolumen=0 #litros
-        energStorageMax=0 #kWh
+        
         T_in_K=T_in_C+273 #Temp return of condensates
         initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
         h_in=initial.h #kJ/kg
@@ -868,7 +866,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         sat_liq=IAPWS97(P=P_op_Mpa, x=0)
         outputState=IAPWS97(P=P_op_Mpa, x=x_design)
         T_out_K=outputState.T 
-        T_out_C=outputState.T-273 #Temperature of saturation at that level
+        T_out_C=T_out_K-273 #Temperature of saturation at that level
         
         out_s=outputState.s
         h_out=outputState.h
@@ -878,13 +876,9 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         outProcess_h=outputProcessState.h
         hProcess_out=outProcess_h
         
-        #Not used
-        porctSensible=0
-        sat_vap=0 #Not used
-        T_out_HX_C=0 #Not used
-        
         integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,
-                                 'Demand2':Demand2,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
+                                 'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'outProcess_s':outProcess_s,
+                                 'outProcess_h':outProcess_h,'hProcess_out':hProcess_out,'x_design':x_design})
         
     elif type_integration=="SL_S_PDS":
         
@@ -924,14 +918,17 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         sat_vap=0 #Not used
         T_out_HX_C=0 #Not used
         
-    integrationDesign={'x_design':x_design,'porctSensible':porctSensible,'almVolumen':almVolumen,'energStorageMax':energStorageMax,
-                       'T_out_HX_C':T_out_HX_C}
+        integration_Dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,
+                                 'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'outProcess_s':outProcess_s,
+                                 'outProcess_h':outProcess_h,'hProcess_out':hProcess_out,'x_design':x_design,
+                                 'energStorageMax':energStorageMax})
     
     
     # --> Simulation Loop variable init
     
-    theta_transv_rad=np.zeros(steps_sim)
-    theta_transv_rad=theta_transv_rad
+    #theta_transv_rad=np.zeros(steps_sim)
+    #h_out_kJkg=np.zeros(steps_sim)
+    #h_in_kJkg=np.zeros(steps_sim)
     theta_i_rad=np.zeros(steps_sim)
     theta_i_deg=np.zeros(steps_sim)
     theta_transv_deg=np.zeros(steps_sim)
@@ -944,8 +941,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     Perd_termicas=np.zeros(steps_sim)
     flow_rate_rec=np.zeros(steps_sim)
     bypass=list()
-    h_in_kJkg=np.zeros(steps_sim)
-    h_in_kJkg=h_in_kJkg
     Q_prod=np.zeros(steps_sim)
     Q_prod_lim=np.zeros(steps_sim)
     Q_prod_rec=np.zeros(steps_sim)
@@ -954,8 +949,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     Q_charg=np.zeros(steps_sim)
     Q_discharg=np.zeros(steps_sim)
     Q_useful=np.zeros(steps_sim)
-    h_out_kJkg=np.zeros(steps_sim)
-    h_out_kJkg=h_out_kJkg
     flowToHx=np.zeros(steps_sim)
     flowToMix=np.zeros(steps_sim)
     flowDemand=np.zeros(steps_sim)
