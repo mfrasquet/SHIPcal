@@ -170,13 +170,26 @@ def Meteo_data (file_meteo,sender='notCIMAV', collector='plane'): #This function
         if collector=='concentrator':
             DNI=data[:,5]#If the collector is a concentrator type collector this variable will carry the DNI
         else:
-            DNI=data[:,6]#But if it is not a concentrator tipe it will carry the global radiation
+            DNI=data[:,6]#But if it is not a concentrator type it will carry the global radiation
         temp=data[:,7]
+        f=open(file_meteo,'r') #Opens the selected file
+        for i, line in enumerate(f): #Starts reading line by line and assign a line number to each as it is reads the line (starts from 0)
+            if i==1: #When the unctions reads line 2, which is where the Lat and time Zone is
+                position=line #Stores the information in the position variable as a string
+            if i>2: #It doesn't read the following lines since it already has the required information
+                break #So it stops
+        f.close() #Close the file
+        position=position.split() #Converts the string to a list of strings [Lat,Long,Altitude,TimeZone(Huso)]
+        position=[float(i) for i in position] #Converts each of the items into a float number
+        Lat=position[0] #Stores the Lat and the TimeZone in variables for later return
+        Positional_longitude=position[1]
+        Huso=position[3]
+        return Lat,Huso,Positional_longitude,data,DNI,temp #Returns the Lat and Time zone corresponding variables
     else:
         data = np.loadtxt(file_meteo, delimiter="\t")
         DNI=data[:,8]
         temp=data[:,9]
-    return [data,DNI,temp]
+        return [data,DNI,temp]
 
 
 
@@ -195,7 +208,7 @@ def Meteo_data (file_meteo,sender='notCIMAV', collector='plane'): #This function
 #dia_fin_sim=22
 #hora_fin_sim=24
                                                                                                          #Sender is an optional argument, if not received continues normaly
-def SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender='notCIMAV'): #This function returns an "output" array with the month, day of the month, hour of the day, hour of the year hour angle,SUN_ELVevation, suN_AZimuth,DECLINATION, SUN_ZENITHAL, DNI,temp_sim,step_sim for every hour between the starting and ending hours in the year.  It also returns the starting and ending hour in the year.
+def SolarData(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender='notCIMAV',Lat=0,Huso=0): #This function returns an "output" array with the month, day of the month, hour of the day, hour of the year hour angle,SUN_ELVevation, suN_AZimuth,DECLINATION, SUN_ZENITHAL, DNI,temp_sim,step_sim for every hour between the starting and ending hours in the year.  It also returns the starting and ending hour in the year.
 
     hour_year_ini=calc_hour_year(mes_ini_sim,dia_ini_sim,hora_ini_sim)#Calls a function within this same script yo calculate the corresponding hout in the year for the day/month/hour of start and end
     hour_year_fin=calc_hour_year(mes_fin_sim,dia_fin_sim,hora_fin_sim)
@@ -207,42 +220,37 @@ def SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim
     
     
     #Llamada al archivo de meteo completo
-    (data,DNI,temp)=Meteo_data(file_loc,sender)#Calls another function within this same script that reads the TMY.dat file 
-    data=np.array(data) #Array where every row is an hour and the columns are month,day in the month, hour of the month, hour of the year, ..., DNI, Temp
-    DNI=np.array(DNI) #Vector with DNI values for every hour in the year
-    temp=np.array(temp) #Vector with the temperature for every hour in the year
+    if sender == 'CIMAV':
+        Lat,Huso,Positional_longitude,data,DNI,temp=Meteo_data(file_loc,sender)
+    else:
+        (data,DNI,temp)=Meteo_data(file_loc,sender)#Calls another function within this same script that reads the TMY.dat file 
+        #They are already np.arrays
+        #data=np.array(data) #Array where every row is an hour and the columns are month,day in the month, hour of the month, hour of the year, ..., DNI, Temp
+        #DNI=np.array(DNI) #Vector with DNI values for every hour in the year
+        #temp=np.array(temp) #Vector with the temperature for every hour in the year
     
     #Bucle de simulacion
-    #Starts the vectors of sim_steps length to store date in them
+    #Starts the vectors of sim_steps length to store data in them
     
     W_sim=np.zeros (sim_steps)
     SUN_ELV_sim=np.zeros (sim_steps)
     SUN_AZ_sim=np.zeros (sim_steps)
     DECL_sim=np.zeros (sim_steps)
     SUN_ZEN_sim=np.zeros (sim_steps)
-    step_sim=np.zeros (sim_steps)
-    DNI_sim=np.zeros (sim_steps)
-    temp_sim=np.zeros (sim_steps)
-    month_sim=np.zeros (sim_steps)
-    day_sim=np.zeros (sim_steps)
-    hour_sim=np.zeros (sim_steps)
-    hour_year_sim=np.zeros (sim_steps)
+    
+    #The file was already readed, and the data was already stored in "data" so it is easier to just pick the needed sections.
+    step_sim=np.array(range(0,sim_steps)) #np.zeros (sim_steps)
+    DNI_sim=DNI[hour_year_ini-1:hour_year_fin-1]
+    temp_sim=temp[hour_year_ini-1:hour_year_fin-1]
+    month_sim=data[hour_year_ini-1:hour_year_fin-1,0]
+    day_sim=data[hour_year_ini-1:hour_year_fin-1,1]
+    hour_sim=data[hour_year_ini-1:hour_year_fin-1,2]
+    hour_year_sim=data[hour_year_ini-1:hour_year_fin-1,3]
     
     
     
     step=0
     for step in range(0,sim_steps):
-        step_sim[step]=step
-        
-        month_sim[step]=data[hour_year_ini+step-1,0]
-        day_sim[step]=data[hour_year_ini+step-1,1]
-        hour_sim[step]=data[hour_year_ini+step-1,2]
-        
-        hour_year_sim[step]=hour_year_ini+step
-    
-        DNI_sim[step]=DNI[hour_year_ini+step-1]
-        temp_sim[step]=temp[hour_year_ini+step-1]
-    
         #Posicion solar
         W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN=SolarEQ_simple (month_sim[step],day_sim[step] ,hour_sim[step],Lat,Huso) #calls another function in within this script that calculates the solar positional angles for the specfied hour of the day and month
         W_sim[step]=W
@@ -255,6 +263,22 @@ def SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim
         step+=1
     
     output=np.column_stack((month_sim,day_sim,hour_sim,hour_year_sim,W_sim,SUN_ELV_sim,SUN_AZ_sim,DECL_sim,SUN_ZEN_sim,DNI_sim,temp_sim,step_sim)) #Arranges the calculated data in a massive array with the previusly calculated vector as columns
+    
+    """
+    Output key:
+    output[0]->month of year
+    output[1]->day of month
+    output[2]->hour of day
+    output[3]->hour of year
+    output[4]->W - rad
+    output[5]->SUN_ELV - rad
+    output[6]->SUN AZ - rad
+    output[7]->DECL - rad
+    output[8]->SUN ZEN - rad
+    output[9]->DNI  - W/m2
+    output[10]->temp -C
+    output[11]->step_sim
+    """
         
 #    if plot_Optics==1:    
 #        fig = plt.figure(1)
@@ -274,5 +298,8 @@ def SolarData(file_loc,Lat,Huso,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim
 #        ax2.set_ylabel('DNI')
 #        plt.legend(bbox_to_anchor=(1.15, .5), loc=2, borderaxespad=0.)
     
-    return[output,hour_year_ini,hour_year_fin]        
+    if sender == 'CIMAV':
+        return Lat,Huso,Positional_longitude,output
+    else:
+        return[output,hour_year_ini,hour_year_fin]        
      

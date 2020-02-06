@@ -69,8 +69,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     elif origin==1: #Simulation called from other front-ends (use positive integers)
         plotPath=""
     
-    plots_param = {'plotPath':plotPath}
-    
     global Turn_key, ESCO
     #-->  Propetary libs
     if sender=='solatom': #The request comes from Solatom's front-end www.ressspi.com
@@ -83,7 +81,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     elif sender=='CIMAV': #The request comes from CIMAV front-end
         global djangoReportCIMAV,CIMAV_collectors,IAM_fiteq,IAM_calculator,theta_IAMs_CIMAV,CIMAV_plant_costFunctions,equiv_coll_series_o1
         from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
-        from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso
         from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
         from CIMAV.CIMAV_modules.incidence_angle import theta_IAMs_v2 as theta_IAMs_CIMAV
         from CIMAV.CIMAV_modules.CIMAV_financeModels import Turn_key,ESCO,CIMAV_plant_costFunctions
@@ -137,15 +134,12 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     
     n_years_sim=25 # Collector life in years & number of years for the simulation [years]
     
-    financial_param = {'finance_study':finance_study,'costRaise':costRaise,'fuelCostRaise':fuelCostRaise,'CPI':CPI,'priceReduction':priceReduction,'n_years_sim':n_years_sim }
     #--> Process parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
     m_dot_min_kgs=0.06 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
-    
-    process_param= {'lim_inf_DNI':lim_inf_DNI,'m_dot_min_kgs':m_dot_min_kgs,'coef_flow_rec':coef_flow_rec,'Boiler_eff':Boiler_eff}
     
     #%%
     # BLOCK 1.3 - SYSTEM VARIABLES <><><><><><><><><><><><><><><><><><><><><><><><><><><>    
@@ -166,10 +160,17 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         type_coll=20 #Solatom 20" fresnel collector - Change if other collector is used
         REC_type=1
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
+        
+        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'IAMfile_loc':IAMfile_loc,'Long':Long}
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
         Area_coll,rho_optic_0,eta1,eta2,mdot_test,Long,weight=CIMAV_collectors(type_coll)
+        blong,nlong = IAM_fiteq(type_coll,1)
+        btrans,ntrans = IAM_fiteq(type_coll,2)
+        REC_type = 1 #Death variable to avoid crashes with the previous code
+        
+        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test':mdot_test,'Long':Long,'weight':weight,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans}
     
     else: #Using other collectors (to be filled with customized data)
         
@@ -183,6 +184,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         Area_coll=26.4 #Aperture area of collector per module [m²]
         rho_optic_0=0.75583 #Optical eff. at incidence angle=0 [º]
         Long=5.28 #Longitude of each module [m]
+        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'IAMfile_loc':IAMfile_loc,'Long':Long}
         
         ## --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
     """    
@@ -192,10 +194,10 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     terreno="clean_ground"
     """
 
-    beta=0 #Pitch not implemented [rad]
-    orient_az_rad=0 #Orientation not implemented [rad]
-    roll=0 #Roll not implemented [rad]
-
+    #beta=0 #Pitch not implemented [rad]
+    #orient_az_rad=0 #Orientation not implemented [rad]
+    #roll=0 #Roll not implemented [rad]
+    coll_par.update({'beta':0,'orient_az_rad':0,'roll':0})
     
     # --> Front-end inputs
     
@@ -219,9 +221,8 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput=inputs['fluid'] #Type of fluid 
-        T_process_in=inputs['outletTemp'] #HIGH - Process temperature [ºC]
-        T_process_out=inputs['inletTemp'] #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=P_op_bar #[bar]
+        T_process_in_C=inputs['outletTemp'] #HIGH - Process temperature [ºC]
+        T_process_out_C=inputs['inletTemp'] #LOW - Temperature at the return of the process [ºC]
             
             #>> ENERGY DEMAND
        
@@ -247,7 +248,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
         file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
         file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
-        Lat,Huso,Positional_longitude=Lat_Huso(file_loc) #Calls a function wich reads only the line where the Lat and Timezone is and gives back theit values for the right city
         
         ## INTEGRATION
         type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
@@ -256,9 +256,8 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput=inputsDjango['fluid'] #Type of fluid 
-        T_process_in=inputsDjango['tempOUT'] #HIGH - Process temperature [ºC]
-        T_process_out=inputsDjango['tempIN'] #LOW - Temperature at the return of the process [ºC]
-        #P_op_bar=P_op_bar #[bar]
+        T_process_in_C=inputsDjango['tempOUT'] #HIGH - Process temperature [ºC]
+        T_process_out_C=inputsDjango['tempIN'] #LOW - Temperature at the return of the process [ºC]
         
             #>> ENERGY DEMAND 
         file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
@@ -291,8 +290,8 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput=inputs['fluid'] #Type of fluid 
-        T_process_in=inputs['outletTemp'] #HIGH - Process temperature [ºC]
-        T_process_out=inputs['inletTemp'] #LOW - Temperature at the return of the process [ºC]
+        T_process_in_C=inputs['outletTemp'] #HIGH - Process temperature [ºC]
+        T_process_out_C=inputs['inletTemp'] #LOW - Temperature at the return of the process [ºC]
         P_op_bar=P_op_bar #[bar]
             
             #>> ENERGY DEMAND
@@ -332,8 +331,8 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=150 #HIGH - Process temperature [ºC]
-        T_process_out=60 #LOW - Temperature at the return of the process [ºC]
+        T_process_in_C=150 #HIGH - Process temperature [ºC]
+        T_process_out_C=60 #LOW - Temperature at the return of the process [ºC]
         P_op_bar=6 #[bar] 
         
         # Not implemented yet
@@ -343,7 +342,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         """
             
         ## ENERGY DEMAND
-#        dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
+#       dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
         dayArray=[1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24] #24 hours day profile
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
@@ -376,17 +375,11 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
     Demand=Boiler_eff*Energy_Before #Demand of energy after the boiler [kWh]
     
-    
-    if co2TonPrice>0:
-        CO2=1 #Flag to take into account co2 savings in terms of cost per ton emitted
-    else:
-        CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
-    
-    
-    
     # --> Meteo variables
-   
-    output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender)
+    if sender == 'CIMAV':
+        Lat,Huso,Positional_longitude,output=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender)
+    else:
+        output,hour_year_ini,hour_year_fin=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso)
 
     """
     Output key:
@@ -414,7 +407,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
 
     
     DNI=DNI*mofDNI # DNI modified if needed. This is necessary to take into account 
-    meteoDict={'DNI':DNI.tolist(),'localMeteo':localMeteo}
 
 #%%
 # ------------------------------------------------------------------------------------
@@ -433,15 +425,14 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     energyStored=0 #kWh
     porctSensible=0 #Not used
     T_out_HX_C=0 #Not used 
-    T_out_process_C=0 #Not used
-    T_in_process_C=0 #Not used
     outProcess_s=0 #Not used
     hProcess_out=0 #Not used
     in_s=0
     out_s=0
     h_in=0
     h_out=0
-    
+    integration_Dict = {'x_design':x_design,'outProcess_h':outProcess_h,'energStorageMax':energStorageMax,'energyStored':energyStored,
+                        'outProcess_s':outProcess_s,'hProcess_out':hProcess_out,'in_s':in_s,'out_s':out_s,'h_in':h_in,'h_out':h_out}
     
     #Temperature of the make-up water
     T_in_C_AR=waterFromGrid_v3(file_loc,sender)
@@ -454,7 +445,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     if sender=='CIMAV':
         T_in_flag=inputsDjango['T_in_flag'] #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
         if T_in_flag == 0:        
-            T_process_out = np.average(T_in_C_AR)
+            T_process_out_C = np.average(T_in_C_AR)
     # --> Integrations: 
         # SL_L_RF Supply level with liquid heat transfer media solar return flow boost
         
@@ -465,14 +456,12 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         HX_eff=0.9 # Simplification for HX efficiency
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        T_in_C=T_process_out_C #T_in_C inlet temperature to the collector #The inlet temperature towards the solar field is the same than the one of return from the process.
+        T_out_C=T_process_in_C #T_out_C outlet temperature from the collector #The outlet temperature towards the process is the same than the delivered from the collector.
         
         
         T_in_K=T_in_C+273
-        T_in_process_C=T_in_C
-        T_in_process_K=T_in_C+273
-        inputProcessState=IAPWS97(P=P_op_Mpa, T=T_in_process_K)
+        inputProcessState=IAPWS97(P=P_op_Mpa, T=T_in_K)
         hProcess_in=inputProcessState.h
     
         #Heat Exchanger design DELTA T    
@@ -483,30 +472,31 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273
         T_out_K=T_out_C+273
-        T_out_process_K=T_out_K
-        T_out_process_C=T_out_K-273 #Temp out the process
-        outputProcessState=IAPWS97(P=P_op_Mpa, T=T_out_process_K)
+        outputProcessState=IAPWS97(P=P_op_Mpa, T=T_out_K)
         outProcess_s=outputProcessState.s
         hProcess_out=outputProcessState.h
         
-        T_out_HX_K=(T_in_process_K+(T_out_K-T_in_process_K)*heatFactor)
+        T_out_HX_K=(T_in_K+(T_out_K-T_in_K)*heatFactor)
         T_out_HX_C=T_out_HX_K-273
         outputHXState=IAPWS97(P=P_op_Mpa, T=T_out_HX_K)
         hHX_out=outputHXState.h
         
         #Our design point will be heat the fluid at x%
-        T_out_K=(T_in_process_K+(T_out_K-T_in_process_K)*heatFactor)+DELTA_T_HX
+        T_out_K=(T_in_K+(T_out_K-T_in_K)*heatFactor)+DELTA_T_HX
         T_out_C=T_out_K-273 
         
         inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
-        h_in=inputState.h    
+        h_in=inputState.h
         in_s=inputState.s
-        in_x=inputState.x
         outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
         out_s=outputState.s
-        h_out=outputState.h                                                                                                                                                                                  
-        T_av_process_K=(T_in_process_K+T_out_process_K)/2
-    
+        h_out=outputState.h
+        
+        integration_Dict.update({DELTA_T_HX,HX_eff,P_op_Mpa,T_in_C,
+                                 T_out_C,T_in_K,T_out_K,hProcess_in,outProcess_s,
+                                 hProcess_out,T_out_HX_K,T_out_HX_C,hHX_out,
+                                 h_in,in_s,out_s,h_out})
+        
     # ----------------------------------------
         # SL_L_P => Supply level with liquid heat transfer media parallel integration
         # PL_E_PM => Process level external HEX for heating of product or process medium
@@ -514,31 +504,26 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":   
            
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in_C #The outlet temperature at the solar field is the same than the process temperature
         
         T_in_K=T_in_C+273
-        T_in_process_C=T_in_C
-        T_in_process_K=T_in_K
         
         if fluidInput=="water":
-            inputState=IAPWS97(P=P_op_Mpa, T=T_in_process_K)
+            inputState=IAPWS97(P=P_op_Mpa, T=T_in_K)
             hProcess_in=inputState.h  
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273    
     
         T_out_K=T_out_C+273
-        T_out_process_K=T_out_K
-        T_out_process_C=T_out_C
         if fluidInput=="water":
-            outputProcessState=IAPWS97(P=P_op_Mpa, T=T_out_process_K)
+            outputProcessState=IAPWS97(P=P_op_Mpa, T=T_out_K)
             outProcess_s=outputProcessState.s
             hProcess_out=outputProcessState.h    
             
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
             h_in=inputState.h    
             in_s=inputState.s
-            in_x=inputState.x
             outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
             out_s=outputState.s
             h_out=outputState.h
@@ -553,8 +538,8 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         flow_rate_design_kgs=2 # Design flow rate (fix value for SL_L_S)
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in_C #The outlet temperature at the solar field is the same than the process temperature
         
         
         T_in_K=T_in_C+273
@@ -580,7 +565,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
             h_in=inputState.h
             in_s=inputState.s
-            in_x=inputState.x
             outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
             out_s=outputState.s
             h_out=outputState.h
@@ -652,8 +636,8 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     elif type_integration=="SL_L_PS":
               
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in_C #The outlet temperature at the solar field is the same than the process temperature
 
         
         T_in_K=T_in_C+273
@@ -666,7 +650,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
             h_in=inputState.h
             in_s=inputState.s
-            in_x=inputState.x
             outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
             out_s=outputState.s
             h_out=outputState.h
@@ -699,15 +682,14 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     elif type_integration=="SL_S_FW":
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in_C #The outlet temperature at the solar field is the same than the process temperature
         
         energStorageMax=0 #kWh
         energyStored=0 #kWh
         T_in_K=T_in_C+273
         initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
         h_in=initial.h #kJ/kg
-        in_x=initial.x
         sat_liq=IAPWS97(P=P_op_Mpa, x=0)
         sat_vap=IAPWS97(P=P_op_Mpa, x=1)
         h_sat_liq=sat_liq.h
@@ -733,7 +715,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     elif type_integration=="SL_S_FWS":
             
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
               
         T_out_K=IAPWS97(P=P_op_Mpa, x=0).T #Heating point
         T_out_C=T_out_K-273 
@@ -749,7 +731,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
         h_in=initial.h #kJ/kg
         in_s=initial.s
-        in_x=initial.x
         sat_liq=IAPWS97(P=P_op_Mpa, x=0)
         sat_vap=IAPWS97(P=P_op_Mpa, x=1)
         h_sat_liq=sat_liq.h
@@ -780,15 +761,14 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         T_in_flag=0 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
+        T_out_C=T_process_in_C #The outlet temperature at the solar field is the same than the process temperature
         
         energStorageMax=0 #kWh
         energyStored=0 #kWh
         T_in_K=T_in_C+273
         initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
         h_in=initial.h #kJ/kg
-        in_x=initial.x
         sat_liq=IAPWS97(P=P_op_Mpa, x=0)
         sat_vap=IAPWS97(P=P_op_Mpa, x=1)
         h_sat_liq=sat_liq.h
@@ -816,7 +796,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         T_in_flag=0 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
               
         T_out_K=IAPWS97(P=P_op_Mpa, x=0).T #Heating point
         T_out_C=T_out_K-273 
@@ -833,8 +813,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
         h_in=initial.h #kJ/kg
         in_s=initial.s
-        in_x=initial.x
-        in_x=in_x
         sat_liq=IAPWS97(P=P_op_Mpa, x=0)
         sat_vap=IAPWS97(P=P_op_Mpa, x=1)
         h_sat_liq=sat_liq.h
@@ -865,7 +843,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
        
         x_design=0.4
 
@@ -892,15 +870,13 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         #Not used
         porctSensible=0
         sat_vap=0 #Not used
-        T_in_process_C=0 #Not used
-        T_out_process_C=T_out_C #Not used
         T_out_HX_C=0 #Not used
         
     elif type_integration=="SL_S_PDS":
         
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
        
         x_design=0.4
 
@@ -933,12 +909,10 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         #Not used
         porctSensible=0
         sat_vap=0 #Not used
-        T_in_process_C=0 #Not used
-        T_out_process_C=T_out_C #Not used
         T_out_HX_C=0 #Not used
         
     integrationDesign={'x_design':x_design,'porctSensible':porctSensible,'almVolumen':almVolumen,'energStorageMax':energStorageMax,
-                       'T_out_process_C':T_out_process_C,'T_in_process_C':T_in_process_C,'T_out_HX_C':T_out_HX_C}
+                       'T_out_HX_C':T_out_HX_C}
     
     
     # --> Simulation Loop variable init
@@ -978,17 +952,18 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
     storage_energy=np.zeros(steps_sim)
     x_out=np.zeros(steps_sim)
     
-    if sender=='CIMAV':
-        blong,nlong = IAM_fiteq(type_coll,1)
-        btrans,ntrans = IAM_fiteq(type_coll,2)
-        lim_inf_DNI_list=[0]
+    #coll_par depends of the sender so it is defined above
+    #integration_Dict depends of the integration method so it is calculated before.
+    meteoDict={'DNI':DNI,'localMeteo':localMeteo,'Lat':Lat,'Positional_longitude':Positional_longitude,'SUN_ELV':SUN_ELV,'SUN_AZ':SUN_AZ, 'temp':temp, 'T_in_flag':T_in_flag, 'T_in_C_AR':T_in_C_AR}
+    financial_param = {'businessModel':businessModel,'Fuel_price':Fuel_price,'co2TonPrice':co2TonPrice,'co2factor':co2factor,'finance_study':finance_study,'costRaise':costRaise,'fuelCostRaise':fuelCostRaise,'CPI':CPI,'priceReduction':priceReduction,'n_years_sim':n_years_sim }
+    process_param= {'lim_inf_DNI':lim_inf_DNI,'m_dot_min_kgs':m_dot_min_kgs,'coef_flow_rec':coef_flow_rec,'Boiler_eff':Boiler_eff,
+                    'sender':sender,'P_op_bar':P_op_bar,'fluidInput':fluidInput,'T_process_in_C':T_process_in_C,'T_process_out_C':T_process_out_C,
+                    'steps_sim':steps_sim,'step_sim':step_sim,'plotPath':plotPath, 'Energy_Before':Energy_Before, 'Energy_Before_annual':Energy_Before_annual,
+                    'Demand':Demand}
     
-    financial_param = {}
-    coll_par = {}
-    tmy = {}
-    return version, tmy, coll_par, inputsDjango, financial_param, plots_param, process_param
+    return version, meteoDict, coll_par, inputsDjango, financial_param, process_param,integration_Dict
     #Put in the tmy and coll_par the necessary info to perform the sim via variable** as argument in SHIPcal
-    #      (origin, inputsDjango, plots, imageQlty, confReport, **modificators, **desginDict, process_param, pk)
+    #      (origin, inputsDjango, plots, imageQlty, confReport, **modificators, **desginDict, process_param, pk, **meteoDict)
 def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,pk):
     lang=confReport['lang'] #Language
     
@@ -999,6 +974,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # BLOCK 2.2 - SIMULATION ANNUAL LOOP <><><><><><><><><><><><><><><><><><><><><><><><><><><>        
     
     # --> Instant = 0 (Initial conditions)
+    lim_inf_DNI_list=[0]
     bypass.append("OFF")
     Q_prod[0]=0
     T_in_K[0]=temp[0] #Ambient temperature 
@@ -1073,14 +1049,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)#Not used, only for S_L_RF                  
                      
                 elif fluidInput=="oil": 
-                    T_av_process_K=(T_out_process_K+T_in_process_K)/2
+                    T_av_process_K=(T_out_K+T_in_K)/2
                     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
-                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) #Not used, only for S_L_RF         
+                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_K-T_in_K)) #Not used, only for S_L_RF         
                 
                 elif fluidInput=="moltenSalt": 
-                    T_av_process_K=(T_out_process_K+T_in_process_K)/2
+                    T_av_process_K=(T_out_K+T_in_K)/2
                     [rho_av,Cp_av,k,Dv]=moltenSalt(T_av_process_K)    
-                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) #Not used, only for S_L_RF         
+                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_K-T_in_K)) #Not used, only for S_L_RF         
             
                 [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,Area_coll,rho_optic_0,eta1,eta2,mdot_test)
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
@@ -1093,7 +1069,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,Area_coll,rho_optic_0,eta1,eta2,mdot_test)
                     if newBypass=="REC":
                         flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating
-                        T_toProcess_K[i]=T_in_process_K
+                        T_toProcess_K[i]=T_in_K
                     else:
                         #HX simulation
                         Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
@@ -1102,7 +1078,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         #Branch from HX to mix                        
                         toMixstate=IAPWS97(P=P_op_Mpa, T=T_out_K[i]-DELTA_T_HX)
                         #Mix
-                        T_av_HX_K=(T_in_process_K+T_out_HX_K)/2
+                        T_av_HX_K=(T_in_K+T_out_HX_K)/2
                         toProcessstate=IAPWS97(P=P_op_Mpa, T=T_av_HX_K)
                         
                         if flowDemand[i]==0: #If there's no demand then T_toProcss_C[i]=0
@@ -1115,9 +1091,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
                 
                 else: 
-                    
+                    T_av_process_K=(T_in_K+T_out_K)/2
                     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
-                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) 
+                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_K-T_in_K)) 
                                                                                                                                 
                     [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,Area_coll,rho_optic_0,eta1,eta2,mdot_test)
                     
@@ -1127,21 +1103,21 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         #HX simulation
                         Q_prodProcessSide=Q_prod[i]*HX_eff
                         Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
-                        flowToHx[i]=Q_prodProcessSide/(Cp_av*(T_out_HX_K-T_in_process_K))
+                        flowToHx[i]=Q_prodProcessSide/(Cp_av*(T_out_HX_K-T_in_K))
                         
                     flowToMix[i]=flowDemand[i]-flowToHx[i]
                     #Exit of the heat Echanger
                     [rho_toHX,Cp_toHX,k_toHX,Dv_toHX,Kv_toHX,thermalDiff_toHX,Prant_toHX]=thermalOil(T_out_HX_K)                    
                     #Brach to mix
-                    [rho_toMix,Cp_toMix,k_toMix,Dv_toMix,Kv_toMix,thermalDiff_toMix,Prant_toMix]=thermalOil(T_in_process_K)    
+                    [rho_toMix,Cp_toMix,k_toMix,Dv_toMix,Kv_toMix,thermalDiff_toMix,Prant_toMix]=thermalOil(T_in_K)    
                     #Mix
-                    #T_av_HX_K=(T_in_process_K+T_out_HX_K)/2 #Ok when are more or less the same flowrate
-                    T_av_HX_K=T_in_process_K*(flowToMix[i]/flowDemand[i])+T_out_HX_K*(flowToHx[i]/flowDemand[i]) #When temperatures are very different            
+                    #T_av_HX_K=(T_in_K+T_out_HX_K)/2 #Ok when are more or less the same flowrate
+                    T_av_HX_K=T_in_K*(flowToMix[i]/flowDemand[i])+T_out_HX_K*(flowToHx[i]/flowDemand[i]) #When temperatures are very different            
                     [rho_av_HX,Cp_av_HX,k_av_HX,Dv_av_HX,Kv_av_HX,thermalDiff_av_HX,Prant_av_HX]=thermalOil(T_av_HX_K)    
                     if flowToHx[i]==0:
-                        T_toProcess_K[i]=T_in_process_K
+                        T_toProcess_K[i]=T_in_K
                     else:
-                        T_toProcess_K[i]=(flowToMix[i]*Cp_toMix*T_in_process_K+flowToHx[i]*Cp_toHX*T_out_HX_K)/(flowDemand[i]*Cp_av_HX)
+                        T_toProcess_K[i]=(flowToMix[i]*Cp_toMix*T_in_K+flowToHx[i]*Cp_toHX*T_out_HX_K)/(flowDemand[i]*Cp_av_HX)
                     T_toProcess_C[i]=T_toProcess_K[i]-273                      
                     [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
 
@@ -1281,9 +1257,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #%%    
     # BLOCK 3.2 - FINANCE MODEL <><><><><><><><><><><><><><><><><><><><><><><><><><><>
         
-        if CO2==1:
+        if co2TonPrice>0:
+            CO2=1
             co2Savings=tonCo2Saved*co2TonPrice
         else:
+            CO2=0
             co2Savings=0
         
         # Turnkey model   
@@ -1358,7 +1336,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
               'steps_sim':steps_sim,'AmortYear':AmortYear,'Selling_price':Selling_price,
               'in_s':in_s,'out_s':out_s,'T_in_flag':T_in_flag,'Fuel_price':Fuel_price,'Boiler_eff':Boiler_eff,
               'T_in_C':T_in_C,'T_in_C_AR':T_in_C_AR.tolist(),'T_out_C':T_out_C,
-              'outProcess_s':outProcess_s,'T_out_process_C':T_out_process_C,'P_op_bar':P_op_bar,
+              'outProcess_s':outProcess_s,'T_out_process_C':T_out_C,'P_op_bar':P_op_bar,
               'x_design':x_design,'h_in':h_in,'h_out':h_out,'hProcess_out':hProcess_out,'outProcess_h':outProcess_h,
               'Break_cost':Break_cost,'sender':sender,'origin':origin}
     
@@ -1402,9 +1380,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # Property plots
     if fluidInput=="water": #WATER
         if plots[10]==1: #(10) Mollier Plot for s-t for Water
-            mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)              
+            mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_C,P_op_bar,x_design,plotPath,imageQlty)              
         if plots[11]==1: #(11) Mollier Plot for s-h for Water 
-            mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_process_C,P_op_bar,x_design,plotPath,imageQlty)  
+            mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_C,P_op_bar,x_design,plotPath,imageQlty)  
     if fluidInput=="oil": 
         if plots[12]==1:
             rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
@@ -1432,7 +1410,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     if steps_sim==8759: #The report is only available when annual simulation is performed
         if origin==-2:
             fileName="results"+str(pk)
-            reportsVar={'logo_output':'no_logo','date':inputs['date'],'type_integration':type_integration,
+            reportsVar={'logo_output':'no_logo','date':inputsDjango['date'],'type_integration':type_integration,
                         'fileName':fileName,'reg':pk,
                         'Area_total':Area_total,'n_coll_loop':n_coll_loop,
                         'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs}
@@ -1440,7 +1418,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
 
             
-            reportsVar.update(inputs)
+            reportsVar.update(inputsDjango)
             reportsVar.update(finance)
             reportsVar.update(confReport)
             reportsVar.update(annualProdDict)
