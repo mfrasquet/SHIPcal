@@ -548,7 +548,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
         
         
         T_in_K=T_in_C+273 #Initially the storage will have the same initial storage temperature
-        #T_ini_storage=T_in_K #Initial temperature of the storage
+        T_ini_storage=T_in_K #Initial temperature of the storage
         
         if fluidInput=="water": # Only applies to water
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
@@ -635,7 +635,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,desginDict,simContr
                                  'T_out_C':T_out_C,'T_in_K':T_in_K,'T_out_K':T_out_K,'T_min_storage':T_min_storage,'T_max_storage':T_max_storage,
                                  'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'storage_max_energy':storage_max_energy,
                                  'storage_ini_energy':storage_ini_energy, 'storage_min_energy':storage_min_energy,'energStorageUseful':energStorageUseful,
-                                 'energStorageMax':energStorageMax})
+                                 'energStorageMax':energStorageMax,'T_ini_storage':T_ini_storage})
         
     # ----------------------------------------
         # SL_L_PS => Supply level with liquid heat transfer media parallel integration with storage
@@ -987,7 +987,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     T_out_K[0]=temp[0] #Ambient temperature
     energyStored = 0 #Inititally the storage is always empty if there is one.
     if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
-        T_alm_K[0]=T_in_K
+        T_alm_K[0]=T_ini_storage
         storage_energy[0]=storage_ini_energy
     #            SOC[i]=100*(T_alm_K[i]-273)/(T_max_storage-273)
         SOC[0]=100*energyStored/energStorageMax
