@@ -36,7 +36,7 @@ def IT_flow (T_out_K,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IA
         
     return [flow_rate_kgs,T_out_K,Q_loss_rec]
     
-def IT_temp(fluidInput,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate,rho_optic_0):    
+def IT_temp(fluidInput,T_in_K,P_op_Mpa,temp_amb_K,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate,REC_type,Long,rho_optic_0,**kwargs):    
     T_outlet_KX=999
     for jj in range(1,202):
         if jj>=200: #Si no llegamos a convergencia después de 200 iteraciones paramos
@@ -74,7 +74,7 @@ def IT_temp(fluidInput,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,
     return[T_outlet_K,Perd_termicas]
 
 
-def flow_calc (T_out_K,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0):
+def flow_calc (T_out_K,T_in_K,P_op_Mpa,temp_amb_K,theta_i_rad,DNI,IAM,Area,n_coll_loop,REC_type,Long,rho_optic_0,**kwargs):
     T_av_K=(T_in_K+T_out_K)/2
     average=IAPWS97(P=P_op_Mpa, T=T_av_K)
     Cp_av_KJkgK=average.cp
@@ -86,7 +86,7 @@ def flow_calc (T_out_K,T_in_K,P_op_Mpa,temp_amb_K,REC_type,theta_i_rad,DNI,Long,
     Perd_termicas=Q_loss_rec*n_coll_loop*Long     
     return [flow_rate_kgs,Perd_termicas]
 
-def flow_calcHTF (T_out_K,T_in_K,Cp_av,temp_amb_K,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0):
+def flow_calcHTF (T_out_K,T_in_K,Cp_av,temp_amb_K,theta_i_rad,DNI,IAM,Area,n_coll_loop,REC_type,Long,rho_optic_0,**coll_par):
     
     DELTA_T_loss=T_out_K-temp_amb_K
     [Q_loss_rec]=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI) #W/m
