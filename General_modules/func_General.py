@@ -218,7 +218,7 @@ def waterFromGrid_v2(T_in_C_AR_mes):
 
 def waterFromGrid_v3(file_meteo, sender='CIMAV'):
     if sender=='CIMAV':
-        Tamb = np.loadtxt(file_meteo, delimiter="\t", skiprows=4)[:,6]#Reads the temperature of the weather. The TMYs are a bit different.
+        Tamb = np.loadtxt(file_meteo, delimiter="\t", skiprows=4)[:,7]#Reads the temperature of the weather. The TMYs are a bit different.
     else:
         Tamb = np.loadtxt(file_meteo, delimiter="\t")[:,9]#Reads the temperature of the weather
     TambAverage=np.mean(Tamb) #Computes the year average

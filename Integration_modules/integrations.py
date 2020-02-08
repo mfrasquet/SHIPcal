@@ -15,7 +15,7 @@ import numpy as np
 from Solar_modules.iteration_process import flow_calc, flow_calcHTF
 from Solar_modules.iteration_process import IT_temp
 from General_modules.func_General import thermalOil,moltenSalt
-from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C
+from General_modules.func_General import bar_MPa,MPa_bar,K_C
 from Collector_modules.receivers import Rec_loss
 
 def offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,temp):
@@ -143,13 +143,18 @@ def operationOilKettleSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypas
         newBypass="PROD"
     return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
     
-def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,flow_rate_kgs):
+def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,flow_rate_kgs,type_coll,sender):
 #SL_L_S Supply level with liquid heat transfer media just for heat a storage
+    
+    if sender == 'CIMAV':
+        from CIMAV.CIMAV_modules.iteration_process import IT_temp
+        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,T_max_storage,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll)
+    else:
+        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
     
     if fluidInput =="water":
         inlet=IAPWS97(P=P_op_Mpa, T=T_in_K_old)
         h_in_kJkg=inlet.h
-        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
     
         if T_out_K>=T_max_storage:
                 outlet=IAPWS97(P=P_op_Mpa, T=T_out_K) 
@@ -162,70 +167,65 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
             outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
             h_out_kJkg=outlet.h
             
-    if fluidInput =="oil":
-        [SF_inlet_rho,SF_inlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_in_K_old)
-           
-    if fluidInput =="moltenSalt":
-        [rho,SF_inlet_Cp,k,Dv]=moltenSalt(T_in_K_old)
-        
-    T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_kgs,rho_optic_0)
-    
-    
-    if fluidInput =="water":    
         Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
-    
-    if fluidInput =="oil":    
-        [SF_outlet_rho,SF_outlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_out_K)    
-        SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
-        Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
-    
-    if fluidInput =="moltenSalt":     
-        [rho,SF_outlet_Cp,k,Dv]=moltenSalt(T_out_K)
         
+    elif fluidInput =="oil":
+        [SF_inlet_rho,SF_inlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_in_K_old)
+        [SF_outlet_rho,SF_outlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_out_K)
         SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
         Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
+        
+    elif fluidInput =="moltenSalt":
+        [rho,SF_inlet_Cp,k,Dv]=moltenSalt(T_in_K_old)
+        [rho,SF_outlet_Cp,k,Dv]=moltenSalt(T_out_K)
+        SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
+        Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
+        
         
     T_out_K=T_max_storage    #Not used
     
     return [T_out_K,Perd_termicas,Q_prod,T_in_K_old,flow_rate_kgs]
 
 
-def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old, sender,type_coll):
+def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old, sender,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     if fluidInput=="water" or fluidInput=="steam":
         [h_in_kJkg,T_in_K]=inputsWithDNIWaterSimple(T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old)
-    if fluidInput=="oil":
+    elif fluidInput=="oil":
         [T_in_K]=inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)
-    if fluidInput=="moltenSalt":
+    elif fluidInput=="moltenSalt":
         [T_in_K]=inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)  
     
-    
     T_out_K=T_out_C+273 #Target temp
-
-    if fluidInput=="water" or fluidInput=="steam":
-        #Calculo el flowrate necesario para poder dar el salto de temp necesario
-        if sender == 'CIMAV':
-            from CIMAV.CIMAV_modules.iteration_process import flow_calc_v2
-            flow_rate_kgs,Perd_termicas=flow_calc_v2(T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,type_coll)
-        else:
+    
+    if sender == 'CIMAV':
+        from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV,IT_temp
+        flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll) #Works for moltensalts,water,thermaloil
+        
+    else:
+        if fluidInput=="water" or fluidInput=="steam":
+            #Calculo el flowrate necesario para poder dar el salto de temp necesario
             flow_rate_kgs,Perd_termicas=flow_calc(T_out_K,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
-    
-    if fluidInput=="oil":
-        T_av_K=(T_in_K+T_out_K)/2
-        [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
-        [flow_rate_kgs,Perd_termicas]=flow_calcHTF(T_out_K,T_in_K,Cp_av,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
-    
-    if fluidInput=="moltenSalt":
-        T_av_K=(T_in_K+T_out_K)/2
-        [rho_av,Cp_av,k_av,Dv_av]=moltenSalt(T_av_K)
-        [flow_rate_kgs,Perd_termicas]=flow_calcHTF (T_out_K,T_in_K,Cp_av,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
+        
+        elif fluidInput=="oil":
+            T_av_K=(T_in_K+T_out_K)/2
+            [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
+            [flow_rate_kgs,Perd_termicas]=flow_calcHTF(T_out_K,T_in_K,Cp_av,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
+        
+        elif fluidInput=="moltenSalt":
+            T_av_K=(T_in_K+T_out_K)/2
+            [rho_av,Cp_av,k_av,Dv_av]=moltenSalt(T_av_K)
+            [flow_rate_kgs,Perd_termicas]=flow_calcHTF (T_out_K,T_in_K,Cp_av,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0)
 
     
 
     if flow_rate_kgs<=m_dot_min_kgs and T_out_K>T_in_K: #El caudal necesario para obtener la temp de salida es inferior al mínimo
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
-        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
+        if sender == 'CIMAV':
+            T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll)
+        else:
+            T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
         Q_prod=0 #No hay produccion
         
         if fluidInput=="water" or fluidInput=="steam":
@@ -233,12 +233,12 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
             h_out_kJkg=outlet.h
             Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)
         
-        if fluidInput=="oil":
+        elif fluidInput=="oil":
             T_av_K=(T_in_K+T_out_K)/2
             [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
             Q_prod_rec=flow_rate_rec*Cp_av*(T_out_K-T_in_K)
         
-        if fluidInput=="moltenSalt":
+        elif fluidInput=="moltenSalt":
             T_av_K=(T_in_K+T_out_K)/2
             [rho_av,Cp_av,k_av,Dv_av]=moltenSalt(T_av_K)
             Q_prod_rec=flow_rate_rec*Cp_av*(T_out_K-T_in_K)
@@ -406,131 +406,137 @@ def outputKettle(P_op_Mpa,almVolumen,T_alm_K_old,Q_prod,T_in_C_AR):
 def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_in_alm_K,T_alm_K_old,Q_prod,energyStored,Demand,energStorageMax,storage_energy_old,storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy): 
        
     if T_min_storage>=T_alm_K_old: # The storage is still under the minimum temperatura -> Charge
-       
-        if ((Q_prod-Demand)+energyStored)<energStorageUseful: # A.1 still room in the storage
-            Q_useful=Q_prod
-            energyStored=0
-            Q_charg=(Q_prod)
-            Q_discharg=0
-            Q_defoscus=0
-            Q_prod_lim=0
-            newEnerg=(storage_energy_old+Q_prod)*3600 #KJ
+        #energyStored: is the energy above/under the storage_min_energy(energy at the minimum/initial/inlet design temperature) that the previous hour left as result in the storage. This is the available energy from the preious step
+        #energStorageUseful: is the energy difference between the energy that the storage would have at the T_max_storage temperature and thes storage_min_energy(energy at the minimum/minimum/initial/inlet)
+        #storage_energy_old: is the total energy that the storage had in the previous hour, this includes the energy that corresponds to temperatures lower than the one for the inlet design.
+        if ((Q_prod-Demand)+energyStored)<energStorageUseful: # A.1 still room in the storage. Is the total available energy less than the posible available energy? if so all of it is stored.
+            Q_useful=Q_prod #All the produced energy is useful and will be charged up in the storage.
+            energyStored=0 #Reset the available energy for the next hour, this will be calculated later in case the temperature has raised enough.
+            Q_charg=(Q_prod) #All the produced energy is stored in the storage.
+            Q_discharg=0 #No energy is wasted
+            Q_defoscus=0 #No energy is wasted
+            Q_prod_lim=0 #No energy is wasted
+            newEnerg=(storage_energy_old+Q_prod)*3600 #KJ #The new energy that the storage will have is the previous total energy plus the produced. Nothing is send to the process because the energy is used to heat the storage
+            
+            #Calculates the properties of the fluid
             if fluidInput=="water":
                 storage=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Storage properties
                 storage_Cp=storage.cp #Specific Heat KJ/kg/K
-                storage_V=storage.v #Specific Volume m3/kg
-                storage_rho=1/storage_V
-            if fluidInput=="oil":
+                storage_rho=storage.rho #Storage density [kg/m2]
+            elif fluidInput=="oil":
                 [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
-            if fluidInput=="moltenSalt":
+            elif fluidInput=="moltenSalt":
                 [storage_rho,storage_Cp,k,Dv]=moltenSalt(T_alm_K_old)
             
-            T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
+            T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K #The new temperature of the storage with the energy that gained in this hour.
             
-            if T_alm_new>T_min_storage:
-                energyStored=(newEnerg/3600-storage_min_energy) 
+            if T_alm_new>T_min_storage: #in case that the new temperature is larger than the minimum temperature of the storage 
+                energyStored=(newEnerg/3600-storage_min_energy)  #Calculates the energy above the minimum level of energy
            
-            if fluidInput=="water" and IAPWS97(P=P_op_Mpa, T=T_alm_new).x>0: #Steam in the storage danger!!
-                T_alm_new=IAPWS97(P=P_op_Mpa, x=0).T
-            SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful
+            if fluidInput=="water" and IAPWS97(P=P_op_Mpa, T=T_alm_new).x>0: #Steam in the storage danger!! #If the fluid is water, it is possible that the temperature is so high that it became steam
+                #This shouldn't happen since in the variable initialization the posible case of steam was handeled by setting the energyStorageMax, but just in case
+                T_alm_new=IAPWS97(P=P_op_Mpa, x=0).T #If steam started to form the new temperature of storage is set to the limit at wich the steam starts to form
+                #In this case some of the energy is lost
+                
+            SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful #Calculates the porcentage of storage used (Juan: I guess)
         
-        else: # A.2 No more room for storage
+        else: # A.2 No more room for storage #The available energy is more than what the storage could handle. Q_prod > energStorageUseful-energyStored+Demand
             
-            Q_charg=energStorageUseful-energyStored
-            Q_useful=Demand+(energStorageUseful-energyStored)
-            Q_discharg=0
-            Q_defoscus=Q_prod-Demand-Q_charg
-            Q_prod_lim=Q_prod-Q_charg-Q_defoscus
-            energyStored=energStorageUseful #New state of the storage
-            SOC=100       
-            T_alm_new=T_max_storage
-            newEnerg=storage_max_energy
+            Q_charg=energStorageUseful-energyStored #The storage is charged to the maximum.
+            Q_useful=Demand+(energStorageUseful-energyStored) #The energy that could be use. This could be obtained from the condition of the "if"
+            Q_discharg=0 #The storage has charged up and fullfilled the demand so no discharge
+            Q_defoscus=Q_prod-Demand-Q_charg #The extra energy that could not be used is the difference between the produced energy and the useful energy
+            Q_prod_lim=Demand # Q_prod-Q_charg-Q_defoscus is a very difficult way to say that the Q_prod_lim = Demand
+            energyStored=energStorageUseful #New state of the storage #The storage is fully charged and all the posible available enery is available
+            SOC=100 #The storage is fully charged
+            T_alm_new=T_max_storage #Since the storage is fully charged its temperature is the maximum temperature
+            newEnerg=storage_max_energy #The storage is fully charged
 
     
-    else:
+    else: #The previous temperature of the storage is larger than the minimum limit, so there is energy available in the storage.
     
-        if Q_prod+energyStored<Demand: #B.2 Complete discharge
-            Q_prod_lim=Q_prod+energyStored
-            Q_useful=Q_prod+energyStored
-            Q_discharg=energyStored
-            Q_charg=0
-            energyStored=0 #New state of the storage
-            SOC=0
-            Q_defoscus=0
-            newEnerg=(storage_energy_old-Q_discharg)*3600
-            T_alm_new=T_min_storage+0.0001 #in K
+        if Q_prod+energyStored<Demand: #B.2 Complete discharge #All the available energy is less than the demand so all has to be used.
+            Q_prod_lim=Q_prod+energyStored #All the available energy is used to feed the process
+            Q_useful=Q_prod+energyStored #All the energy is useful
+            Q_discharg=energyStored #All the energy is discharged
+            Q_charg=0 #Nothing has charged, all used for the process
+            energyStored=0 #New state of the storage #Now the storage has no available energy
+            SOC=0 #0% of the storage available
+            Q_defoscus=0 #Nothing is wasted
+            newEnerg=(storage_energy_old-Q_discharg)*3600 #From the total energy that the storage had in the previous step, now it has Q_discharg less energy (which should be the same as the same as the minimum possible energy that the storage could have in total)
+            T_alm_new=T_min_storage+0.0001 #in K #Since now it has the minimum energy posible then it has the minimum temperature posible
             
-        if (Q_prod<Demand) and (Q_prod+energyStored>Demand): # B.1 Partial discharge
+        elif (Q_prod<Demand) and (Q_prod+energyStored>Demand): # B.1 Partial discharge
             
-            energyStored=energyStored-(Demand-Q_prod)#New state of the storage
-            Q_charg=0
-            Q_discharg=(Demand-Q_prod)
-            Q_prod_lim=Demand
-            Q_useful=Demand
-            Q_defoscus=0
-            newEnerg=(storage_energy_old+Q_prod-Demand)*3600 #KJ   
+            Q_discharg=(Demand-Q_prod) #Extra energy necessary to fullfill the demand
+            energyStored=energyStored-Q_discharg #(Demand-Q_prod) #New state of the storage #The new available energy is the previous available energy minus the energy necessary to complete the demand 
+            Q_charg=0 #No charge
+            Q_prod_lim=Demand #The demand has been fullfilled
+            Q_useful=Demand #The energy that has been useful is the same as the demand
+            Q_defoscus=0 #Nothing is wasted
+            newEnerg=(storage_energy_old+Q_prod-Demand)*3600 #KJ #The new energy available is the total previous energy plus the produced energy minus the demanded energy
             
+            #Calculates the fluid temperatures for calculating the new temperature of the storage
             if fluidInput=="water":
                 storage=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Storage properties
                 storage_Cp=storage.cp #Specific Heat KJ/kg/K
-                storage_V=storage.v #Specific Volume m3/kg
-                storage_rho=1/storage_V
-            if fluidInput=="oil":
+                storage_rho=storage.rho #Storage density [kg/m2]
+            elif fluidInput=="oil":
                 [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
-            if fluidInput=="moltenSalt":
+            elif fluidInput=="moltenSalt":
                 [storage_rho,storage_Cp,k,Dv]=moltenSalt(T_alm_K_old)
             
-            T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
+            T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K #Calculates the new temperature of the storage.
             
             if T_alm_new<=274: #Avoid absolute zero
                 T_alm_new=274
 
-            SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful
+            SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful #Porcentage of the storage tha is occupied.
              
-        if (Q_prod>=Demand): #Charging
+        elif (Q_prod>=Demand): #Charging #In this case the energy produced is larger than the demand,then the the storage charges up
             if ((Q_prod-Demand)+energyStored)<energStorageUseful and (T_alm_K_old<T_max_storage): # B.3.2 Still room in the storage for the full production
-                Q_useful=Q_prod
-                energyStored=energyStored+(Q_prod-Demand) #New state of the storage
-                Q_charg=(Q_prod-Demand)
-                Q_discharg=0
-                Q_defoscus=0
-                Q_prod_lim=Q_prod-Q_charg
-                newEnerg=(storage_energy_old+Q_prod-Demand)*3600 #KJ 
-    
+                Q_useful=Q_prod#All the energy is useful since it can be either stored or used
+                Q_charg=(Q_prod-Demand) #The extra available energy after covering the demand.
+                energyStored=energyStored+(Q_charg) #New state of the storage #The extra energy after the demand is covered plus the previous total energy
+                Q_discharg=0 #No energy is taken from the storage
+                Q_defoscus=0 #No energy is wasted
+                Q_prod_lim=Demand #Q_prod-Q_charg #This is the demanded energy too.
+                newEnerg=(storage_energy_old+Q_charg)*3600 #KJ #The new energy of the storage is the previous total energy plus the energy that charged up
+                
+                #Calculates the fluid temperatures    
                 if fluidInput=="water":
                     storage=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Storage properties
                     storage_Cp=storage.cp #Specific Heat KJ/kg/K
-                    storage_V=storage.v #Specific Volume m3/kg
-                    storage_rho=1/storage_V
-                if fluidInput=="oil":
+                    storage_rho=storage.rho #Storage density [kg/m2]
+                elif fluidInput=="oil":
                     [storage_rho,storage_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_alm_K_old)
-                if fluidInput=="moltenSalt":
+                elif fluidInput=="moltenSalt":
                     [storage_rho,storage_Cp,k,Dv]=moltenSalt(T_alm_K_old)
             
-                T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K
+                T_alm_new=(newEnerg/(storage_Cp*almVolumen*(1/1000)*(storage_rho))) #in K #Calculates the new temperature
                 
-                if fluidInput=="water" and IAPWS97(P=P_op_Mpa, T=T_alm_new).x>0: #Steam in the storage danger!!
+                if fluidInput=="water" and IAPWS97(P=P_op_Mpa, T=T_alm_new).x>0: #Steam in the storage danger!! #In the unlikely case that the new temperature is over the vapor temperatue of water assign a new storage temperature, some energy is lost and should be calculated.
                     T_alm_new=IAPWS97(P=P_op_Mpa, x=0).T
 
-                SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful
+                SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful #The new porcentage of storage that is occupied
                 
-            else: # B.3.1 No more room in the storage
-                if (T_alm_K_old<T_max_storage): 
-                    Q_charg=energStorageUseful-energyStored
-                    Q_useful=Demand+(energStorageUseful-energyStored)
-                else:
-                    Q_charg=0
-                    Q_useful=Demand
+            else: # B.3.1 No more room in the storage. #In the case when the produced energy is more than the demand and the one that could be possibly stored
+                if (T_alm_K_old<T_max_storage): #In the previous hour the storage temperature was less than the maximum posible storage temperature
+                    Q_charg=energStorageUseful-energyStored #The energy that will be charged up is the one missing to fully chage the storage
+                    Q_useful=Demand+Q_charg #(energStorageUseful-energyStored) #The energy that could be used is the one to cover the deman plus the one to fully charge the storage
+                else:#If the previous temperature is larger or the same as the maximum possible temperature
+                    Q_charg=0 #Nothing is charged
+                    Q_useful=Demand #Only the energy to cover the demand is useful
                     
-                Q_discharg=0
-                Q_defoscus=Q_prod-Demand-Q_charg
-                Q_prod_lim=Q_prod-Q_charg-Q_defoscus
-                energyStored=energStorageUseful #New state of the storage
-                SOC=100           
-                T_alm_new=T_max_storage
-                newEnerg=storage_max_energy*3600 #kJ
+                Q_discharg=0 #No energy was discharged
+                Q_defoscus=Q_prod-Q_useful #Demand-Q_charg #Some energy is lost, the lost energy is the difference between what was used (charge up the storage and to cover the demand) and the one produced
+                Q_prod_lim=Q_prod-Q_charg-Q_defoscus #This is the same as the demand
+                energyStored=energStorageUseful #New state of the storage #Completely full
+                SOC=100 #The storage is 100% occupied
+                T_alm_new=T_max_storage #The new temperature of the storage is the maxiumum temperature since it is fully cahrged
+                newEnerg=storage_max_energy*3600 #kJ #The new total energy
             
-    newEnerg=newEnerg/3600
+    newEnerg=newEnerg/3600 #Changes from kJ -> kWh
     return [T_alm_new,newEnerg,Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defoscus,Q_useful]
   
 
@@ -547,7 +553,7 @@ def outputStorageSimple(Q_prod,energyStored,Demand,energStorageMax):
         Q_defoscus=0
        
         
-    if (Q_prod<Demand) and (Q_prod+energyStored>Demand): #Partial discharge
+    elif (Q_prod<Demand) and (Q_prod+energyStored>Demand): #Partial discharge
         
         energyStored=energyStored-(Demand-Q_prod)#New state of the storage
         Q_charg=0
@@ -557,7 +563,7 @@ def outputStorageSimple(Q_prod,energyStored,Demand,energStorageMax):
         SOC=100*energyStored/energStorageMax
         Q_defoscus=0
             
-    if (Q_prod>=Demand): #Charging
+    elif (Q_prod>=Demand): #Charging
         if ((Q_prod-Demand)+energyStored)<energStorageMax: #Still room in the storage
             Q_useful=Q_prod
             energyStored=energyStored+(Q_prod-Demand) #New state of the storage
