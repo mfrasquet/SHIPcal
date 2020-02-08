@@ -20,6 +20,8 @@ import numpy as np
 
 def demandCreator(totalConsumption,dayArray,weekArray,monthArray):
     days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31] #days_in_the_month[month_number]=how many days are in the month number "month_number"
+    renormalization_factor = 0
+    
     if type(totalConsumption) == list:
         renormalization_factor = 1
         totalConsumption = totalConsumption[0]
@@ -37,7 +39,7 @@ def demandCreator(totalConsumption,dayArray,weekArray,monthArray):
         weight_of_hours_in_year += np.multiply(monthArray[month_number],weight_of_hours_in_month).tolist() #Multiplies the hours of use of the month to the porcentage of use of the month in the year, then appends the list to the end of the weight_of_hours_in_year list
         weight_of_hours_in_month=[] #Restarts the weight_of_hours_in_month list to be used again for the next month data
     
-    if renormalization_factor:
+    if renormalization_factor != 0:
         totalConsumption_normailized=totalConsumption/renormalization_factor #Renormalices the totalConsumption
     else:
         renormalization_factor=sum(weight_of_hours_in_year) #calculates the renormalization factor of the list in order to get "1" when summing all the 8760 elements.
