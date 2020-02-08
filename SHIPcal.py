@@ -177,6 +177,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         type_coll=20 #Solatom 20" fresnel collector - Change if other collector is used
         REC_type=1
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
+        # Variables needed for flat plate collectors, int is case they are 0 since solatom is a concentrating solar collector
+        eta1=0
+        eta2=0
+        mdot_test=0
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
@@ -185,7 +189,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         REC_type=1#Se puede borrar despues 
         IAM_folder=os.path.dirname(os.path.realpath(__file__))+"/Collector_modules/"
     
-    else: #Using other collectors (to be filled with customized data)
+    else: #Using other concentrating collectors (to be filled with customized data)
         
         ## IAM 
         IAM_file='defaultCollector.csv'
@@ -201,6 +205,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Area=Area_coll*n_coll_loop #Area of aperture per loop [m²] Used later
     Area_total=Area*num_loops #Total area of aperture [m²] Used later
     num_modulos_tot=n_coll_loop*num_loops
+    # Variables needed for flat plate collectors, int is case they are 0 since the default collector is a concentrating solar collector
+    eta1=0
+    eta2=0
+    mdot_test=0
     
         ## --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
     """    
@@ -399,7 +407,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         CO2=1 #Flag to take into account co2 savings in terms of cost per ton emitted
     else:
         CO2=0 #Flag to take into account co2 savings in terms of cost per ton emitted
-    
     
     
     # --> Meteo variables
@@ -1533,13 +1540,13 @@ type_integration="SL_L_P"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=-3 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs

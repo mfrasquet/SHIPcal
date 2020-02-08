@@ -199,7 +199,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     T_out_K=T_out_C+273 #Target temp
     
     if sender == 'CIMAV':
-        from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV,IT_temp
+        from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV,IT_temp_CIMAV
         flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll) #Works for moltensalts,water,thermaloil
         
     else:
@@ -223,7 +223,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
         if sender == 'CIMAV':
-            T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll)
+            T_out_K,Perd_termicas = IT_temp_CIMAV(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll)
         else:
             T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
         Q_prod=0 #No hay produccion
