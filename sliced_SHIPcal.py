@@ -186,6 +186,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         Area_coll=26.4 #Aperture area of collector per module [m²]
         rho_optic_0=0.75583 #Optical eff. at incidence angle=0 [º]
         Long=5.28 #Longitude of each module [m]
+        type_coll = 'default'
         coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'IAMfile_loc':IAMfile_loc,'Long':Long}
         
         ## --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
@@ -214,6 +215,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
         file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
         Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
+        Positional_longitude = 'Not used'
         Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
 
         ## INDUSTRIAL APPLICATION
@@ -275,6 +277,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
         file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
         Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+        Positional_longitude = 'Not used'
         Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         
         ## INDUSTRIAL APPLICATION
@@ -307,11 +310,13 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Positional_longitude = 'Not used'
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         else:
             meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
             file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Positional_longitude = 'Not used'
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         
         ## INDUSTRIAL APPLICATION
@@ -577,10 +582,10 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
             outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
             out_s=outputState.s
             h_out=outputState.h
+            initial_variables_dict.update({'hProcess_in':hProcess_in,'outProcess_s':outProcess_s,'hProcess_out':hProcess_out,
+                                           'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
             
-        initial_variables_dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
-                                 'hProcess_in':hProcess_in,'outProcess_s':outProcess_s,'hProcess_out':hProcess_out,
-                                 'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
+        initial_variables_dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C})
         
     # ---------------------------------------
     # SL_L_S => Supply level with liquid heat transfer media solar heating of storages
@@ -793,7 +798,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
             
         initial_variables_dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'Demand2':Demand2,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,
-                                     'energStorageMax':energStorageMax})
+                                 'energStorageMax':energStorageMax})
         
     # ---------------------------------------- 
     # SL_S_MW => Supply level with steam solar heating of boiler make-up water
@@ -827,7 +832,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
         h_out=outputState.h
         
         initial_variables_dict.update({'T_in_flag':T_in_flag,'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
-                                 'Demand2':Demand2,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
+                                       'Demand2':Demand2,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
         
     # ----------------------------------------
     #SL_S_MWS => Supply level with steam solar heating of boiler make-up water including storage
@@ -1039,7 +1044,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
         hHX_out=initial_variables_dict['hHX_out']
     
     elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":
-        hProcess_in=initial_variables_dict['hProcess_in']
+        hProcess_in=initial_variables_dict.get('hProcess_in',0)
     
     elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
         flow_rate_design_kgs=initial_variables_dict['flow_rate_design_kgs']
@@ -1605,7 +1610,6 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
-       
 """
 # Variables needed for calling SHIPcal from terminal
     
@@ -1650,8 +1654,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=20
-n_coll_loop=100
+num_loops=5
+n_coll_loop=15
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1661,17 +1665,17 @@ n_coll_loop=100
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_PS"
+type_integration="SL_L_P"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'someoneelse','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=-3 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-0 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1679,33 +1683,33 @@ if origin==0:
     last_reg=666
 elif origin==-3:
     inputsDjango={'T_in_flag': 1,
-                 'businessModel': 'turnkey',
-                 'co2TonPrice': 0.0,
-                 'co2factor': 0.0,
-                 'collector_type': 'BOSCH SKW2.txt',
-                 'date': '2020-01-30 10:36:S',
-                 'demand': 1000000.0,
-                 'demandUnit': '1',
-                 'distance': 25.0,
-                 'email': 'juanshifu2.5@hotmail.com',
-                 'fluid': 'water',
-                 'fuel': 'gas_seco',
-                 'fuelPrice': 5*(3.6*1000)/38.268,
-                 'fuelUnit': (3.6*1000)/38.268,
-                 'hourEND': 19,
-                 'hourINI': 8,
-                 'industry': 'Nombredelaindustria',
-                 'last_reg': 198,
-                 'location': 'Oaxaca de Juárez.dat',
-                 'name': 'Juan Antonio Aramburo Pasapera',
-                 'pais': 'México',
-                 'pressure': 1.0,
-                 'pressureUnit': '1',
-                 'semana': ['0', '1', '2', '3', '4', '5', '6'],
-                 'surface': 48.0,
-                 'tempIN': 20.0,
-                 'tempOUT': 120.0,
-                 'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
+                  'businessModel': 'turnkey',
+                  'co2TonPrice': 0.0,
+                  'co2factor': 0.0,
+                  'collector_type': 'BOSCH SKW2.txt',
+                  'date': '2020-01-30 10:36:S',
+                  'demand': 100000.0,
+                  'demandUnit': '1',
+                  'distance': 25.0,
+                  'email': 'juanshifu2.5@hotmail.com',
+                  'fluid': 'water',
+                  'fuel': 'gas_natural',
+                  'fuelPrice': 5,
+                  'fuelUnit': 87.0869417968939,
+                  'hourEND': 19,
+                  'hourINI': 8,
+                  'industry': 'Nombredelaindustria',
+                  'last_reg': 198,
+                  'location': 'Oaxaca de Juárez.dat',
+                  'name': 'Juan Antonio Aramburo Pasapera',
+                  'pais': 'México',
+                  'pressure': 1.0,
+                  'pressureUnit': '1',
+                  'semana': ['0', '1', '2', '3', '4', '5', '6'],
+                  'surface': 100.0,
+                  'tempIN': 20.0,
+                  'tempOUT': 80.0,
+                  'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
     last_reg=inputsDjango['last_reg']
     
 else:
@@ -1717,11 +1721,10 @@ else:
 version, initial_variables_dict, coll_par = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
     
 initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) #This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
-coll_par.update({'auto':'on'})
-LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
-print(LCOE)
-
+#coll_par.update({'auto':'on'})
+#LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
+#print(LCOE)
+coll_par.update({'auto':'off'})
 [jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
-
-#[jSonResults,plotVars,reportsVar,version] = SHIPcal     (origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 """
+

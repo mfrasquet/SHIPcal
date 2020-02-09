@@ -1476,7 +1476,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
-       
 """
 # Variables needed for calling SHIPcal from terminal
     
@@ -1550,33 +1549,33 @@ if origin==0:
     last_reg=666
 elif origin==-3:
     inputsDjango={'T_in_flag': 1,
-                 'businessModel': 'turnkey',
-                 'co2TonPrice': 0.0,
-                 'co2factor': 0.0,
-                 'collector_type': 'BOSCH SKW2.txt',
-                 'date': '2020-01-30 10:36:S',
-                 'demand': 15000000.0,
-                 'demandUnit': '1',
-                 'distance': 50.0,
-                 'email': 'juanshifu2.5@hotmail.com',
-                 'fluid': 'water',
-                 'fuel': 'diesel',
-                 'fuelPrice': 1.7065359615703164,
-                 'fuelUnit': '0.09480755342057313',
-                 'hourEND': 19,
-                 'hourINI': 8,
-                 'industry': 'Nombredelaindustria',
-                 'last_reg': 198,
-                 'location': 'Oaxaca de Juárez.dat',
-                 'name': 'Juan Antonio Aramburo Pasapera',
-                 'pais': 'México',
-                 'pressure': 5.0,
-                 'pressureUnit': '1',
-                 'semana': ['0', '1', '2', '3', '4', '5', '6'],
-                 'surface': 2000.0,
-                 'tempIN': 18.0,
-                 'tempOUT': 35.0,
-                 'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
+                  'businessModel': 'turnkey',
+                  'co2TonPrice': 0.0,
+                  'co2factor': 0.0,
+                  'collector_type': 'BOSCH SKW2.txt',
+                  'date': '2020-01-30 10:36:S',
+                  'demand': 100000.0,
+                  'demandUnit': '1',
+                  'distance': 25.0,
+                  'email': 'juanshifu2.5@hotmail.com',
+                  'fluid': 'water',
+                  'fuel': 'gas_natural',
+                  'fuelPrice': 5,
+                  'fuelUnit': 87.0869417968939,
+                  'hourEND': 19,
+                  'hourINI': 8,
+                  'industry': 'Nombredelaindustria',
+                  'last_reg': 198,
+                  'location': 'Oaxaca de Juárez.dat',
+                  'name': 'Juan Antonio Aramburo Pasapera',
+                  'pais': 'México',
+                  'pressure': 1.0,
+                  'pressureUnit': '1',
+                  'semana': ['0', '1', '2', '3', '4', '5', '6'],
+                  'surface': 100.0,
+                  'tempIN': 20.0,
+                  'tempOUT': 80.0,
+                  'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
     last_reg=inputsDjango['last_reg']
 else:
     #To perform simulations from command line using inputs like if they were from django
@@ -1585,4 +1584,3 @@ else:
     
 [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 """
-
