@@ -1221,7 +1221,11 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                     else:
                         #HX simulation
                         Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
-                        flowToHx[i]=Q_prodProcessSide/(hHX_out-hProcess_in)  
+                        flowToHx[i]=Q_prodProcessSide/(hHX_out-hProcess_in)
+                        
+                        if flowToHx[i]>=flowDemand[i]:
+                            flowToHx[i]=flowDemand[i]
+                        
                         Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
                         #Branch from HX to mix                        
                         toMixstate=IAPWS97(P=P_op_Mpa, T=T_out_K[i]-DELTA_T_HX)
