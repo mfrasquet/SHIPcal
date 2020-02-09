@@ -147,8 +147,8 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
 #SL_L_S Supply level with liquid heat transfer media just for heat a storage
     
     if sender == 'CIMAV':
-        from CIMAV.CIMAV_modules.iteration_process import IT_temp
-        T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,T_max_storage,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,coll_par)
+        from CIMAV.CIMAV_modules.iteration_process import IT_temp as IT_temp_CIMAV
+        T_out_K,Perd_termicas=IT_temp_CIMAV(fluidInput,T_in_K_old,T_max_storage,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,coll_par)
     else:
         T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,**coll_par)
     
@@ -199,7 +199,8 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     T_out_K=T_out_C+273 #Target temp
     
     if sender == 'CIMAV':
-        from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV,IT_temp
+        from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV
+        from CIMAV.CIMAV_modules.iteration_process import IT_temp as IT_temp_CIMAV
         flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,coll_par) #Works for moltensalts,water,thermaloil
         
     else:
@@ -223,7 +224,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
         if sender == 'CIMAV':
-            T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,coll_par)
+            T_out_K,Perd_termicas = IT_temp_CIMAV(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,coll_par)
         else:
             T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate_rec,**coll_par)    
         Q_prod=0 #No hay produccion
