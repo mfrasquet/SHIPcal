@@ -339,7 +339,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## METEO
 #        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        localMeteo="Cadiz.dat"
+        localMeteo="Bakersfield.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -357,9 +357,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=150 #HIGH - Process temperature [ºC]
-        T_process_out=60 #LOW - Temperature at the return of the process [ºC]
+        fluidInput="oil" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=290 #HIGH - Process temperature [ºC]
+        T_process_out=180 #LOW - Temperature at the return of the process [ºC]
         P_op_bar=6 #[bar] 
         
         # Not implemented yet
@@ -1133,6 +1133,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         Q_prodProcessSide=Q_prod[i]*HX_eff
                         Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
                         flowToHx[i]=Q_prodProcessSide/(Cp_av*(T_out_HX_K-T_in_process_K))
+                        if flowToHx[i]>=flowDemand[i]:
+                            flowToHx[i]=flowDemand[i]
                         
                     flowToMix[i]=flowDemand[i]-flowToHx[i]
                     #Exit of the heat Echanger
@@ -1487,7 +1489,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -1510,11 +1512,11 @@ plots=[0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0] # Put 1 in the elements you want to plot
 finance_study=1
 
 month_ini_sim=6
-day_ini_sim=19
+day_ini_sim=21
 hour_ini_sim=1
 
 month_fin_sim=6
-day_fin_sim=20
+day_fin_sim=22
 hour_fin_sim=24
 
 
@@ -1525,8 +1527,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=2
-n_coll_loop=16
+num_loops=8
+n_coll_loop=8
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1536,7 +1538,7 @@ n_coll_loop=16
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
+type_integration="SL_L_RF"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
