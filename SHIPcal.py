@@ -497,7 +497,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         hProcess_in=inputProcessState.h
     
         #Heat Exchanger design DELTA T    
-        T_in_C=T_in_C+DELTA_T_HX
+        T_in_P=T_in_C+DELTA_T_HX  # Design point temperature at the outlet of the HX from the solar side
+        T_in_C=T_in_P
         T_in_K=T_in_C+273
         
         if fluidInput=="water":
@@ -516,8 +517,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         hHX_out=outputHXState.h
         
         #Our design point will be heat the fluid at x%
-        T_out_K=(T_in_process_K+(T_out_K-T_in_process_K)*heatFactor)+DELTA_T_HX
-        T_out_C=T_out_K-273 
+        T_out_P=(T_in_process_K+(T_out_K-T_in_process_K)*heatFactor)+DELTA_T_HX-273 # Design point temperature at the inlet of the HX from the solar side
+        T_out_C=T_out_P
+        T_out_K=T_out_C+273 
         
         inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
         h_in=inputState.h    
