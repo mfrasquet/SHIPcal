@@ -172,7 +172,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         btrans,ntrans = IAM_fiteq(type_coll,2)
         REC_type = 1 #Death variable to avoid crashes with the previous code
         
-        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,'auto':'yes'}
+        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,}
     
     else: #Using other collectors (to be filled with customized data)
         
@@ -490,7 +490,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     initial_variables_dict.update(financial_param)
     initial_variables_dict.update(process_param)
     initial_variables_dict.update(initial_arrays)
-    initial_variables_dict.update(modificators)
+    #initial_variables_dict.update(modificators)
     
     return version, initial_variables_dict, coll_par
     
@@ -720,7 +720,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
             energStorageMax=(almVolumen*(1/1000)*(rho_av)*Cp_av*(T_out_K-T_in_K))/3600 #Storage capacity in kWh
             
         initial_variables_dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
-                                 'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'storage_max_energy':storage_max_energy,
+                                 'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,
                                  'energStorageMax':energStorageMax})
                     
     # ---------------------------------------- 
@@ -943,16 +943,20 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
         
     return initial_variables_dict
     
-def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,pk): #At this point the energetic and and economical data is computed, the calculation of the equivalent parameters of the collectors in series is left here since the efficiency may depend on the temperature wich may change in recirculation
+def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,pk): #At this point the energetic and and economical data is computed, the calculation of the equivalent parameters of the collectors in series is left here since the efficiency may depend on the temperature wich may change in recirculation
     
     version = "1.1.10"
     sender=confReport['sender']
     lang=confReport['lang'] #Language
     
     type_integration=desginDict['type_integration']
-    
+    n_coll_loop=desginDict['n_coll_loop']
+    num_loops=desginDict['num_loops']
+    almVolumen=desginDict['almVolumen']
+        
     #Defined the variables from the initial_variables_dict
-    
+    mofINV=modificators['mofINV']
+    mofProd=modificators['mofProd']
     DNI=initial_variables_dict['DNI']
     localMeteo=initial_variables_dict['localMeteo']
     Lat=initial_variables_dict['Lat']
@@ -993,7 +997,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     flow_rate_kgs=initial_variables_dict['flow_rate_kgs']
     Perd_termicas=initial_variables_dict['Perd_termicas']
     flow_rate_rec=initial_variables_dict['flow_rate_rec']
-    bypass=initial_variables_dict['bypass']
+    bypass=initial_variables_dict['bypass'].copy()
     Q_prod=initial_variables_dict['Q_prod']
     Q_prod_lim=initial_variables_dict['Q_prod_lim']
     Q_prod_rec=initial_variables_dict['Q_prod_rec']
@@ -1049,7 +1053,6 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
         T_ini_storage=initial_variables_dict['T_ini_storage']
         
     elif type_integration=="SL_L_PS":
-        storage_max_energy=initial_variables_dict['storage_max_energy']
         energStorageMax=initial_variables_dict['energStorageMax']
     
     elif type_integration=="SL_S_FW":
@@ -1347,254 +1350,263 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     
     #%%
     # BLOCK 2.2 - ANUAL INTEGRATION <><><><><><><><><><><><><><><><><><><><><><><><><><><>
+    
+    if coll_par['auto'] == 'on' and (sum(Q_prod) == 0 or np.isnan(sum(Q_prod))):
+        LCOE = float('inf') #Added this possibility because sometimes the jump in temperature is too large for only a few collectors.
+        print('It wasnt possible to produce any heaat!!!')
+        print('Using (loops,coll per loop) = {} as configuration'.format((num_loops, n_coll_loop)))
         
-    Production_max=sum(Q_prod) #Produccion total en kWh. Asumiendo que se consume todo lo producido
-    Production_lim=sum(Q_prod_lim) #Produccion limitada total en kWh
-    Demand_anual=sum(Demand) #Demanda energética anual
-    solar_fraction_max=100*Production_max/Demand_anual #Fracción solar maxima
-    
-    tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
-    totalDischarged=(sum(Q_discharg))
-#    totalCharged=(sum(Q_charg))
-    Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
-    improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
-    solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
-#    Energy_module_max=Production_max/num_modulos_tot
-#    operation_hours=np.nonzero(Q_prod)
-    DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
-#    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
-    Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
-    
-    annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
-                    'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
-                    'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
-                    'flow_rate_kgs':flow_rate_kgs.tolist()}
-    
-
-#%%
-# ------------------------------------------------------------------------------------
-# BLOCK 3 - FINANCE SIMULATION -------------------------------------------------------
-# ------------------------------------------------------------------------------------
-    
-    Break_cost=0 # Init variable
-    if finance_study==1 and steps_sim==8759:#This eneters only for yearly simulations with the flag finance_study = 1
-
-    # BLOCK 3.1 - PLANT INVESTMENT <><><><><><><><><><><><><><><><><><><><><><><><><><><>
-
-        if origin==-2: #If ReSSSPI front-end is calling, then it uses Solatom propietary cost functions
-            [Selling_price,Break_cost,OM_cost_year]=SOL_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
-
-        elif origin==-3: #Use the CIMAV's costs functions
-            destination=[Lat,Positional_longitude]
-            [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,num_loops,type_integration,almVolumen,fluidInput,type_coll,destination,inputsDjango['distance']) #Returns all the prices in mxn
-
-        else: #If othe collector is selected, it uses default cost functions
-            #This function calls the standard cost functions, if necessary, please modify them within the function
-            [Selling_price,Break_cost,OM_cost_year]=SP_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
-              
-        Selling_price=Selling_price*mofINV
-        
-    #%%    
-    # BLOCK 3.2 - FINANCE MODEL <><><><><><><><><><><><><><><><><><><><><><><><><><><>
-        
-        if co2TonPrice>0:
-            CO2=1
-            co2Savings=tonCo2Saved*co2TonPrice
-        else:
-            CO2=0
-            co2Savings=0
-        
-        # Turnkey model   
-        if businessModel=="Llave en mano" or businessModel=="Turnkey project" or businessModel=="turnkey":
-            [LCOE,IRR,IRR10,AmortYear,Acum_FCF,FCF,Energy_savings,OM_cost,fuelPrizeArray,Net_anual_savings]=Turn_key(Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,costRaise,co2Savings)
-            if lang=="spa":        
-                TIRscript="TIR para el cliente"
-                Amortscript="<b>Amortización: </b> Año "+ str(AmortYear)
-                TIRscript10="TIR para el cliente en 10 años"
-            if lang=="eng":
-                TIRscript="IRR for the client"
-                Amortscript="<b>Payback: </b> Year "+ str(AmortYear)
-                TIRscript10="IRR for the client 10 years"
-    
-        
-        # ESCO Energy service company model    
-        if businessModel=="Compra de energia" or businessModel=="ESCO" or businessModel=="Renting":
-             #From financing institution poit of view        
-            [IRR,IRR10,AmortYear,Acum_FCF,FCF,BenefitESCO,OM_cost,fuelPrizeArray,Energy_savings,Net_anual_savings]=ESCO(priceReduction,Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,costRaise,co2Savings)
-            if lang=="spa":    
-                TIRscript="TIR para la ESE"
-                Amortscript="<b>Ahorro en precio actual combustible: </b>"+str(round(100*(1-priceReduction)))+"%" 
-            if lang=="eng":   
-                TIRscript="IRR for the ESCO"
-                Amortscript="<b>Savings in fuel cost: </b>"+str(round(100*(1-priceReduction)))+"%" 
-    
-            #Form client point of view
-            AmortYear=0
-            Selling_price=0 #No existe inversión
-            FCF[0]=0
-            
-        Energy_savingsList=[]
-        OMList=[]
-        fuelPrizeArrayList=[]
-        Acum_FCFList=[]
-        for i in range(0,len(Acum_FCF)):
-            if Acum_FCF[i]<0:
-                Acum_FCFList.append("("+str(int(abs(Acum_FCF[i])))+")")
-            else:
-                Acum_FCFList.append(str(int(Acum_FCF[i])))
-        
-        for i in range(0,len(fuelPrizeArray)):
-            Energy_savingsList.append(round(Net_anual_savings[i]))
-            OMList.append(OM_cost[i])
-            fuelPrizeArrayList.append(fuelPrizeArray[i])
-               
-        finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
-                 'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
-                 'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
-                 'co2TonPrice':co2TonPrice,'fuelIncremento':fuelCostRaise,'IPC':CPI,'Selling_price':Selling_price,
-                 'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE}
-    
     else:
-        n_years_sim=0 #No finance simulation
-        Acum_FCF=np.array([]) #No finance simulation
-        FCF=np.array([]) #No finance simulation
-        AmortYear=0 #No finance simulation
-        Selling_price=0 #No finance simulation
         
+        Production_max=sum(Q_prod) #Produccion total en kWh. Asumiendo que se consume todo lo producido
+        Production_lim=sum(Q_prod_lim) #Produccion limitada total en kWh
+        Demand_anual=sum(Demand) #Demanda energética anual
+        solar_fraction_max=100*Production_max/Demand_anual #Fracción solar maxima
+        
+        tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
+        totalDischarged=(sum(Q_discharg))
+    #    totalCharged=(sum(Q_charg))
+        Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
+        improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
+        solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
+    #    Energy_module_max=Production_max/num_modulos_tot
+    #    operation_hours=np.nonzero(Q_prod)
+        DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
+    #    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
+        Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
+        
+        annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
+                        'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
+                        'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
+                        'flow_rate_kgs':flow_rate_kgs.tolist()}
+        
+    
+    #%%
+    # ------------------------------------------------------------------------------------
+    # BLOCK 3 - FINANCE SIMULATION -------------------------------------------------------
+    # ------------------------------------------------------------------------------------
+        
+        Break_cost=0 # Init variable
+        if finance_study==1 and steps_sim==8759:#This eneters only for yearly simulations with the flag finance_study = 1
+    
+        # BLOCK 3.1 - PLANT INVESTMENT <><><><><><><><><><><><><><><><><><><><><><><><><><><>
+    
+            if origin==-2: #If ReSSSPI front-end is calling, then it uses Solatom propietary cost functions
+                [Selling_price,Break_cost,OM_cost_year]=SOL_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
+    
+            elif origin==-3: #Use the CIMAV's costs functions
+                destination=[Lat,Positional_longitude]
+                [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,num_loops,type_integration,almVolumen,fluidInput,type_coll,destination,inputsDjango['distance']) #Returns all the prices in mxn
+    
+            else: #If othe collector is selected, it uses default cost functions
+                #This function calls the standard cost functions, if necessary, please modify them within the function
+                [Selling_price,Break_cost,OM_cost_year]=SP_plant_costFunctions(num_modulos_tot,type_integration,almVolumen,fluidInput)
+                  
+            Selling_price=Selling_price*mofINV
+            
+        #%%    
+        # BLOCK 3.2 - FINANCE MODEL <><><><><><><><><><><><><><><><><><><><><><><><><><><>
+            
+            if co2TonPrice>0:
+                CO2=1
+                co2Savings=tonCo2Saved*co2TonPrice
+            else:
+                CO2=0
+                co2Savings=0
+            
+            # Turnkey model   
+            if businessModel=="Llave en mano" or businessModel=="Turnkey project" or businessModel=="turnkey":
+                [LCOE,IRR,IRR10,AmortYear,Acum_FCF,FCF,Energy_savings,OM_cost,fuelPrizeArray,Net_anual_savings]=Turn_key(Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,costRaise,co2Savings)
+                if lang=="spa":        
+                    TIRscript="TIR para el cliente"
+                    Amortscript="<b>Amortización: </b> Año "+ str(AmortYear)
+                    TIRscript10="TIR para el cliente en 10 años"
+                if lang=="eng":
+                    TIRscript="IRR for the client"
+                    Amortscript="<b>Payback: </b> Year "+ str(AmortYear)
+                    TIRscript10="IRR for the client 10 years"
+        
+            
+            # ESCO Energy service company model    
+            if businessModel=="Compra de energia" or businessModel=="ESCO" or businessModel=="Renting":
+                 #From financing institution poit of view        
+                [IRR,IRR10,AmortYear,Acum_FCF,FCF,BenefitESCO,OM_cost,fuelPrizeArray,Energy_savings,Net_anual_savings]=ESCO(priceReduction,Production_lim,Fuel_price,Boiler_eff,n_years_sim,Selling_price,OM_cost_year,costRaise,co2Savings)
+                if lang=="spa":    
+                    TIRscript="TIR para la ESE"
+                    Amortscript="<b>Ahorro en precio actual combustible: </b>"+str(round(100*(1-priceReduction)))+"%" 
+                if lang=="eng":   
+                    TIRscript="IRR for the ESCO"
+                    Amortscript="<b>Savings in fuel cost: </b>"+str(round(100*(1-priceReduction)))+"%" 
+        
+                #Form client point of view
+                AmortYear=0
+                Selling_price=0 #No existe inversión
+                FCF[0]=0
+                
+            Energy_savingsList=[]
+            OMList=[]
+            fuelPrizeArrayList=[]
+            Acum_FCFList=[]
+            for i in range(0,len(Acum_FCF)):
+                if Acum_FCF[i]<0:
+                    Acum_FCFList.append("("+str(int(abs(Acum_FCF[i])))+")")
+                else:
+                    Acum_FCFList.append(str(int(Acum_FCF[i])))
+            
+            for i in range(0,len(fuelPrizeArray)):
+                Energy_savingsList.append(round(Net_anual_savings[i]))
+                OMList.append(OM_cost[i])
+                fuelPrizeArrayList.append(fuelPrizeArray[i])
+                   
+            finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
+                     'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
+                     'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
+                     'co2TonPrice':co2TonPrice,'fuelIncremento':fuelCostRaise,'IPC':CPI,'Selling_price':Selling_price,
+                     'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE}
+        
+        else:
+            n_years_sim=0 #No finance simulation
+            Acum_FCF=np.array([]) #No finance simulation
+            FCF=np.array([]) #No finance simulation
+            AmortYear=0 #No finance simulation
+            Selling_price=0 #No finance simulation
+            
 #%%
 # ------------------------------------------------------------------------------------
 # BLOCK 4 - PLOT GENERATION ----------------------------------------------------------
 # ------------------------------------------------------------------------------------
+    if coll_par['auto'] == 'off':
+        plotVars={'lang':lang,'Production_max':Production_max,'Production_lim':Production_lim,
+                  'Perd_term_anual':Perd_term_anual,'DNI_anual_irradiation':DNI_anual_irradiation,
+                  'Area':Area,'num_loops':num_loops,'imageQlty':imageQlty,'plotPath':plotPath,
+                  'Demand':Demand.tolist(),'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'type_integration':type_integration,
+                  'Q_charg':Q_charg.tolist(),'Q_discharg':Q_discharg.tolist(),'DNI':DNI.tolist(),'SOC':SOC.tolist(),
+                  'Q_useful':Q_useful.tolist(),'Q_defocus':Q_defocus.tolist(),'T_alm_K':T_alm_K.tolist(),
+                  'n_years_sim':n_years_sim,'Acum_FCF':Acum_FCF.tolist(),'FCF':FCF.tolist(),'m_dot_min_kgs':m_dot_min_kgs,
+                  'steps_sim':steps_sim,'AmortYear':AmortYear,'Selling_price':Selling_price,
+                  'in_s':in_s,'out_s':out_s,'T_in_flag':T_in_flag,'Fuel_price':Fuel_price,'Boiler_eff':Boiler_eff,
+                  'T_in_C':T_in_C,'T_in_C_AR':T_in_C_AR.tolist(),'T_out_C':T_out_C,
+                  'outProcess_s':outProcess_s,'T_out_process_C':T_out_C,'P_op_bar':P_op_Mpa*10,
+                  'x_design':x_design,'h_in':h_in,'h_out':h_out,'hProcess_out':hProcess_out,'outProcess_h':outProcess_h,
+                  'Break_cost':Break_cost,'sender':sender,'origin':origin}
+        
+        # Plot functions
+        
+        # Plots for annual simulations
+        if steps_sim==8759:
+            if plots[0]==1: #(0) Sankey plot
+                image_base64,sankeyDict=SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
+            if plots[0]==0: #(0) Sankey plot -> no plotting
+                sankeyDict={'Production':0,'raw_potential':0,'Thermal_loss':0,'Utilization':0}
+            if plots[1]==1: #(1) Production week Winter & Summer
+                prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)   
+                prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)  
+            if plots[2]==1 and finance_study==1: #(2) Plot Finance
+                financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty)
+            if plots[3]==1: #(3)Plot of Storage first week winter & summer 
+                storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
+                storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
+            if plots[4]==1: #(4) Plot Prod months
+                output_excel=prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
+                output_excel=output_excel
+            if plots[15]==1: #(14) Plot Month savings
+                output_excel2=savingsMonths(sender,origin,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
+                output_excel2=output_excel2
     
-    plotVars={'lang':lang,'Production_max':Production_max,'Production_lim':Production_lim,
-              'Perd_term_anual':Perd_term_anual,'DNI_anual_irradiation':DNI_anual_irradiation,
-              'Area':Area,'num_loops':num_loops,'imageQlty':imageQlty,'plotPath':plotPath,
-              'Demand':Demand.tolist(),'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'type_integration':type_integration,
-              'Q_charg':Q_charg.tolist(),'Q_discharg':Q_discharg.tolist(),'DNI':DNI.tolist(),'SOC':SOC.tolist(),
-              'Q_useful':Q_useful.tolist(),'Q_defocus':Q_defocus.tolist(),'T_alm_K':T_alm_K.tolist(),
-              'n_years_sim':n_years_sim,'Acum_FCF':Acum_FCF.tolist(),'FCF':FCF.tolist(),'m_dot_min_kgs':m_dot_min_kgs,
-              'steps_sim':steps_sim,'AmortYear':AmortYear,'Selling_price':Selling_price,
-              'in_s':in_s,'out_s':out_s,'T_in_flag':T_in_flag,'Fuel_price':Fuel_price,'Boiler_eff':Boiler_eff,
-              'T_in_C':T_in_C,'T_in_C_AR':T_in_C_AR.tolist(),'T_out_C':T_out_C,
-              'outProcess_s':outProcess_s,'T_out_process_C':T_out_C,'P_op_bar':P_op_Mpa*10,
-              'x_design':x_design,'h_in':h_in,'h_out':h_out,'hProcess_out':hProcess_out,'outProcess_h':outProcess_h,
-              'Break_cost':Break_cost,'sender':sender,'origin':origin}
+        
+        # Plots for non-annual simulatios (With annual simuations you cannot see anything)
+        if steps_sim!=8759:
+            if plots[5]==1: #(5) Theta angle Plot
+                thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
+            if plots[6]==1: #(6) IAM angles Plot
+                IAMAnglesPlot(sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty) 
+            if plots[7]==1: #(7) Plot Overview (Demand vs Solar Radiation) 
+                demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty)
+            if plots[8]==1: #(8) Plot flowrates  & Temp & Prod
+                flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
+            if plots[9]==1: #(9)Plot Storage non-annual simulation  
+                storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
+                 
+        # Property plots
+        if fluidInput=="water": #WATER
+            if plots[10]==1: #(10) Mollier Plot for s-t for Water
+                mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_C,P_op_Mpa*10,x_design,plotPath,imageQlty)              
+            if plots[11]==1: #(11) Mollier Plot for s-h for Water 
+                mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_C,P_op_Mpa*10,x_design,plotPath,imageQlty)  
+        if fluidInput=="oil": 
+            if plots[12]==1:
+                rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
+            if plots[13]==1:
+                viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
+        if fluidInput=="moltenSalt": 
+            if plots[12]==1:
+                rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
+            if plots[13]==1:
+                viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
     
-    # Plot functions
     
-    # Plots for annual simulations
-    if steps_sim==8759:
-        if plots[0]==1: #(0) Sankey plot
-            image_base64,sankeyDict=SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
-        if plots[0]==0: #(0) Sankey plot -> no plotting
-            sankeyDict={'Production':0,'raw_potential':0,'Thermal_loss':0,'Utilization':0}
-        if plots[1]==1: #(1) Production week Winter & Summer
-            prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)   
-            prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)  
-        if plots[2]==1 and finance_study==1: #(2) Plot Finance
-            financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty)
-        if plots[3]==1: #(3)Plot of Storage first week winter & summer 
-            storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
-            storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
-        if plots[4]==1: #(4) Plot Prod months
-            output_excel=prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
-            output_excel=output_excel
-        if plots[15]==1: #(14) Plot Month savings
-            output_excel2=savingsMonths(sender,origin,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
-            output_excel2=output_excel2
-
+        
+        # Other plots
+        if plots[14]==1: #(14) Plot Production
+            productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty)
+           
+        
+    #%%
+    # ------------------------------------------------------------------------------------
+    # BLOCK 5 - REPORT GENERATION ----------------------------------------------------------
+    # ------------------------------------------------------------------------------------
+        
+        # Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
+        if steps_sim==8759: #The report is only available when annual simulation is performed
+            if origin==-2:
+                fileName="results"+str(pk)
+                reportsVar={'logo_output':'no_logo','date':inputsDjango['date'],'type_integration':type_integration,
+                            'fileName':fileName,'reg':pk,
+                            'Area_total':Area_total,'n_coll_loop':n_coll_loop,
+                            'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs}
     
-    # Plots for non-annual simulatios (With annual simuations you cannot see anything)
-    if steps_sim!=8759:
-        if plots[5]==1: #(5) Theta angle Plot
-            thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
-        if plots[6]==1: #(6) IAM angles Plot
-            IAMAnglesPlot(sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty) 
-        if plots[7]==1: #(7) Plot Overview (Demand vs Solar Radiation) 
-            demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty)
-        if plots[8]==1: #(8) Plot flowrates  & Temp & Prod
-            flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
-        if plots[9]==1: #(9)Plot Storage non-annual simulation  
-            storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
-             
-    # Property plots
-    if fluidInput=="water": #WATER
-        if plots[10]==1: #(10) Mollier Plot for s-t for Water
-            mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_C,P_op_Mpa*10,x_design,plotPath,imageQlty)              
-        if plots[11]==1: #(11) Mollier Plot for s-h for Water 
-            mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,outProcess_h,in_s,out_s,T_in_flag,T_in_C,T_in_C_AR,T_out_C,outProcess_s,T_out_C,P_op_Mpa*10,x_design,plotPath,imageQlty)  
-    if fluidInput=="oil": 
-        if plots[12]==1:
-            rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
-        if plots[13]==1:
-            viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
-    if fluidInput=="moltenSalt": 
-        if plots[12]==1:
-            rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty) #(12) Plot thermal oil properties Rho & Cp vs Temp
-        if plots[13]==1:
-            viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
-
-
     
-    # Other plots
-    if plots[14]==1: #(14) Plot Production
-        productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty)
-       
     
-#%%
-# ------------------------------------------------------------------------------------
-# BLOCK 5 - REPORT GENERATION ----------------------------------------------------------
-# ------------------------------------------------------------------------------------
-    
-    # Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
-    if steps_sim==8759: #The report is only available when annual simulation is performed
-        if origin==-2:
-            fileName="results"+str(pk)
-            reportsVar={'logo_output':'no_logo','date':inputsDjango['date'],'type_integration':type_integration,
-                        'fileName':fileName,'reg':pk,
-                        'Area_total':Area_total,'n_coll_loop':n_coll_loop,
-                        'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs}
-
-
-
+                
+                reportsVar.update(inputsDjango)
+                reportsVar.update(finance)
+                reportsVar.update(confReport)
+                reportsVar.update(annualProdDict)
+                reportsVar.update(sankeyDict)
+                reportsVar.update(meteoDict)
+                reportsVar.update(processDict)
+                reportsVar.update(integrationDesign)   
+                template_vars=reportOutput(origin,reportsVar,-1,"",pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)),Energy_Before_annual,sankeyDict)
             
-            reportsVar.update(inputsDjango)
-            reportsVar.update(finance)
-            reportsVar.update(confReport)
-            reportsVar.update(annualProdDict)
-            reportsVar.update(sankeyDict)
-            reportsVar.update(meteoDict)
-            reportsVar.update(processDict)
-            reportsVar.update(integrationDesign)   
-            template_vars=reportOutput(origin,reportsVar,-1,"",pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)),Energy_Before_annual,sankeyDict)
-        
+            else:
+                template_vars={} 
+                reportsVar={'version':version,'logo_output':'no_logo','version':version,'type_integration':type_integration,
+                            'energyStored':energyStored,"location":localMeteo,
+                            'Area_total':Area_total,'n_coll_loop':n_coll_loop,
+                            'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
+                            'Production_max':Production_max,'Production_lim':Production_lim,
+                            'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
+                            'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
+                reportsVar.update(finance)
+                reportsVar.update(confReport)
+                reportsVar.update(annualProdDict)
+                reportsVar.update(modificators)
+                if origin==0 or origin == -3:
+                    reportOutputOffline(reportsVar)
         else:
-            template_vars={} 
-            reportsVar={'version':version,'logo_output':'no_logo','version':version,'type_integration':type_integration,
-                        'energyStored':energyStored,"location":localMeteo,
-                        'Area_total':Area_total,'n_coll_loop':n_coll_loop,
-                        'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
-                        'Production_max':Production_max,'Production_lim':Production_lim,
-                        'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
-                        'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
-            reportsVar.update(finance)
-            reportsVar.update(confReport)
-            reportsVar.update(annualProdDict)
-            reportsVar.update(modificators)
-            if origin==0 or origin == -3:
-                reportOutputOffline(reportsVar)
-    else:
-        template_vars={}
-        reportsVar={}
-        
-    return(template_vars,plotVars,reportsVar,version)
+            template_vars={}
+            reportsVar={}
+            
+        return(template_vars,plotVars,reportsVar,version)
+    
+    return(LCOE)
 
 
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
        
-
+"""
 # Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
@@ -1649,7 +1661,7 @@ n_coll_loop=100
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
+type_integration="SL_L_PS"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1672,14 +1684,14 @@ elif origin==-3:
                  'co2factor': 0.0,
                  'collector_type': 'BOSCH SKW2.txt',
                  'date': '2020-01-30 10:36:S',
-                 'demand': 50.0,
-                 'demandUnit': '666',
-                 'distance': 50.0,
+                 'demand': 1000000.0,
+                 'demandUnit': '1',
+                 'distance': 25.0,
                  'email': 'juanshifu2.5@hotmail.com',
                  'fluid': 'water',
-                 'fuel': 'diesel',
-                 'fuelPrice': 1.7065359615703164,
-                 'fuelUnit': '0.09480755342057313',
+                 'fuel': 'gas_seco',
+                 'fuelPrice': 5*(3.6*1000)/38.268,
+                 'fuelUnit': (3.6*1000)/38.268,
                  'hourEND': 19,
                  'hourINI': 8,
                  'industry': 'Nombredelaindustria',
@@ -1687,25 +1699,29 @@ elif origin==-3:
                  'location': 'Oaxaca de Juárez.dat',
                  'name': 'Juan Antonio Aramburo Pasapera',
                  'pais': 'México',
-                 'pressure': 5.0,
+                 'pressure': 1.0,
                  'pressureUnit': '1',
                  'semana': ['0', '1', '2', '3', '4', '5', '6'],
-                 'surface': 2000.0,
-                 'tempIN': 18.0,
-                 'tempOUT': 35.0,
+                 'surface': 48.0,
+                 'tempIN': 20.0,
+                 'tempOUT': 120.0,
                  'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
     last_reg=inputsDjango['last_reg']
+    
 else:
     #To perform simulations from command line using inputs like if they were from django
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
     
 
-#version, initial_variables_dict, coll_par = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
+version, initial_variables_dict, coll_par = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
     
-#initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) #This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
+initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) #This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
+coll_par.update({'auto':'on'})
+LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
+print(LCOE)
 
-#[jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,last_reg)
+[jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
 
 #[jSonResults,plotVars,reportsVar,version] = SHIPcal     (origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
-
+"""
