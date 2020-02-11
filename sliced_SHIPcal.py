@@ -711,7 +711,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
             almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
             almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg
             energStorageMax=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K-T_in_K))/3600 #Storage capacity in kWh
-        
+            initial_variables_dict.update({'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
         elif fluidInput=="oil":
             T_out_K=T_out_C+273
             T_av_K=(T_in_K+T_out_K)/2
@@ -725,8 +725,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
             energStorageMax=(almVolumen*(1/1000)*(rho_av)*Cp_av*(T_out_K-T_in_K))/3600 #Storage capacity in kWh
             
         initial_variables_dict.update({'P_op_Mpa':P_op_Mpa,'T_in_C':T_in_C,'T_out_C':T_out_C,
-                                 'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,
-                                 'energStorageMax':energStorageMax})
+                                       'energStorageMax':energStorageMax})
                     
     # ---------------------------------------- 
     # SL_S_FW => Supply level with steam solar heating of boiler feed water
@@ -1184,7 +1183,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
             elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
-                [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,flow_rate_design_kgs,type_coll,sender,coll_par)
+                [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],theta_i_rad[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,mofProd,flow_rate_design_kgs,type_coll,sender,coll_par)
 
                 #Storage control
                 [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
@@ -1217,7 +1216,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                     [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],theta_i_rad[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,coll_par)
                     if newBypass=="REC":
                         flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating
-                        T_toProcess_K[i]=T_in_K
+                        T_toProcess_K[i]=T_in_C+273
                     else:
                         #HX simulation
                         Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
@@ -1230,7 +1229,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                         #Branch from HX to mix                        
                         toMixstate=IAPWS97(P=P_op_Mpa, T=T_out_K[i]-DELTA_T_HX)
                         #Mix
-                        T_av_HX_K=(T_in_K+T_out_HX_K)/2
+                        T_av_HX_K=(T_in_C+273+T_out_HX_K)/2
                         toProcessstate=IAPWS97(P=P_op_Mpa, T=T_av_HX_K)
                         
                         if flowDemand[i]==0: #If there's no demand then T_toProcss_C[i]=0
@@ -1243,9 +1242,9 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                     [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
                 
                 else: 
-                    T_av_process_K=(T_in_K+T_out_K)/2
+                    T_av_process_K=(T_in_C+273+T_out_K)/2
                     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
-                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_K-T_in_K)) 
+                    flowDemand[i]=Demand[i]/(Cp_av*(T_out_K-T_in_C+273)) 
                                                                                                                                 
                     [T_out_K[i],flow_rate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],theta_i_rad[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,coll_par)
                     
@@ -1255,21 +1254,21 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                         #HX simulation
                         Q_prodProcessSide=Q_prod[i]*HX_eff
                         Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
-                        flowToHx[i]=Q_prodProcessSide/(Cp_av*(T_out_HX_K-T_in_K))
+                        flowToHx[i]=Q_prodProcessSide/(Cp_av*(T_out_HX_K-T_in_C+273))
                         
                     flowToMix[i]=flowDemand[i]-flowToHx[i]
                     #Exit of the heat Echanger
                     [rho_toHX,Cp_toHX,k_toHX,Dv_toHX,Kv_toHX,thermalDiff_toHX,Prant_toHX]=thermalOil(T_out_HX_K)                    
                     #Brach to mix
-                    [rho_toMix,Cp_toMix,k_toMix,Dv_toMix,Kv_toMix,thermalDiff_toMix,Prant_toMix]=thermalOil(T_in_K)    
+                    [rho_toMix,Cp_toMix,k_toMix,Dv_toMix,Kv_toMix,thermalDiff_toMix,Prant_toMix]=thermalOil(T_in_C+273)    
                     #Mix
-                    #T_av_HX_K=(T_in_K+T_out_HX_K)/2 #Ok when are more or less the same flowrate
-                    T_av_HX_K=T_in_K*(flowToMix[i]/flowDemand[i])+T_out_HX_K*(flowToHx[i]/flowDemand[i]) #When temperatures are very different            
+                    #T_av_HX_K=(T_in_C+273+T_out_HX_K)/2 #Ok when are more or less the same flowrate
+                    T_av_HX_K=T_in_C+273*(flowToMix[i]/flowDemand[i])+T_out_HX_K*(flowToHx[i]/flowDemand[i]) #When temperatures are very different            
                     [rho_av_HX,Cp_av_HX,k_av_HX,Dv_av_HX,Kv_av_HX,thermalDiff_av_HX,Prant_av_HX]=thermalOil(T_av_HX_K)    
                     if flowToHx[i]==0:
-                        T_toProcess_K[i]=T_in_K
+                        T_toProcess_K[i]=T_in_C+273
                     else:
-                        T_toProcess_K[i]=(flowToMix[i]*Cp_toMix*T_in_K+flowToHx[i]*Cp_toHX*T_out_HX_K)/(flowDemand[i]*Cp_av_HX)
+                        T_toProcess_K[i]=(flowToMix[i]*Cp_toMix*(T_in_C+273)+flowToHx[i]*Cp_toHX*T_out_HX_K)/(flowDemand[i]*Cp_av_HX)
                     T_toProcess_C[i]=T_toProcess_K[i]-273                      
                     [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
 
@@ -1731,4 +1730,3 @@ initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) 
 coll_par.update({'auto':'off'})
 [jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
 """
-
