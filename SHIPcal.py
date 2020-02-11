@@ -354,10 +354,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=150 #HIGH - Process temperature [ºC]
-        T_process_out=60 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=6 #[bar] 
+        fluidInput="water" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=75 #HIGH - Process temperature [ºC]
+        T_process_out=55 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=1 #[bar] 
         
         # Not implemented yet
         """
@@ -371,7 +371,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=900*8760 #[kWh]
+        totalConsumption=120652.778#900*8760 #[kWh]
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         # file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
 
@@ -1247,10 +1247,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #    totalCharged=(sum(Q_charg))
     Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
     improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
-    solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
+    solar_fraction_lim=100*(Production_lim)/Demand_anual 
 #    Energy_module_max=Production_max/num_modulos_tot
 #    operation_hours=np.nonzero(Q_prod)
-    DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
+    DNI_anual_irradiation=sum(DNI)/1000 #kWh/year/m2
 #    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
     Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
     
@@ -1524,8 +1524,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=4
-n_coll_loop=4
+num_loops=20
+n_coll_loop=2
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1535,8 +1535,8 @@ n_coll_loop=4
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_RF"
-almVolumen=10000 #litros
+type_integration="SL_L_PS"
+almVolumen=6000 #litros
 
 # --------------------------------------------------
 confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
@@ -1556,29 +1556,29 @@ elif origin==-3:
                   'businessModel': 'turnkey',
                   'co2TonPrice': 0.0,
                   'co2factor': 0.0,
-                  'collector_type': 'BOSCH SKW2.txt',
+                  'collector_type': 'MODULOSOLAR MAXOL MS25.txt',
                   'date': '2020-01-30 10:36:S',
-                  'demand': 100000.0,
+                  'demand': 120652.778,
                   'demandUnit': '1',
                   'distance': 25.0,
                   'email': 'juanshifu2.5@hotmail.com',
                   'fluid': 'water',
-                  'fuel': 'gas_natural',
-                  'fuelPrice': 5,
-                  'fuelUnit': 87.0869417968939,
-                  'hourEND': 19,
-                  'hourINI': 8,
+                  'fuel': 'gas_licuado_petroleo',
+                  'fuelPrice': 1.0895,
+                  'fuelUnit': 1,
+                  'hourEND': 23,
+                  'hourINI': 0,
                   'industry': 'Nombredelaindustria',
                   'last_reg': 198,
-                  'location': 'Oaxaca de Juárez.dat',
+                  'location': 'Zacatecas.dat',
                   'name': 'Juan Antonio Aramburo Pasapera',
                   'pais': 'México',
                   'pressure': 1.0,
                   'pressureUnit': '1',
                   'semana': ['0', '1', '2', '3', '4', '5', '6'],
                   'surface': 100.0,
-                  'tempIN': 20.0,
-                  'tempOUT': 80.0,
+                  'tempIN': 55.0,
+                  'tempOUT': 75.0,
                   'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
     last_reg=inputsDjango['last_reg']
 else:
