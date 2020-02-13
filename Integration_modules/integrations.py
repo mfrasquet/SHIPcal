@@ -91,8 +91,7 @@ def inputsWithDNIWaterSimple(T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P
         else:
             T_in_K=T_in_C_AR+273
         
-    inlet=IAPWS97(P=P_op_Mpa, T=T_in_K)
-    h_in_kJkg=inlet.h
+    h_in_kJkg=IAPWS97(P=P_op_Mpa, T=T_in_K).h
     return [h_in_kJkg,T_in_K]
 
 def inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old):
@@ -224,15 +223,17 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
         if sender == 'CIMAV':
+            Cp_av_kJkgK = IAPWS97(P=P_op_Mpa, T=0.5*(T_out_K+T_in_K)).cp
             T_out_K,Perd_termicas = IT_temp_CIMAV(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,coll_par)
         else:
-            T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate_rec,**coll_par)    
+            T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate_rec,**coll_par)    #Here the T_out_K is the desired outlet temperature, it is used to calculate an average CP and the coll parameters
         Q_prod=0 #No hay produccion
         
         if fluidInput=="water" or fluidInput=="steam":
-            outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
-            h_out_kJkg=outlet.h
-            Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)
+            #outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
+            #h_out_kJkg=outlet.h
+            #Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)
+            Q_prod_rec=flow_rate_rec*(Cp_av_kJkgK)*(T_out_K-T_in_K) #[kW] Using Cp_av
         
         elif fluidInput=="oil":
             T_av_K=(T_in_K+T_out_K)/2
@@ -244,23 +245,24 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
             [rho_av,Cp_av,k_av,Dv_av]=moltenSalt(T_av_K)
             Q_prod_rec=flow_rate_rec*Cp_av*(T_out_K-T_in_K)
             
-        Q_prod_rec=Q_prod_rec+Q_prod_rec_old      
+        Q_prod_rec=Q_prod_rec+Q_prod_rec_old #The Q_prod_rec is per serie and it will be mutiplied by the num_loops when enters into production
         bypass.append("REC")
-        newBypass="REC"      
+        newBypass="REC"
+        Perd_termicas = Perd_termicas*num_loops #Takes into account all the loops, before it was only the losses of one serie (one loop)
         
     else:
         #PRODUCCION
         
         if fluidInput=="water" or fluidInput=="steam":
-            outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
-            h_out_kJkg=outlet.h
-            if bypass_old=="REC":
-                if Q_prod_rec_old>0:
-                    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kW
-                else:
-                    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
+            #outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
+            #h_out_kJkg=outlet.h
+            Cp_av_kJkgK = IAPWS97(P=P_op_Mpa, T=0.5*(T_out_K+T_in_K)).cp
+            if bypass_old=="REC" and Q_prod_rec_old>0:
+                #Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kW
+                Q_prod=flow_rate_kgs*(Cp_av_kJkgK)*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*num_loops*FS
             else:
-                Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS #In kW
+                #Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS #In kW
+                Q_prod=flow_rate_kgs*(Cp_av_kJkgK)*(T_out_K-T_in_K)*num_loops*FS
         
         if fluidInput=="oil":
             if bypass_old=="REC":
@@ -280,10 +282,15 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
             else:
                 Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS #In kW
                 
-        flow_rate_rec=0
-        Q_prod_rec=0
         bypass.append("PROD")
         newBypass="PROD"
+        Perd_termicas = Perd_termicas*num_loops + (1-FS)*Q_prod #Takes into account all the loops, before it was only the losses of one serie (one loop) and the losses by the modificator FS
+        flow_rate_rec=0
+        Q_prod_rec=0
+        #Perd_termicas [Wh]
+        #Q_prod [kWh]
+        #DNI [W/m2]
+        
     return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
 
 

@@ -959,6 +959,8 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     almVolumen=desginDict['almVolumen']
         
     #Defined the variables from the initial_variables_dict
+    #The arrays that won't change are just referenced, the ones that might change are copied.
+    
     mofINV=modificators['mofINV']
     mofProd=modificators['mofProd']
     DNI=initial_variables_dict['DNI']
@@ -1116,7 +1118,6 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     meteoDict={'DNI':DNI.tolist(),'localMeteo':localMeteo}
     integrationDesign={'x_design':x_design,'porctSensible':initial_variables_dict['porctSensible'],'almVolumen':almVolumen,'energStorageMax':energStorageMax,
                        'T_out_process_C':T_out_C,'T_in_process_C':T_in_C,'T_out_HX_C':initial_variables_dict['T_out_HX_C']}
-    
     # BLOCK 2.2 - SIMULATION ANNUAL LOOP <><><><><><><><><><><><><><><><><><><><><><><><><><><>        
     
     # --> Instant = 0 (Initial conditions)
@@ -1312,6 +1313,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
             elif type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
+                Perd_termicas[i] = DNI[i]*Area_total + Q_prod_rec[i-1]*num_loops #All the energy is lost since the collectors are not working
                 [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
                 if Demand[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
@@ -1342,8 +1344,15 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
                 if Demand[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
-               
-    
+                    
+        if bypass[i-1]=='REC' and bypass[i] == 'OFF':
+            Q_prod[i] += Q_prod_rec[i-1]*num_loops
+            print(Q_prod_rec[i-1]*num_loops)
+        # if Q_prod[i] < 0:
+        #     print('Q produced less than zero after modification!!! at {}. Now it is {}'.format(i,Q_prod[i]))
+        #     print('before modification was {}'.format(Q_prod[i]-Q_prod_rec[i-1]*num_loops))
+        #     print('I added {}'.format(Q_prod_rec[i-1]*num_loops))
+            
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
     # DataFRame summary of the simulation (only for SL_L_P)
@@ -1379,7 +1388,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
         solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
     #    Energy_module_max=Production_max/num_modulos_tot
     #    operation_hours=np.nonzero(Q_prod)
-        DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
+        DNI_anual_irradiation=sum(DNI)/1000 #kWh/year/m2
     #    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
         Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
         
@@ -1657,8 +1666,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=5
-n_coll_loop=15
+num_loops=20 
+n_coll_loop=2
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1668,17 +1677,17 @@ n_coll_loop=15
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
-almVolumen=10000 #litros
+type_integration="SL_L_PS"
+almVolumen=6000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'someoneelse','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=-0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-3 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1689,29 +1698,29 @@ elif origin==-3:
                   'businessModel': 'turnkey',
                   'co2TonPrice': 0.0,
                   'co2factor': 0.0,
-                  'collector_type': 'BOSCH SKW2.txt',
+                  'collector_type': 'MODULOSOLAR MAXOL MS25.txt',
                   'date': '2020-01-30 10:36:S',
-                  'demand': 100000.0,
+                  'demand': 120652.778,
                   'demandUnit': '1',
                   'distance': 25.0,
                   'email': 'juanshifu2.5@hotmail.com',
                   'fluid': 'water',
-                  'fuel': 'gas_natural',
-                  'fuelPrice': 5,
-                  'fuelUnit': 87.0869417968939,
-                  'hourEND': 19,
-                  'hourINI': 8,
+                  'fuel': 'gas_licuado_petroleo',
+                  'fuelPrice': 1.0895,
+                  'fuelUnit': 1,
+                  'hourEND': 23,
+                  'hourINI': 0,
                   'industry': 'Nombredelaindustria',
                   'last_reg': 198,
-                  'location': 'Oaxaca de Juárez.dat',
+                  'location': 'Zacatecas.dat',
                   'name': 'Juan Antonio Aramburo Pasapera',
                   'pais': 'México',
                   'pressure': 1.0,
                   'pressureUnit': '1',
                   'semana': ['0', '1', '2', '3', '4', '5', '6'],
                   'surface': 100.0,
-                  'tempIN': 20.0,
-                  'tempOUT': 80.0,
+                  'tempIN': 55.0,
+                  'tempOUT': 75.0,
                   'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
     last_reg=inputsDjango['last_reg']
     
