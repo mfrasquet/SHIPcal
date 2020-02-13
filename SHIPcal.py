@@ -135,7 +135,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     n_years_sim=25 # Collector life in years & number of years for the simulation [years]
     
     
-    #--> Process parameters
+    #--> Integration parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
     m_dot_min_kgs=0.06 # Minimum flowrate before re-circulation [kg/s]
