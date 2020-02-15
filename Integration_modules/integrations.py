@@ -226,7 +226,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
             T_out_K,Perd_termicas = IT_temp_CIMAV(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll)
         else:
             T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
-        Q_prod=0 #No hay produccion
+        Q_prod=0 #No production
         
         if fluidInput=="water" or fluidInput=="steam":
             outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)

@@ -143,7 +143,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
         ## SL_L_RF
-    heatFactor=.5 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
+    heatFactor=1 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
     DELTA_T_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
     HX_eff=0.9 # Simplification for HX efficiency
         ## SL_L_S
@@ -357,10 +357,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="water" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=190 #HIGH - Process temperature [ºC]
-        T_process_out=80 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=16 #[bar] 
+        fluidInput="oil" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=290 #HIGH - Process temperature [ºC]
+        T_process_out=180 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=6 #[bar] 
         
         # Not implemented yet
         """
@@ -1100,23 +1100,26 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 if fluidInput=="water":
                     flowDemand[i]=Demand[i]/(hProcess_out-hProcess_in)
                     [T_out_K[i],flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,Area_coll,rho_optic_0,eta1,eta2,mdot_test)
+                    #Corrections in Q_prod and DEemand
+                    Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
+                    Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
+                    Demand[i]=Demand[i]*heatFactor #Temporary correction of demand for the output function. Afterwards it is corrected again
+                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                        
+                    #HX simulation
                     if newBypass=="REC":
                         flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating
                         T_toProcess_K[i]=T_in_process_K
                     else:
-                        #HX simulation
-                        Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
-                        Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
-                        [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
-                        
-                        flowToHx[i]=Q_prodProcessSide/(hHX_out-hProcess_in)  
+                        flowToHx[i]=Q_prod_lim[i]/(hHX_out-hProcess_in)
                         if flowToHx[i]>=flowDemand[i]:
-                            flowToHx[i]=flowDemand[i]
+                            flowToHx[i]=flowDemand[i]  #Maximum flow
+                            hHX_out=hProcess_in+Q_prod_lim[i]/flowToHx[i] #Recalculate the oulet state
                         
                         #Branch from HX to mix                        
-                        toMixstate=IAPWS97(P=P_op_Mpa, T=T_out_K[i]-DELTA_T_HX)
+                        toMixstate=IAPWS97(P=P_op_Mpa, h=hHX_out)
                         #Mix
-                        T_av_HX_K=(T_in_process_K+T_out_HX_K)/2
+                        T_av_HX_K=(T_in_process_K+toMixstate.T)/2
                         toProcessstate=IAPWS97(P=P_op_Mpa, T=T_av_HX_K)
                         
                         if flowDemand[i]==0: #If there's no demand then T_toProcss_C[i]=0
@@ -1126,39 +1129,48 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                             
                     flowToMix[i]=flowDemand[i]-flowToHx[i]
                     T_toProcess_K[i]=T_toProcess_K[i]+273
+                    Demand[i]=Demand[i]/heatFactor #Demand is put again in its original value (just for plotting real demand on graphs)
                 else: 
                     
                     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
                     flowDemand[i]=Demand[i]/(Cp_av*(T_out_process_K-T_in_process_K)) 
-                                                                                                                                
                     [T_out_K[i],flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,Area_coll,rho_optic_0,eta1,eta2,mdot_test)
+                    #Corrections in Q_prod and DEemand
+                    Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
+                    Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
+                    Demand[i]=Demand[i]*heatFactor #Temporary correction of demand for the output function. Afterwards it is corrected again
+                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                        
                     
                     if newBypass=="REC":
                         flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating                         
-                    else:
-                        #HX simulation
-                        Q_prodProcessSide=Q_prod[i]*HX_eff
-                        Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
-                        flowToHx[i]=Q_prodProcessSide/(Cp_av*(T_out_HX_K-T_in_process_K))
-                        if flowToHx[i]>=flowDemand[i]:
-                            flowToHx[i]=flowDemand[i]
-                    
-                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
-                    flowToMix[i]=flowDemand[i]-flowToHx[i]
-                    #Exit of the heat Echanger
-                    [rho_toHX,Cp_toHX,k_toHX,Dv_toHX,Kv_toHX,thermalDiff_toHX,Prant_toHX]=thermalOil(T_out_HX_K)                    
-                    #Brach to mix
-                    [rho_toMix,Cp_toMix,k_toMix,Dv_toMix,Kv_toMix,thermalDiff_toMix,Prant_toMix]=thermalOil(T_in_process_K)    
-                    #Mix
-                    #T_av_HX_K=(T_in_process_K+T_out_HX_K)/2 #Ok when are more or less the same flowrate
-                    T_av_HX_K=T_in_process_K*(flowToMix[i]/flowDemand[i])+T_out_HX_K*(flowToHx[i]/flowDemand[i]) #When temperatures are very different            
-                    [rho_av_HX,Cp_av_HX,k_av_HX,Dv_av_HX,Kv_av_HX,thermalDiff_av_HX,Prant_av_HX]=thermalOil(T_av_HX_K)    
-                    if flowToHx[i]==0:
                         T_toProcess_K[i]=T_in_process_K
                     else:
-                        T_toProcess_K[i]=(flowToMix[i]*Cp_toMix*T_in_process_K+flowToHx[i]*Cp_toHX*T_out_HX_K)/(flowDemand[i]*Cp_av_HX)
-                    T_toProcess_C[i]=T_toProcess_K[i]-273                      
+                        #HX simulation
+                        flowToHx[i]=Q_prod_lim[i]/(Cp_av*(T_out_HX_K-T_in_process_K))
+                        if flowToHx[i]>=flowDemand[i]:
+                            flowToHx[i]=flowDemand[i] #Macimum flow 
+                            T_out_HX_K=T_in_process_K+(Q_prod_lim[i]/flowToHx[i])/Cp_av #Recalculate the oulet temperature
+                            
+                        flowToMix[i]=flowDemand[i]-flowToHx[i]
+                        #Exit of the heat Echanger
+                        [rho_toHX,Cp_toHX,k_toHX,Dv_toHX,Kv_toHX,thermalDiff_toHX,Prant_toHX]=thermalOil(T_out_HX_K)                    
+                        #Brach to mix
+                        [rho_toMix,Cp_toMix,k_toMix,Dv_toMix,Kv_toMix,thermalDiff_toMix,Prant_toMix]=thermalOil(T_in_process_K)    
+                        #Mix
+                        #T_av_HX_K=(T_in_process_K+T_out_HX_K)/2 #Ok when are more or less the same flowrate
+                        T_av_HX_K=T_in_process_K*(flowToMix[i]/flowDemand[i])+T_out_HX_K*(flowToHx[i]/flowDemand[i]) #When temperatures are very different            
+                        [rho_av_HX,Cp_av_HX,k_av_HX,Dv_av_HX,Kv_av_HX,thermalDiff_av_HX,Prant_av_HX]=thermalOil(T_av_HX_K)    
+                        
+                        if flowToHx[i]==0:
+                            T_toProcess_K[i]=T_in_process_K
+                        else:
+                            T_toProcess_K[i]=(flowToMix[i]*Cp_toMix*T_in_process_K+flowToHx[i]*Cp_toHX*T_out_HX_K)/(flowDemand[i]*Cp_av_HX)
                     
+                    flowToMix[i]=flowDemand[i]-flowToHx[i]
+                    T_toProcess_C[i]=T_toProcess_K[i]-273                      
+                    Demand[i]=Demand[i]/heatFactor #Demand is put again in its original value (just for plotting real demand on graphs)
+      
 
             elif type_integration=="SL_S_FW" or type_integration=="SL_S_MW":
                 #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage              
@@ -1536,7 +1548,7 @@ mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
 num_loops=8
-n_coll_loop=8
+n_coll_loop=9
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
