@@ -143,7 +143,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
         ## SL_L_RF
-    heatFactor=1 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
+    heatFactor=.6 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
     DELTA_T_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
     HX_eff=0.9 # Simplification for HX efficiency
         ## SL_L_S
@@ -1103,8 +1103,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     #Corrections in Q_prod and DEemand
                     Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
                     Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
-                    Demand[i]=Demand[i]*heatFactor #Temporary correction of demand for the output function. Afterwards it is corrected again
-                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                    Demand_HX=Demand[i]*heatFactor #Demand of Energy at the HX
+                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand_HX)
                         
                     #HX simulation
                     if newBypass=="REC":
@@ -1129,7 +1129,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                             
                     flowToMix[i]=flowDemand[i]-flowToHx[i]
                     T_toProcess_K[i]=T_toProcess_K[i]+273
-                    Demand[i]=Demand[i]/heatFactor #Demand is put again in its original value (just for plotting real demand on graphs)
+                    
                 else: 
                     
                     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
@@ -1138,8 +1138,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     #Corrections in Q_prod and DEemand
                     Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
                     Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
-                    Demand[i]=Demand[i]*heatFactor #Temporary correction of demand for the output function. Afterwards it is corrected again
-                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                    Demand_HX=Demand[i]*heatFactor #Temporary correction of demand for the output function. Afterwards it is corrected again
+                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand_HX)
                         
                     
                     if newBypass=="REC":
@@ -1169,9 +1169,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     
                     flowToMix[i]=flowDemand[i]-flowToHx[i]
                     T_toProcess_C[i]=T_toProcess_K[i]-273                      
-                    Demand[i]=Demand[i]/heatFactor #Demand is put again in its original value (just for plotting real demand on graphs)
-      
-
+                  
             elif type_integration=="SL_S_FW" or type_integration=="SL_S_MW":
                 #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage              
                 
