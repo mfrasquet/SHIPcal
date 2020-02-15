@@ -357,10 +357,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="oil" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=290 #HIGH - Process temperature [ºC]
-        T_process_out=180 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=6 #[bar] 
+        fluidInput="water" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=190 #HIGH - Process temperature [ºC]
+        T_process_out=80 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=16 #[bar] 
         
         # Not implemented yet
         """
@@ -381,7 +381,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## FINANCE
         businessModel="turnkey"
         fuel="Gasoil-B" #Type of fuel
-        Fuel_price=0.05 #Price of fossil fuel [€/kWh]
+        Fuel_price=0.05 #Price of fossil fuel 1st year of simulation [€/kWh]
         co2TonPrice=0 #[€/TonCo2]
         co2factor=1 #Default value 1, after it will be modified [-]
 
@@ -440,6 +440,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     DNI=DNI*mofDNI # DNI modified if needed. This is necessary to take into account 
     meteoDict={'DNI':DNI.tolist(),'localMeteo':localMeteo}
+    
+    #Temperature of the make-up water
+    T_in_C_AR=waterFromGrid_v3(file_loc,sender)
+    #Trim the T_in_C_AR [8760] to the simulation frame 
+    T_in_C_AR=waterFromGrid_trim(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim)
+
 
 #%%
 # ------------------------------------------------------------------------------------
@@ -468,11 +474,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     h_out=0
     
     
-    #Temperature of the make-up water
-    T_in_C_AR=waterFromGrid_v3(file_loc,sender)
-    #Trim the T_in_C_AR [8760] to the simulation frame 
-    T_in_C_AR=waterFromGrid_trim(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim)
-
+    
     #By default water flows in closed loop
     T_in_flag=1 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
     
@@ -1104,8 +1106,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     else:
                         #HX simulation
                         Q_prodProcessSide=Q_prod[i]*HX_eff #Evaluation of the Energy production after the HX
-                        flowToHx[i]=Q_prodProcessSide/(hHX_out-hProcess_in)  
                         Q_prod[i]=Q_prodProcessSide #I rename the Qprod to QprodProcessSide since this is the energy the system is transfering the process side
+                        [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                        
+                        flowToHx[i]=Q_prodProcessSide/(hHX_out-hProcess_in)  
+                        if flowToHx[i]>=flowDemand[i]:
+                            flowToHx[i]=flowDemand[i]
+                        
                         #Branch from HX to mix                        
                         toMixstate=IAPWS97(P=P_op_Mpa, T=T_out_K[i]-DELTA_T_HX)
                         #Mix
@@ -1119,8 +1126,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                             
                     flowToMix[i]=flowDemand[i]-flowToHx[i]
                     T_toProcess_K[i]=T_toProcess_K[i]+273
-                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
-                
                 else: 
                     
                     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
@@ -1137,7 +1142,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         flowToHx[i]=Q_prodProcessSide/(Cp_av*(T_out_HX_K-T_in_process_K))
                         if flowToHx[i]>=flowDemand[i]:
                             flowToHx[i]=flowDemand[i]
-                        
+                    
+                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
                     flowToMix[i]=flowDemand[i]-flowToHx[i]
                     #Exit of the heat Echanger
                     [rho_toHX,Cp_toHX,k_toHX,Dv_toHX,Kv_toHX,thermalDiff_toHX,Prant_toHX]=thermalOil(T_out_HX_K)                    
@@ -1152,7 +1158,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     else:
                         T_toProcess_K[i]=(flowToMix[i]*Cp_toMix*T_in_process_K+flowToHx[i]*Cp_toHX*T_out_HX_K)/(flowDemand[i]*Cp_av_HX)
                     T_toProcess_C[i]=T_toProcess_K[i]-273                      
-                    [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+                    
 
             elif type_integration=="SL_S_FW" or type_integration=="SL_S_MW":
                 #SL_S_FW Supply level with steam for solar heating of boiler feed water without storage              
