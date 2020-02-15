@@ -516,7 +516,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_out_HX_K=(T_in_process_K+(T_out_K-T_in_process_K)*heatFactor)
         T_out_HX_C=T_out_HX_K-273
         outputHXState=IAPWS97(P=P_op_Mpa, T=T_out_HX_K)
-        hHX_out=outputHXState.h
+        h_out_HX=outputHXState.h
         
         #Our design point will be heat the fluid at x%
         T_out_P=(T_in_process_K+(T_out_K-T_in_process_K)*heatFactor)+DELTA_T_HX-273 # Design point temperature at the inlet of the HX from the solar side
@@ -1111,13 +1111,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         flowToHx[i]=0   #Valve closed no circulation through the HX. The solar field is recirculating
                         T_toProcess_K[i]=T_in_process_K
                     else:
-                        flowToHx[i]=Q_prod_lim[i]/(hHX_out-hProcess_in)
+                        flowToHx[i]=Q_prod_lim[i]/(h_out_HX-hProcess_in)
                         if flowToHx[i]>=flowDemand[i]:
                             flowToHx[i]=flowDemand[i]  #Maximum flow
-                            hHX_out=hProcess_in+Q_prod_lim[i]/flowToHx[i] #Recalculate the oulet state
+                            h_out_HX=hProcess_in+Q_prod_lim[i]/flowToHx[i] #Recalculate the oulet state
                         
                         #Branch from HX to mix                        
-                        toMixstate=IAPWS97(P=P_op_Mpa, h=hHX_out)
+                        toMixstate=IAPWS97(P=P_op_Mpa, h=h_out_HX)
                         #Mix
                         T_av_HX_K=(T_in_process_K+toMixstate.T)/2
                         toProcessstate=IAPWS97(P=P_op_Mpa, T=T_av_HX_K)
