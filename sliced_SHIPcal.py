@@ -1103,8 +1103,8 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     #Sender dependent
     
     if sender == 'CIMAV':
-        eta1=coll_par['eta1']
-        eta2=coll_par['eta2']
+        #eta1=coll_par['eta1']
+        #eta2=coll_par['eta2']
         #mdot_test=coll_par['mdot_test_permeter']#[kg/sm2]
         blong=coll_par['blong']
         nlong=coll_par['nlong']
@@ -1133,9 +1133,9 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     #            SOC[i]=100*(T_alm_K[i]-273)/(T_max_storage-273)
         SOC[0]=100*energyStored/energStorageMax
 
-        
+    
     for i in range(1,steps_sim): #--> <><><><>< ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
-        
+        print(i)
     # --> IAM calculation
         if sender=='solatom': #Using Solatom's IAMs
             if SUN_ELV[i]>0:
@@ -1158,9 +1158,39 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 IAM_long[i],IAM_t[i]=0,0
             
             IAM[i]=IAM_long[i]*IAM_t[i]
-            Tm_Ta=0.5*(T_in_C+T_out_C)-(temp[i]-273)#Calculates Tm-Ta in order to calculate the minimum DNI for the colector at that ambient temperature 
-            lim_inf_DNI=(eta1*Tm_Ta + eta2*Tm_Ta**2)/rho_optic_0 #eta1 and eta2 are positives and the negative had to be put in the efficiency equation, from the clear of the equation rho_optic_0 is negative again and therefore everything is positive again.
+            
+            if DNI[i] > 0 and IAM[i] != 0:
+            
+                if T_in_flag==1:
+                   if bypass[i-1]=="REC" and T_out_K[i-1]>(T_in_C+273):
+                       T_in_K[i]=T_out_K[i-1]
+                   else:
+                       T_in_K[i]=T_in_C+273
+                else:
+                    if bypass[i-1]=="REC" and T_out_K[i-1]>(T_in_C_AR+273):
+                        T_in_K[i]=T_out_K[i-1]
+                    else:
+                        T_in_K[i]=T_in_C_AR[i]+273
+                        
+                #Tm_Ta=0.5*(T_in_C+T_out_C)-(temp[i]-273)#Calculates Tm-Ta in order to calculate the minimum DNI for the colector at that ambient temperature 
+                T_av_K=(T_in_K[i]+T_out_C+273)/2 #[K]
+                if fluidInput == 'water':
+                    Cp_av_KJkgK = IAPWS97(P=P_op_Mpa, T=T_av_K).cp
+                    Cp_av_JkgK = Cp_av_KJkgK*1000 #[J/kg·K]
+                elif fluidInput=="oil":
+                    [rho_av,Cp_av_KJkgK,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
+                    Cp_av_JkgK = Cp_av_KJkgK*1000 #[J/kg·K]
+                elif fluidInput=="moltenSalt":
+                    [rho,Cp_av_KJkgK,k,Dv]=moltenSalt(T_av_K)
+                    Cp_av_JkgK = Cp_av_KJkgK*1000 #[J/kg·K]
+                F_Rta_eq,F_RU_L_eq,mdot_test_kgs = equiv_coll_series_o1(T_in_K[i],T_out_C+273,temp[i],DNI[i],IAM[i],Area,Cp_av_JkgK,**coll_par)
+                lim_inf_DNI= F_RU_L_eq*(T_in_K[i]-temp[i])/(F_Rta_eq*IAM[i]) #(eta1*Tm_Ta + eta2*Tm_Ta**2)/rho_optic_0 #eta1 and eta2 are positives and the negative had to be put in the efficiency equation, from the clear of the equation rho_optic_0 is negative again and therefore everything is positive again.
+                
+            else:
+                lim_inf_DNI = float('inf')
+                
             lim_inf_DNI_list+=[lim_inf_DNI]
+            
         else:               # Using default's IAMs 
             if SUN_ELV[i]>0:
                 theta_transv_deg[i],theta_i_deg[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad)
@@ -1175,6 +1205,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
 
             
         if DNI[i]>lim_inf_DNI and DNI[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system
+            print('Enough DNI')
             if type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
@@ -1344,10 +1375,12 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
                 if Demand[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
-                    
+        #print(abs(DNI[i]*Area_total*0.001 - Q_prod[i]-Perd_termicas[i]*0.001-(Q_prod_rec[i]-Q_prod_rec[i-1])*num_loops))
         if bypass[i-1]=='REC' and bypass[i] == 'OFF':
-            Q_prod[i] += Q_prod_rec[i-1]*num_loops
-            print(Q_prod_rec[i-1]*num_loops)
+        #     Q_prod[i] += Q_prod_rec[i-1]*num_loops
+            print(i)
+            # test+=[DNI[i]*Area_total*0.001 - Q_prod[i]-Perd_termicas[i]*0.001]
+            # print(test)
         # if Q_prod[i] < 0:
         #     print('Q produced less than zero after modification!!! at {}. Now it is {}'.format(i,Q_prod[i]))
         #     print('before modification was {}'.format(Q_prod[i]-Q_prod_rec[i-1]*num_loops))
@@ -1622,7 +1655,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
-"""
+
 # Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
@@ -1738,4 +1771,3 @@ initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) 
 #print(LCOE)
 coll_par.update({'auto':'off'})
 [jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
-"""

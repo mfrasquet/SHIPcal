@@ -252,7 +252,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         
     else:
         #PRODUCCION
-        
+        print('produccion')
         if fluidInput=="water" or fluidInput=="steam":
             #outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
             #h_out_kJkg=outlet.h
