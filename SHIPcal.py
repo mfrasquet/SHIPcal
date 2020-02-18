@@ -143,7 +143,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
         ## SL_L_RF
-    heatFactor=.6 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
+    heatFactor=.5 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
     DELTA_T_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
     HX_eff=0.9 # Simplification for HX efficiency
         ## SL_L_S
@@ -488,42 +488,54 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     if type_integration=="SL_L_RF": 
 
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        
+        #Outlet of the process
+        T_process_out_C=T_process_out
+        T_process_out_K=T_process_out_C+273
+        output_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_out_K)
+        h_out_process=output_ProcessState.h
+        #Inlet of the process
+        T_process_in_C=T_process_in
+        T_process_in_K=T_process_in_C+273
+        input_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_in_K)
+        s_process_in=input_ProcessState.s
+        h_process_in=input_ProcessState.h
+         
+        # --------------  STEP 1 -------------- 
+            #The inlet temperature at the solar field (Afterwards it will corrected to take into account the HX) 
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
         T_in_K=T_in_C+273
+        
+            #The outlet temperature at the solar field (Afterwards it will corrected to take into account the HX) 
         T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
         if fluidInput=="water":
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273
         T_out_K=T_out_C+273
         
-        
-        T_process_out_C=T_in_C
-        T_process_out_K=T_in_C+273
-        output_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_out_K)
-        h_out_process=output_ProcessState.h
-    
-        #Heat Exchanger design DELTA T    
+    ##Heat Exchanger design 
+        # --------------  STEP 2 -------------- 
+            #HX inlet (process side)         
+        T_in_C=T_process_out_C #Already defined before
+        # --------------  STEP 3 -------------- 
+            #HX outlet (process side) 
+        T_out_HX_K=(T_process_out_K+(T_process_in_K-T_process_out_K)*heatFactor)
+        T_out_HX_C=T_out_HX_K-273
+        if fluidInput=="water": 
+            outputHXState=IAPWS97(P=P_op_Mpa, T=T_out_HX_K)
+            h_out_HX=outputHXState.h    
+          # --------------  STEP 4 -------------- 
+            #HX inlet (solar side) 
+        T_out_P=T_out_HX_K+DELTA_T_HX-273  # Design point temperature at the inlet of the HX from the solar side
+        T_out_C=T_out_P #T_out_C is updated
+        T_out_K=T_out_C+273    
+         # --------------  STEP 5 -------------- 
+            #HX outlet (solar side)        
         T_in_P=T_in_C+DELTA_T_HX  # Design point temperature at the outlet of the HX from the solar side
-        T_in_C=T_in_P
+        T_in_C=T_in_P #T_in_C is updated
         T_in_K=T_in_C+273
         
-        
-        T_process_in_K=T_out_K
-        T_process_in_C=T_out_K-273 #Temp out the process
-        input_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_in_K)
-        s_process_in=input_ProcessState.s
-        h_process_in=input_ProcessState.h
-        
-        T_out_HX_K=(T_process_out_K+(T_out_K-T_process_out_K)*heatFactor)
-        T_out_HX_C=T_out_HX_K-273
-        outputHXState=IAPWS97(P=P_op_Mpa, T=T_out_HX_K)
-        h_out_HX=outputHXState.h
-        
-        #Our design point will be heat the fluid at x%
-        T_out_P=(T_process_out_K+(T_out_K-T_process_out_K)*heatFactor)+DELTA_T_HX-273 # Design point temperature at the inlet of the HX from the solar side
-        T_out_C=T_out_P
-        T_out_K=T_out_C+273 
-        
+        #Other auxiliar calculations necessary  (for plotting)
         inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
         h_in=inputState.h    
         in_s=inputState.s
