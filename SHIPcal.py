@@ -357,10 +357,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="oil" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=290 #HIGH - Process temperature [ºC]
-        T_process_out=180 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=6 #[bar] 
+        fluidInput="water" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=190 #HIGH - Process temperature [ºC]
+        T_process_out=80 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=16 #[bar] 
         
         # Not implemented yet
         """
@@ -489,10 +489,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
-        
-        
         T_in_K=T_in_C+273
+        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        if fluidInput=="water":
+            if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
+                T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273
+        T_out_K=T_out_C+273
+        
+        
         T_process_out_C=T_in_C
         T_process_out_K=T_in_C+273
         output_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_out_K)
@@ -503,10 +507,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_in_C=T_in_P
         T_in_K=T_in_C+273
         
-        if fluidInput=="water":
-            if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273
-        T_out_K=T_out_C+273
+        
         T_process_in_K=T_out_K
         T_process_in_C=T_out_K-273 #Temp out the process
         input_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_in_K)
@@ -1506,7 +1507,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
