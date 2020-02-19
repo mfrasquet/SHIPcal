@@ -740,7 +740,6 @@ def outputFlowsHTF(Q_prod_lim,Cp_av,T_out_HX_K,T_process_out_K,flowDemand):
     else: 
         T_toProcess_K=(flowToMix*Cp_toMix*T_process_out_K+flowToHx*Cp_toHX*T_out_HX_K)/(flowDemand*Cp_av_HX) 
  
-    flowToMix=flowDemand-flowToHx 
     T_toProcess_C=T_toProcess_K-273            
     return [T_toProcess_C,flowToMix,T_toProcess_K,flowToMix,flowToHx] 
  
@@ -762,7 +761,6 @@ def outputFlowsWater(Q_prod_lim,P_op_Mpa,h_out_HX,h_process_out,T_process_out_K,
     else: 
         T_toProcess_C=(flowToMix*h_process_out+flowToHx*toMixstate.h)/(flowDemand*toProcessstate.cp) 
          
-    flowToMix=flowDemand-flowToHx 
     T_toProcess_K=T_toProcess_C+273 
  
     return [T_toProcess_C,flowToMix,T_toProcess_K,flowToMix,flowToHx]
