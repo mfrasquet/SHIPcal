@@ -357,10 +357,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="water" #"water" "steam" "oil" "moltenSalt"
+        fluidInput="oil" #"water" "steam" "oil" "moltenSalt"
         T_process_in=190 #HIGH - Process temperature [ºC]
         T_process_out=80 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=16 #[bar] 
+        P_op_bar=3 #[bar] 
         
         # Not implemented yet
         """
@@ -496,23 +496,24 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             output_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_out_K)
             h_process_out=output_ProcessState.h
         #Inlet of the process
+        if fluidInput=="water":    
+            if T_process_in>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
+                T_process_in=IAPWS97(P=P_op_Mpa, x=0).T-27
         T_process_in_C=T_process_in
         T_process_in_K=T_process_in_C+273
         if fluidInput=="water": 
             input_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_in_K)
             s_process_in=input_ProcessState.s
             h_process_in=input_ProcessState.h
-        T_av_process_K=(T_process_out_K+T_process_in_K)/2 
+        T_av_process_K=(T_process_out_K+T_process_in_K)/2
+        
         # --------------  STEP 1 -------------- 
             #The inlet temperature at the solar field (Afterwards it will corrected to take into account the HX) 
         T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
         T_in_K=T_in_C+273
         
             #The outlet temperature at the solar field (Afterwards it will corrected to take into account the HX) 
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
-        if fluidInput=="water":
-            if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273
+        T_out_C=T_process_in_C #The outlet temperature at the solar field is the same than the process temperature
         T_out_K=T_out_C+273
         
     ##Heat Exchanger design 
@@ -555,29 +556,40 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":   
            
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        
+        #Outlet of the process
+        T_process_out_C=T_process_out
+        T_process_out_K=T_process_out_C+273
+        if fluidInput=="water": 
+            output_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_out_K)
+            h_process_out=output_ProcessState.h
+        
+        #Inlet of the process
+        if fluidInput=="water":    
+            if T_process_in>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
+                T_process_in=IAPWS97(P=P_op_Mpa, x=0).T-273   
+        T_process_in_C=T_process_in
+        T_process_in_K=T_process_in_C+273
+        if fluidInput=="water": 
+            input_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_in_K)
+            s_process_in=input_ProcessState.s
+            h_process_in=input_ProcessState.h
+        T_av_process_K=(T_process_out_K+T_process_in_K)/2
+        
+        
         # --------------  STEP 1 -------------- 
             #The inlet temperature at the solar field 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
         T_in_K=T_in_C+273
-        T_process_out_C=T_in_C
-        T_process_out_K=T_in_K
-        if fluidInput=="water":
-            inputState=IAPWS97(P=P_op_Mpa, T=T_process_out_K)
-            h_process_out=inputState.h 
-            #The outlet temperature at the solar field (corrected in case of usig water and temperature greater than saturation temp.)
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
-        if fluidInput=="water":    
-            if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273    
+
+
+            #The outlet temperature at the solar field 
+        T_out_C=T_process_in_C #The outlet temperature at the solar field is the same than the process temperature
         T_out_K=T_out_C+273
-        T_process_in_K=T_out_K
-        T_process_in_C=T_out_C
+
         
         #Other auxiliar calculations necessary  (for plotting)
         if fluidInput=="water":
-            input_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_in_K)
-            s_process_in=input_ProcessState.s
-            h_process_in=input_ProcessState.h    
             
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
             h_in=inputState.h    
@@ -1100,12 +1112,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                     flowDemand[i]=Demand[i]/(h_process_in-h_process_out)#Not used, only for S_L_RF                  
                      
                 elif fluidInput=="oil": 
-                    T_av_process_K=(T_process_in_K+T_process_out_K)/2
                     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
                     flowDemand[i]=Demand[i]/(Cp_av*(T_process_in_K-T_process_out_K)) #Not used, only for S_L_RF         
                 
                 elif fluidInput=="moltenSalt": 
-                    T_av_process_K=(T_process_in_K+T_process_out_K)/2
                     [rho_av,Cp_av,k,Dv]=moltenSalt(T_av_process_K)    
                     flowDemand[i]=Demand[i]/(Cp_av*(T_process_in_K-T_process_out_K)) #Not used, only for S_L_RF         
             
