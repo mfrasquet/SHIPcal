@@ -1547,7 +1547,7 @@ n_coll_loop=9
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_RF"
+type_integration="SL_L_S"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
