@@ -142,12 +142,12 @@ def operationOilKettleSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypas
         newBypass="PROD"
     return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
     
-def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,num_loops,FS,flow_rate_kgs,type_coll,sender,coll_par):
+def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,num_loops,FS,flow_rate_kgs,sender,coll_par):
 #SL_L_S Supply level with liquid heat transfer media just for heat a storage
     
     if sender == 'CIMAV':
         from CIMAV.CIMAV_modules.iteration_process import IT_temp as IT_temp_CIMAV
-        T_out_K,Perd_termicas=IT_temp_CIMAV(fluidInput,T_in_K_old,T_max_storage,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,coll_par)
+        T_out_K,Perd_termicas=IT_temp_CIMAV(fluidInput,T_max_storage,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,**coll_par)
     else:
         T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,**coll_par)
     
@@ -188,21 +188,21 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
 
 def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,num_loops,FS,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old,sender,coll_par):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
-    if fluidInput=="water" or fluidInput=="steam":
-        [h_in_kJkg,T_in_K]=inputsWithDNIWaterSimple(T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old)
-    elif fluidInput=="oil":
-        [T_in_K]=inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)
-    elif fluidInput=="moltenSalt":
-        [T_in_K]=inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)  
     
     T_out_K=T_out_C+273 #Target temp
     
     if sender == 'CIMAV':
         from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV
         from CIMAV.CIMAV_modules.iteration_process import IT_temp as IT_temp_CIMAV
-        flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,coll_par) #Works for moltensalts,water,thermaloil
-        
+        flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,**coll_par) #Works for moltensalts,water,thermaloil
+        T_in_K = coll_par['T_in_K']
     else:
+        if fluidInput=="water" or fluidInput=="steam":
+            [h_in_kJkg,T_in_K]=inputsWithDNIWaterSimple(T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old)
+        elif fluidInput=="oil":
+            [T_in_K]=inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)
+        elif fluidInput=="moltenSalt":
+            [T_in_K]=inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)  
         if fluidInput=="water" or fluidInput=="steam":
             #Calculo el flowrate necesario para poder dar el salto de temp necesario
             flow_rate_kgs,Perd_termicas=flow_calc(T_out_K,T_in_K,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,**coll_par)
@@ -222,9 +222,10 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     if flow_rate_kgs<=m_dot_min_kgs and T_out_K>T_in_K: #El caudal necesario para obtener la temp de salida es inferior al mínimo
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
+        Cp_av_kJkgK = IAPWS97(P=P_op_Mpa, T=0.5*(T_out_K+T_in_K)).cp
         if sender == 'CIMAV':
-            Cp_av_kJkgK = IAPWS97(P=P_op_Mpa, T=0.5*(T_out_K+T_in_K)).cp
-            T_out_K,Perd_termicas = IT_temp_CIMAV(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,coll_par)
+            
+            T_out_K,Perd_termicas = IT_temp_CIMAV(fluidInput,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,**coll_par)
         else:
             T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate_rec,**coll_par)    #Here the T_out_K is the desired outlet temperature, it is used to calculate an average CP and the coll parameters
         Q_prod=0 #No hay produccion
@@ -252,7 +253,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         
     else:
         #PRODUCCION
-        print('produccion')
+        
         if fluidInput=="water" or fluidInput=="steam":
             #outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
             #h_out_kJkg=outlet.h

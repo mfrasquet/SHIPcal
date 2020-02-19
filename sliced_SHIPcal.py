@@ -139,7 +139,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     #--> Process parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.06 # Minimum flowrate before re-circulation [kg/s]
+    m_dot_min_kgs=0.06 #1e-10 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
@@ -1133,9 +1133,9 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     #            SOC[i]=100*(T_alm_K[i]-273)/(T_max_storage-273)
         SOC[0]=100*energyStored/energStorageMax
 
-    
+    nu_list = []
     for i in range(1,steps_sim): #--> <><><><>< ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
-        print(i)
+        
     # --> IAM calculation
         if sender=='solatom': #Using Solatom's IAMs
             if SUN_ELV[i]>0:
@@ -1183,7 +1183,9 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 elif fluidInput=="moltenSalt":
                     [rho,Cp_av_KJkgK,k,Dv]=moltenSalt(T_av_K)
                     Cp_av_JkgK = Cp_av_KJkgK*1000 #[J/kg·K]
-                F_Rta_eq,F_RU_L_eq,mdot_test_kgs = equiv_coll_series_o1(T_in_K[i],T_out_C+273,temp[i],DNI[i],IAM[i],Area,Cp_av_JkgK,**coll_par)
+                coll_par.update({'T_in_K':T_in_K[i]})
+                F_Rta_eq,F_RU_L_eq,mdot_test_permeter = equiv_coll_series_o1(T_out_C+273,temp[i],DNI[i],IAM[i],Area,Cp_av_JkgK,**coll_par)
+                coll_par.update({'F_Rta_eq':F_Rta_eq,'F_RU_L_eq':F_RU_L_eq,'mdot_test_permeter':mdot_test_permeter})
                 lim_inf_DNI= F_RU_L_eq*(T_in_K[i]-temp[i])/(F_Rta_eq*IAM[i]) #(eta1*Tm_Ta + eta2*Tm_Ta**2)/rho_optic_0 #eta1 and eta2 are positives and the negative had to be put in the efficiency equation, from the clear of the equation rho_optic_0 is negative again and therefore everything is positive again.
                 
             else:
@@ -1205,7 +1207,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
 
             
         if DNI[i]>lim_inf_DNI and DNI[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system
-            print('Enough DNI')
+            nu_list += [F_Rta_eq*IAM[i] -F_RU_L_eq*(T_in_K[i]-temp[i])/DNI[i]]
             if type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
@@ -1215,7 +1217,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
             elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
-                [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],theta_i_rad[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,mofProd,flow_rate_design_kgs,type_coll,sender,coll_par)
+                [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],theta_i_rad[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,mofProd,flow_rate_design_kgs,sender,coll_par)
 
                 #Storage control
                 [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
@@ -1344,7 +1346,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
             elif type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
-                Perd_termicas[i] = DNI[i]*Area_total + Q_prod_rec[i-1]*num_loops #All the energy is lost since the collectors are not working
+                Perd_termicas[i] = DNI[i]*Area_total + Q_prod_rec[i-1]*num_loops*1000 #All the energy is lost since the collectors are not working
                 [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
                 if Demand[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
@@ -1375,16 +1377,6 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
                 if Demand[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
-        #print(abs(DNI[i]*Area_total*0.001 - Q_prod[i]-Perd_termicas[i]*0.001-(Q_prod_rec[i]-Q_prod_rec[i-1])*num_loops))
-        if bypass[i-1]=='REC' and bypass[i] == 'OFF':
-        #     Q_prod[i] += Q_prod_rec[i-1]*num_loops
-            print(i)
-            # test+=[DNI[i]*Area_total*0.001 - Q_prod[i]-Perd_termicas[i]*0.001]
-            # print(test)
-        # if Q_prod[i] < 0:
-        #     print('Q produced less than zero after modification!!! at {}. Now it is {}'.format(i,Q_prod[i]))
-        #     print('before modification was {}'.format(Q_prod[i]-Q_prod_rec[i-1]*num_loops))
-        #     print('I added {}'.format(Q_prod_rec[i-1]*num_loops))
             
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
@@ -1416,9 +1408,9 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
         tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
         totalDischarged=(sum(Q_discharg))
     #    totalCharged=(sum(Q_charg))
-        Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
-        improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
-        solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
+        Utilitation_ratio=100*((Production_lim)/(Production_max))
+        improvStorage=(100*Production_lim/(Production_lim-totalDischarged))-100 #Assuming discharged = Charged
+        solar_fraction_lim=100*(Production_lim)/Demand_anual 
     #    Energy_module_max=Production_max/num_modulos_tot
     #    operation_hours=np.nonzero(Q_prod)
         DNI_anual_irradiation=sum(DNI)/1000 #kWh/year/m2
@@ -1699,7 +1691,7 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=20 
+num_loops=20
 n_coll_loop=2
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1741,8 +1733,8 @@ elif origin==-3:
                   'fuel': 'gas_licuado_petroleo',
                   'fuelPrice': 1.0895,
                   'fuelUnit': 1,
-                  'hourEND': 23,
-                  'hourINI': 0,
+                  'hourEND': 17,
+                  'hourINI': 15,
                   'industry': 'Nombredelaindustria',
                   'last_reg': 198,
                   'location': 'Zacatecas.dat',
