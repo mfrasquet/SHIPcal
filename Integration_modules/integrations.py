@@ -718,48 +718,48 @@ def PDCLatent(d_int,P_in,x_in,Long,m_dot,granoEpsilon):
     P_out=P_in-deltaP
     return MPa_bar(P_out)
 
-def outputFlowsHTF(Q_prod_lim,Cp_av,T_out_HX_K,T_process_out_K,flowDemand): 
+def outputFlowsHTF(Q_prod_lim,Cp_av,T_HX_out_K,T_process_out_K,flowDemand): 
     #HX simulation 
-    flowToHx=Q_prod_lim/(Cp_av*(T_out_HX_K-T_process_out_K)) 
+    flowToHx=Q_prod_lim/(Cp_av*(T_HX_out_K-T_process_out_K)) 
     if flowToHx>=flowDemand: 
         flowToHx=flowDemand #Macimum flow  
-        T_out_HX_K=T_process_out_K+(Q_prod_lim/flowToHx)/Cp_av #Recalculate the oulet temperature 
+        T_HX_out_K=T_process_out_K+(Q_prod_lim/flowToHx)/Cp_av #Recalculate the oulet temperature 
          
     flowToMix=flowDemand-flowToHx 
     #Exit of the heat Echanger 
-    [rho_toHX,Cp_toHX,k_toHX,Dv_toHX,Kv_toHX,thermalDiff_toHX,Prant_toHX]=thermalOil(T_out_HX_K)                     
+    [rho_toHX,Cp_toHX,k_toHX,Dv_toHX,Kv_toHX,thermalDiff_toHX,Prant_toHX]=thermalOil(T_HX_out_K)                     
     #Brach to mix 
     [rho_toMix,Cp_toMix,k_toMix,Dv_toMix,Kv_toMix,thermalDiff_toMix,Prant_toMix]=thermalOil(T_process_out_K)     
     #Mix 
-    #T_av_HX_K=(T_process_out_K+T_out_HX_K)/2 #Ok when are more or less the same flowrate 
-    T_av_HX_K=T_process_out_K*(flowToMix/flowDemand)+T_out_HX_K*(flowToHx/flowDemand) #When temperatures are very different             
-    [rho_av_HX,Cp_av_HX,k_av_HX,Dv_av_HX,Kv_av_HX,thermalDiff_av_HX,Prant_av_HX]=thermalOil(T_av_HX_K)     
+    #T_av_HX_K=(T_process_out_K+T_HX_out_K)/2 #Ok when are more or less the same flowrate 
+    T_av_HX_K=T_process_out_K*(flowToMix/flowDemand)+T_HX_out_K*(flowToHx/flowDemand) #When temperatures are very different             
+    [rho_toProcess,Cp_toProcess,k_toProcess,Dv_toProcess,Kv_toProcess,thermalDiff_toProcess,Prant_toProcess]=thermalOil(T_av_HX_K)     
      
     if flowToHx==0: 
         T_toProcess_K=T_process_out_K 
     else: 
-        T_toProcess_K=(flowToMix*Cp_toMix*T_process_out_K+flowToHx*Cp_toHX*T_out_HX_K)/(flowDemand*Cp_av_HX) 
+        T_toProcess_K=(flowToMix*Cp_toMix*T_process_out_K+flowToHx*Cp_toHX*T_HX_out_K)/(flowDemand*Cp_toProcess) 
  
     T_toProcess_C=T_toProcess_K-273            
     return [T_toProcess_C,flowToMix,T_toProcess_K,flowToMix,flowToHx] 
  
-def outputFlowsWater(Q_prod_lim,P_op_Mpa,h_out_HX,h_process_out,T_process_out_K,flowDemand): 
-    flowToHx=Q_prod_lim/(h_out_HX-h_process_out) 
+def outputFlowsWater(Q_prod_lim,P_op_Mpa,h_HX_out,h_process_out,T_process_out_K,flowDemand): 
+    flowToHx=Q_prod_lim/(h_HX_out-h_process_out) 
     if flowToHx>=flowDemand: 
         flowToHx=flowDemand  #Maximum flow 
-        h_out_HX=h_process_out+Q_prod_lim/flowToHx #Recalculate the oulet state 
+        h_HX_out=h_process_out+Q_prod_lim/flowToHx #Recalculate the oulet state 
      
     flowToMix=flowDemand-flowToHx 
     #Branch from HX to mix                         
-    toMixstate=IAPWS97(P=P_op_Mpa, h=h_out_HX) 
+    fromHXstate=IAPWS97(P=P_op_Mpa, h=h_HX_out) 
     #Mix 
-    T_av_HX_K=(T_process_out_K+toMixstate.T)/2 
+    T_av_HX_K=(T_process_out_K+fromHXstate.T)/2 
     toProcessstate=IAPWS97(P=P_op_Mpa, T=T_av_HX_K) 
      
     if flowDemand==0: #If there's no demand then T_toProcss_K=0 
         T_toProcess_C=0 
     else: 
-        T_toProcess_C=(flowToMix*h_process_out+flowToHx*toMixstate.h)/(flowDemand*toProcessstate.cp) 
+        T_toProcess_C=(flowToMix*h_process_out+flowToHx*h_HX_out)/(flowDemand*toProcessstate.cp) 
          
     T_toProcess_K=T_toProcess_C+273 
  

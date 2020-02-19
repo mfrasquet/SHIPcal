@@ -143,7 +143,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
         ## SL_L_RF
-    heatFactor=.3 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
+    heatFactor=.8 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
     DELTA_T_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
     HX_eff=0.9 # Simplification for HX efficiency
         ## SL_L_S
@@ -498,7 +498,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         #Inlet of the process
         if fluidInput=="water":    
             if T_process_in>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                T_process_in=IAPWS97(P=P_op_Mpa, x=0).T-27
+                T_process_in=IAPWS97(P=P_op_Mpa, x=0).T-273
         T_process_in_C=T_process_in
         T_process_in_K=T_process_in_C+273
         if fluidInput=="water": 
@@ -522,14 +522,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_in_C=T_process_out_C #Already defined before
         # --------------  STEP 3 -------------- 
             #HX outlet (process side) 
-        T_out_HX_K=(T_process_out_K+(T_process_in_K-T_process_out_K)*heatFactor)
-        T_out_HX_C=T_out_HX_K-273
+        T_HX_out_K=(T_process_out_K+(T_process_in_K-T_process_out_K)*heatFactor)
+        T_out_HX_C=T_HX_out_K-273
         if fluidInput=="water": 
-            outputHXState=IAPWS97(P=P_op_Mpa, T=T_out_HX_K)
-            h_out_HX=outputHXState.h    
+            outputHXState=IAPWS97(P=P_op_Mpa, T=T_HX_out_K)
+            h_HX_out=outputHXState.h    
           # --------------  STEP 4 -------------- 
             #HX inlet (solar side) 
-        T_out_P=T_out_HX_K+DELTA_T_HX-273  # Design point temperature at the inlet of the HX from the solar side
+        T_out_P=T_HX_out_K+DELTA_T_HX-273  # Design point temperature at the inlet of the HX from the solar side
         T_out_C=T_out_P #T_out_C is updated
         T_out_K=T_out_C+273    
          # --------------  STEP 5 -------------- 
@@ -1140,7 +1140,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         T_toProcess_K[i]=T_process_out_K
                         T_toProcess_C[i]=T_process_out_K-273
                     else:
-                        [T_toProcess_C[i],flowToMix[i],T_toProcess_K[i],flowToMix[i],flowToHx[i]]=outputFlowsWater(Q_prod_lim[i],P_op_Mpa,h_out_HX,h_process_out,T_process_out_K,flowDemand[i])     
+                        [T_toProcess_C[i],flowToMix[i],T_toProcess_K[i],flowToMix[i],flowToHx[i]]=outputFlowsWater(Q_prod_lim[i],P_op_Mpa,h_HX_out,h_process_out,T_process_out_K,flowDemand[i])     
                 else: 
                     
                     [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
@@ -1158,7 +1158,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         T_toProcess_K[i]=T_process_out_K
                         T_toProcess_C[i]=T_process_out_K-273
                     else:
-                        [T_toProcess_C[i],flowToMix[i],T_toProcess_K[i],flowToMix[i],flowToHx[i]]=outputFlowsHTF(Q_prod_lim[i],Cp_av,T_out_HX_K,T_process_out_K,flowDemand[i]) 
+                        [T_toProcess_C[i],flowToMix[i],T_toProcess_K[i],flowToMix[i],flowToHx[i]]=outputFlowsHTF(Q_prod_lim[i],Cp_av,T_HX_out_K,T_process_out_K,flowDemand[i]) 
                                            
                   
             elif type_integration=="SL_S_FW" or type_integration=="SL_S_MW":
@@ -1547,7 +1547,7 @@ n_coll_loop=9
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
+type_integration="SL_L_RF"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1598,5 +1598,5 @@ else:
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
     
-[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
