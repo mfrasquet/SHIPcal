@@ -357,7 +357,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="oil" #"water" "steam" "oil" "moltenSalt"
+        fluidInput="water" #"water" "steam" "oil" "moltenSalt"
         T_process_in=190 #HIGH - Process temperature [ºC]
         T_process_out=80 #LOW - Temperature at the return of the process [ºC]
         P_op_bar=16 #[bar] 
@@ -555,22 +555,25 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":   
            
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        # --------------  STEP 1 -------------- 
+            #The inlet temperature at the solar field 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
-        
         T_in_K=T_in_C+273
         T_process_out_C=T_in_C
         T_process_out_K=T_in_K
-        
         if fluidInput=="water":
             inputState=IAPWS97(P=P_op_Mpa, T=T_process_out_K)
-            h_process_out=inputState.h  
+            h_process_out=inputState.h 
+            #The outlet temperature at the solar field (corrected in case of usig water and temperature greater than saturation temp.)
+        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
+        if fluidInput=="water":    
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273    
-    
         T_out_K=T_out_C+273
         T_process_in_K=T_out_K
         T_process_in_C=T_out_C
+        
+        #Other auxiliar calculations necessary  (for plotting)
         if fluidInput=="water":
             input_ProcessState=IAPWS97(P=P_op_Mpa, T=T_process_in_K)
             s_process_in=input_ProcessState.s
@@ -1534,7 +1537,7 @@ n_coll_loop=9
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_RF"
+type_integration="SL_L_P"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
