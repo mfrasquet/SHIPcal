@@ -594,7 +594,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
     elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
         
         DELTA_ST=30 # Temperature delta over the design process temp for the storage
-        flow_rate_design_kgs=2 # Design flow rate (fix value for SL_L_S)
+        flow_rate_design_kgs=0.895 # Design flow rate (fix value for SL_L_S)
         
         T_in_K=T_in_C+273 #Initially the storage will have the same initial storage temperature
         T_ini_storage=T_in_K #Initial temperature of the storage
@@ -1162,7 +1162,9 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
             if DNI[i] > 0 and IAM[i] != 0:
             
                 if T_in_flag==1:
-                   if bypass[i-1]=="REC" and T_out_K[i-1]>(T_in_C+273):
+                   if type_integration == 'SL_L_S':
+                       T_in_K[i]=T_alm_K[i-1]
+                   elif bypass[i-1]=="REC" and T_out_K[i-1]>(T_in_C+273):
                        T_in_K[i]=T_out_K[i-1]
                    else:
                        T_in_K[i]=T_in_C+273
@@ -1220,7 +1222,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],theta_i_rad[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,mofProd,flow_rate_design_kgs,sender,coll_par)
 
                 #Storage control
-                [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
+                [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)
                 
  
             elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":     
@@ -1702,7 +1704,7 @@ n_coll_loop=2
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_PS"
+type_integration="SL_L_S"
 almVolumen=6000 #litros
 
 # --------------------------------------------------
@@ -1733,8 +1735,8 @@ elif origin==-3:
                   'fuel': 'gas_licuado_petroleo',
                   'fuelPrice': 1.0895,
                   'fuelUnit': 1,
-                  'hourEND': 17,
-                  'hourINI': 15,
+                  'hourEND': 16,
+                  'hourINI': 9,
                   'industry': 'Nombredelaindustria',
                   'last_reg': 198,
                   'location': 'Zacatecas.dat',
@@ -1758,8 +1760,8 @@ else:
 version, initial_variables_dict, coll_par = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
     
 initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) #This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
-#coll_par.update({'auto':'on'})
-#LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
+coll_par.update({'auto':'on'})
+LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
 #print(LCOE)
-coll_par.update({'auto':'off'})
-[jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
+#coll_par.update({'auto':'off'})
+#[jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
