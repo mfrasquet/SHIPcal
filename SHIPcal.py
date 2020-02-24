@@ -1254,6 +1254,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Demand_anual=sum(Demand) #Demanda energética anual
     solar_fraction_max=100*Production_max/Demand_anual #Fracción solar maxima
     
+    
     tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
     totalDischarged=(sum(Q_discharg))
 #    totalCharged=(sum(Q_charg))
