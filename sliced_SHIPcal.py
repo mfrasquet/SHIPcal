@@ -364,6 +364,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     #Demand of energy before the boiler
     Energy_Before=DemandData(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim) # [kWh]
     Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
+    print(Energy_Before_annual)
     Demand=Boiler_eff*Energy_Before #Demand of energy after the boiler [kWh]
     
     # --> Meteo variables
@@ -1190,9 +1191,9 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 coll_par.update({'F_Rta_eq':F_Rta_eq,'F_RU_L_eq':F_RU_L_eq,'mdot_test_permeter':mdot_test_permeter})
                 lim_inf_DNI= F_RU_L_eq*(T_in_K[i]-temp[i])/(F_Rta_eq*IAM[i]) #(eta1*Tm_Ta + eta2*Tm_Ta**2)/rho_optic_0 #eta1 and eta2 are positives and the negative had to be put in the efficiency equation, from the clear of the equation rho_optic_0 is negative again and therefore everything is positive again.
                 nu_list += [F_Rta_eq*IAM[i] -F_RU_L_eq*(T_in_K[i]-temp[i])/DNI[i]]
-                print(i)
-                print(DNI[i])
-                print(nu_list[i])
+                # print(i)
+                # print(DNI[i])
+                # print(nu_list[i])
             else:
                 lim_inf_DNI = float('inf')
                 nu_list += [0]
@@ -1421,7 +1422,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
         DNI_anual_irradiation=sum(DNI)/1000 #kWh/year/m2
     #    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
         Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
-        
+        print(solar_fraction_lim)
         annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
                         'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
                         'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
@@ -1730,7 +1731,7 @@ elif origin==-3:
                   'co2factor': 0.0,
                   'collector_type': 'MODULOSOLAR MAXOL MS25.txt',
                   'date': '2020-01-30 10:36:S',
-                  'demand': 120652.778,
+                  'demand': 120652.778, # 73243.6611111, #[kWh]
                   'demandUnit': '1',
                   'distance': 25.0,
                   'email': 'juanshifu2.5@hotmail.com',
@@ -1749,7 +1750,7 @@ elif origin==-3:
                   'pressureUnit': '1',
                   'semana': ['0', '1', '2', '3', '4', '5', '6'],
                   'surface': 100.0,
-                  'tempIN': 55.0,
+                  'tempIN': 40.0,
                   'tempOUT': 75.0,
                   'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
     last_reg=inputsDjango['last_reg']
