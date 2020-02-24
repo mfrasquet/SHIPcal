@@ -1247,7 +1247,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     #%%
     # BLOCK 2.2 - ANUAL INTEGRATION <><><><><><><><><><><><><><><><><><><><><><><><><><><>
-        
+    
+    
+    
     Production_max=sum(Q_prod) #Produccion total en kWh. Asumiendo que se consume todo lo producido
     Production_lim=sum(Q_prod_lim) #Produccion limitada total en kWh
     Demand_anual=sum(Demand) #Demanda energética anual
