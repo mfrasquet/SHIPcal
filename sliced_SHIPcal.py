@@ -364,7 +364,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     #Demand of energy before the boiler
     Energy_Before=DemandData(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim) # [kWh]
     Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
-    print(Energy_Before_annual)
     Demand=Boiler_eff*Energy_Before #Demand of energy after the boiler [kWh]
     
     # --> Meteo variables
@@ -1505,12 +1504,14 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 Energy_savingsList.append(round(Net_anual_savings[i]))
                 OMList.append(OM_cost[i])
                 fuelPrizeArrayList.append(fuelPrizeArray[i])
-                   
+            anual_energy_cost = fuelPrizeArray*Energy_Before_annual
+            tab_FCF_savings_anualcost = list(zip(Acum_FCF,Net_anual_savings,anual_energy_cost))
+                
             finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
                      'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
                      'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
                      'co2TonPrice':co2TonPrice,'fuelIncremento':fuelCostRaise,'IPC':CPI,'Selling_price':Selling_price,
-                     'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE}
+                     'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE,'tab_FCF_savings_anualcost':tab_FCF_savings_anualcost}
         
         else:
             n_years_sim=0 #No finance simulation
