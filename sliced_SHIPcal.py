@@ -172,7 +172,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         btrans,ntrans = IAM_fiteq(type_coll,2)
         REC_type = 1 #Death variable to avoid crashes with the previous code
         
-        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,}
+        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,'coll_weight':weight}
     
     else: #Using other collectors (to be filled with customized data)
         
@@ -1412,20 +1412,25 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
         
         tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
         totalDischarged=(sum(Q_discharg))
-    #    totalCharged=(sum(Q_charg))
+        totalCharged=(sum(Q_charg))
+        totalDefocus = sum(Q_defocus)
         Utilitation_ratio=100*((Production_lim)/(Production_max))
         improvStorage=(100*Production_lim/(Production_lim-totalDischarged))-100 #Assuming discharged = Charged
         solar_fraction_lim=100*(Production_lim)/Demand_anual 
-    #    Energy_module_max=Production_max/num_modulos_tot
+        Energy_module_max=Production_max/num_modulos_tot
     #    operation_hours=np.nonzero(Q_prod)
         DNI_anual_irradiation=sum(DNI)/1000 #kWh/year/m2
     #    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
         Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
-        print(solar_fraction_lim)
+
+        nonzeroflow_rate_kgs = [flow_rate_kgs[i] for i in np.nonzero(flow_rate_kgs)[0]]
+
         annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
+                        'totalCharged':totalCharged,'totalDischarged':totalDischarged,'totalDefocus':totalDefocus,
                         'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
                         'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
-                        'flow_rate_kgs':flow_rate_kgs.tolist()}
+                        'flow_rate_kgs':flow_rate_kgs.tolist(), 'flow_rate_kgs_average':np.mean(nonzeroflow_rate_kgs), 
+                        'colected_energ':Production_max/(DNI_anual_irradiation*Area_total)}
         
     
     #%%
@@ -1506,12 +1511,15 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 fuelPrizeArrayList.append(fuelPrizeArray[i])
             anual_energy_cost = fuelPrizeArray*Energy_Before_annual
             tab_FCF_savings_anualcost = list(zip(Acum_FCF,Net_anual_savings,anual_energy_cost))
+            Energy_savings_mean = np.mean(Net_anual_savings)
                 
             finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
                      'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
                      'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
                      'co2TonPrice':co2TonPrice,'fuelIncremento':fuelCostRaise,'IPC':CPI,'Selling_price':Selling_price,
-                     'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE,'tab_FCF_savings_anualcost':tab_FCF_savings_anualcost}
+                     'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE,
+                     'anual_energy_cost':anual_energy_cost.tolist(),
+                     'Energy_savings_mean':Energy_savings_mean,'tab_FCF_savings_anualcost':tab_FCF_savings_anualcost}
         
         else:
             n_years_sim=0 #No finance simulation
@@ -1527,7 +1535,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     if coll_par['auto'] == 'off':
         plotVars={'lang':lang,'Production_max':Production_max,'Production_lim':Production_lim,
                   'Perd_term_anual':Perd_term_anual,'DNI_anual_irradiation':DNI_anual_irradiation,
-                  'Area':Area,'num_loops':num_loops,'imageQlty':imageQlty,'plotPath':plotPath,
+                  'Area':Area,'num_loops':num_loops,'imageQlty':imageQlty,'plotPath':plotPath,'Energy_Before_annual':Energy_Before_annual,
                   'Demand':Demand.tolist(),'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'type_integration':type_integration,
                   'Q_charg':Q_charg.tolist(),'Q_discharg':Q_discharg.tolist(),'DNI':DNI.tolist(),'SOC':SOC.tolist(),
                   'Q_useful':Q_useful.tolist(),'Q_defocus':Q_defocus.tolist(),'T_alm_K':T_alm_K.tolist(),
@@ -1631,8 +1639,8 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 template_vars={} 
                 reportsVar={'version':version,'logo_output':'no_logo','version':version,'type_integration':type_integration,
                             'energyStored':energyStored,"location":localMeteo,
-                            'Area_total':Area_total,'n_coll_loop':n_coll_loop,
-                            'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
+                            'Area_total':Area_total,'n_coll_loop':n_coll_loop,'energStorageMax':energStorageMax,
+                            'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,'Energy_module_max':Energy_module_max,
                             'Production_max':Production_max,'Production_lim':Production_lim,
                             'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
                             'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
@@ -1640,6 +1648,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 reportsVar.update(confReport)
                 reportsVar.update(annualProdDict)
                 reportsVar.update(modificators)
+                reportsVar.update({'coll_weight':coll_par['coll_weight']})
                 if origin==0 or origin == -3:
                     reportOutputOffline(reportsVar)
         else:
