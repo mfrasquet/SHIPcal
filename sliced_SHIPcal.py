@@ -164,6 +164,16 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
         
         coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'IAMfile_loc':IAMfile_loc,'Long':Long}
+        
+         
+        ## METEO
+        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
+        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
+        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
+        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
+        Positional_longitude = 'Not used'
+        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
@@ -173,6 +183,23 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         REC_type = 1 #Death variable to avoid crashes with the previous code
         
         coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,'coll_weight':weight}
+        
+        ## METEO
+        localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
+        file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
+        file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
+        
+    elif origin==1: #sender == 'some front-end':
+    
+        ## METEO (free available meteo sets)
+        locationFromFrontEnd=inputs['location']
+        
+        meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
+        file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
+        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+        Positional_longitude = 'Not used'
+        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
     
     else: #Using other collectors (to be filled with customized data)
         
@@ -189,6 +216,22 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         type_coll = 'default'
         coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'IAMfile_loc':IAMfile_loc,'Long':Long}
         
+        ## METEO
+        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
+        # localMeteo="Cadiz.dat"
+        if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
+            meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
+            file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Positional_longitude = 'Not used'
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        else:
+            meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+            file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Positional_longitude = 'Not used'
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        
         ## --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
     """    
     orientation="NS"
@@ -202,21 +245,19 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     #roll=0 #Roll not implemented [rad]
     coll_par.update({'beta':0,'orient_az_rad':0,'roll':0})
     
+    
+    #By default water flows in closed loop
+    T_in_flag=1 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)#Temperature of the make-up water
+    T_in_C_AR=waterFromGrid_v3(file_loc,sender)
+    #Trim the T_in_C_AR [8760] to the simulation frame 
+    T_in_C_AR=waterFromGrid_trim(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim)
+    
     # --> Front-end inputs
     
     if origin==-2: #Simulation called from front-end -> www.ressspi.com
         
         #Retrieve front-end inputs
         [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
-         
-        ## METEO
-        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
-        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
-        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
-        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
-        Positional_longitude = 'Not used'
-        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
 
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
@@ -240,14 +281,14 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         co2factor=inputs['co2factor'] #[-]
          
     elif origin==-3: #Simulation called from CIMAV's front end
+    
+        T_in_flag=inputsDjango['T_in_flag'] #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
+        if T_in_flag == 0:        
+            T_process_out_C = np.average(T_in_C_AR)
+            inputsDjango['tempIN'] = T_process_out_C
         
         #Retrieve front-end inputs
         [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
-        
-        ## METEO
-        localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
-        file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
-        file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
@@ -269,16 +310,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         
         #Retrieve front-end inputs 
         [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
-        
-        ## METEO (free available meteo sets)
-        locationFromFrontEnd=inputs['location']
-        
-        meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
-        file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
-        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-        Positional_longitude = 'Not used'
-        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
@@ -302,22 +333,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
          
                   
     elif origin==0:  #Simulation called from Python file (called from the terminal)
-        
-        ## METEO
-        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        # localMeteo="Cadiz.dat"
-        if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
-            meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
-            file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
-            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-            Positional_longitude = 'Not used'
-            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
-        else:
-            meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
-            file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
-            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-            Positional_longitude = 'Not used'
-            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
@@ -419,19 +434,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     out_s=0
     h_in=0
     h_out=0
-    
-    #Temperature of the make-up water
-    T_in_C_AR=waterFromGrid_v3(file_loc,sender)
-    #Trim the T_in_C_AR [8760] to the simulation frame 
-    T_in_C_AR=waterFromGrid_trim(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim)
-
-    #By default water flows in closed loop
-    T_in_flag=1 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
-    
-    if sender=='CIMAV':
-        T_in_flag=inputsDjango['T_in_flag'] #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
-        if T_in_flag == 0:        
-            T_process_out_C = np.average(T_in_C_AR)
     
     integration_Dict = {'P_op_Mpa':P_op_bar/10,'T_in_C':T_process_out_C,'T_out_C':T_process_in_C,
                         'x_design':x_design,'outProcess_h':outProcess_h,'energStorageMax':energStorageMax,'T_in_flag':T_in_flag,
@@ -1160,16 +1162,15 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
             IAM[i]=IAM_long[i]*IAM_t[i]
             
             if DNI[i] > 0 and IAM[i] != 0:
-            
-                if T_in_flag==1:
-                   if type_integration == 'SL_L_S':
-                       T_in_K[i]=T_alm_K[i-1]
-                   elif bypass[i-1]=="REC" and T_out_K[i-1]>(T_in_C+273):
+                if type_integration == 'SL_L_S':
+                    T_in_K[i]=T_alm_K[i-1]
+                elif T_in_flag==1:
+                   if bypass[i-1]=="REC" and T_out_K[i-1]>(T_in_C+273):
                        T_in_K[i]=T_out_K[i-1]
                    else:
                        T_in_K[i]=T_in_C+273
                 else:
-                    if bypass[i-1]=="REC" and T_out_K[i-1]>(T_in_C_AR+273):
+                    if bypass[i-1]=="REC" and T_out_K[i-1]>(T_in_C_AR[i]+273):
                         T_in_K[i]=T_out_K[i-1]
                     else:
                         T_in_K[i]=T_in_C_AR[i]+273
