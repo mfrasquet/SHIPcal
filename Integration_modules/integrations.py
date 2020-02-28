@@ -147,8 +147,10 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
 #SL_L_S Supply level with liquid heat transfer media just for heat a storage
     
     if sender == 'CIMAV':
+
         from CIMAV.CIMAV_modules.iteration_process import IT_temp as IT_temp_CIMAV
         T_out_K,Perd_termicas=IT_temp_CIMAV(fluidInput,T_in_K_old,T_max_storage,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,coll_par)
+
     else:
         T_out_K,Perd_termicas=IT_temp(fluidInput,T_in_K_old,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,**coll_par)
     
@@ -199,10 +201,11 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     T_out_K=T_out_C+273 #Target temp
     
     if sender == 'CIMAV':
+
         from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV
         from CIMAV.CIMAV_modules.iteration_process import IT_temp as IT_temp_CIMAV
         flow_rate_kgs,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,coll_par) #Works for moltensalts,water,thermaloil
-        
+
     else:
         if fluidInput=="water" or fluidInput=="steam":
             #Calculo el flowrate necesario para poder dar el salto de temp necesario
@@ -224,10 +227,12 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
         if sender == 'CIMAV':
+
             T_out_K,Perd_termicas = IT_temp_CIMAV(fluidInput,T_in_K,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,coll_par)
         else:
             T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate_rec,**coll_par)    
         Q_prod=0 #No hay produccion
+
         
         if fluidInput=="water" or fluidInput=="steam":
             outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
@@ -718,3 +723,51 @@ def PDCLatent(d_int,P_in,x_in,Long,m_dot,granoEpsilon):
         deltaP=deltaP
     P_out=P_in-deltaP
     return MPa_bar(P_out)
+
+def outputFlowsHTF(Q_prod_lim,Cp_av,T_HX_out_K,T_process_out_K,flowDemand): 
+    #HX simulation 
+    flowToHx=Q_prod_lim/(Cp_av*(T_HX_out_K-T_process_out_K)) 
+    if flowToHx>=flowDemand: 
+        flowToHx=flowDemand #Macimum flow  
+        T_HX_out_K=T_process_out_K+(Q_prod_lim/flowToHx)/Cp_av #Recalculate the oulet temperature 
+         
+    flowToMix=flowDemand-flowToHx 
+    #Exit of the heat Echanger 
+    [rho_toHX,Cp_toHX,k_toHX,Dv_toHX,Kv_toHX,thermalDiff_toHX,Prant_toHX]=thermalOil(T_HX_out_K)                     
+    #Brach to mix 
+    [rho_toMix,Cp_toMix,k_toMix,Dv_toMix,Kv_toMix,thermalDiff_toMix,Prant_toMix]=thermalOil(T_process_out_K)     
+    #Mix 
+    #T_av_HX_K=(T_process_out_K+T_HX_out_K)/2 #Ok when are more or less the same flowrate 
+    T_av_HX_K=T_process_out_K*(flowToMix/flowDemand)+T_HX_out_K*(flowToHx/flowDemand) #When temperatures are very different             
+    [rho_toProcess,Cp_toProcess,k_toProcess,Dv_toProcess,Kv_toProcess,thermalDiff_toProcess,Prant_toProcess]=thermalOil(T_av_HX_K)     
+     
+    if flowToHx==0: 
+        T_toProcess_K=T_process_out_K 
+    else: 
+        T_toProcess_K=(flowToMix*Cp_toMix*T_process_out_K+flowToHx*Cp_toHX*T_HX_out_K)/(flowDemand*Cp_toProcess) 
+ 
+    T_toProcess_C=T_toProcess_K-273            
+    return [T_toProcess_C,flowToMix,T_toProcess_K,flowToMix,flowToHx] 
+ 
+def outputFlowsWater(Q_prod_lim,P_op_Mpa,h_HX_out,h_process_out,T_process_out_K,flowDemand): 
+    flowToHx=Q_prod_lim/(h_HX_out-h_process_out) 
+    if flowToHx>=flowDemand: 
+        flowToHx=flowDemand  #Maximum flow 
+        h_HX_out=h_process_out+Q_prod_lim/flowToHx #Recalculate the oulet state 
+     
+    flowToMix=flowDemand-flowToHx 
+    #Branch from HX to mix                         
+    fromHXstate=IAPWS97(P=P_op_Mpa, h=h_HX_out) 
+    #Mix 
+    T_av_HX_K=(T_process_out_K+fromHXstate.T)/2 
+    toProcessstate=IAPWS97(P=P_op_Mpa, T=T_av_HX_K) 
+     
+    if flowDemand==0: #If there's no demand then T_toProcss_K=0 
+        T_toProcess_C=0 
+    else: 
+        T_toProcess_C=(flowToMix*h_process_out+flowToHx*h_HX_out)/(flowDemand*toProcessstate.cp) 
+         
+    T_toProcess_K=T_toProcess_C+273 
+ 
+    return [T_toProcess_C,flowToMix,T_toProcess_K,flowToMix,flowToHx]
+
