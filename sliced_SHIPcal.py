@@ -384,6 +384,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     # --> Meteo variables
     if sender == 'CIMAV':
         Lat,Huso,Positional_longitude,output=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender)
+        coll_par.update({'beta':np.radians(Lat)})
     else:
         output,hour_year_ini,hour_year_fin=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso)
 
