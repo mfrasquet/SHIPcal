@@ -755,7 +755,10 @@ def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
         ax2 = ax1.twinx()   
         ax2.fill_between( np.arange(167), Demand[0:167], color="grey", alpha=0.2,label="Demanda")
         ax2 .plot(np.arange(167), Demand[0:167],'.-',color = '#362510',label="Demanda")
-        ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'red',label="Desenfoque")
+        if sender =='CIMAV':
+            ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'red',label="Disipación")
+        else:
+            ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'red',label="Desenfoque")
         ax2 .plot(np.arange(167), Q_prod_lim[0:167],'.-',color = 'blue',label="Producción solar")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot(np.arange(167), Q_charg[0:167],'.-',color = '#FFAE00',label="Carga")
@@ -823,7 +826,10 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
         ax2 = ax1.twinx()   
         ax2.fill_between( np.arange(3624,3624+167,1), Demand[3624:3791], color="grey", alpha=0.2,label="Demanda")
         ax2 .plot((np.arange(3624,3624+167,1)), Demand[3624:3791],'.-',color = '#362510',label="Demanda")
-        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'red',label="Desenfoque")
+        if sender =='CIMAV':
+            ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'red',label="Disipación")
+        else:
+            ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'red',label="Desenfoque")
         ax2 .plot((np.arange(3624,3624+167,1)), Q_prod_lim[3624:3791],'.-',color = 'blue',label="Producción solar")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot((np.arange(3624,3624+167,1)), Q_charg[3624:3791],'.-',color = '#FFAE00',label="Carga")
@@ -960,7 +966,10 @@ def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
 #        ax1 .plot(np.arange(167), Q_useful[0:167],color = 'green',label="Energía útil",linewidth=2)
         
         ax1 .plot(np.arange(167), Demand[0:167],color = '#362510',label="Demanda",linewidth=2.0)
-        plt.bar(np.arange(167), Q_defocus[0:167],color = 'red',label="Desenfoque",bottom=np.array(Q_prod[0:167])-np.array(Q_defocus[0:167]),align='center')
+        if sender =='CIMAV':
+            plt.bar(np.arange(167), Q_defocus[0:167],color = 'red',label="Disipación",bottom=np.array(Q_prod[0:167])-np.array(Q_defocus[0:167]),align='center')
+        else:
+            plt.bar(np.arange(167), Q_defocus[0:167],color = 'red',label="Desenfoque",bottom=np.array(Q_prod[0:167])-np.array(Q_defocus[0:167]),align='center')
            
         plt.bar(np.arange(167), Q_charg[0:167],color = '#FFAE00',label="Carga",bottom=np.array(Q_prod[0:167])-np.array(Q_charg[0:167])-np.array(Q_defocus[0:167]),align='center')
     
@@ -1041,7 +1050,10 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         #ax1 .plot((np.arange(3624,3624+167,1)), Q_useful[3624:3791],color = 'green',label="Energía útil",linewidth=2)
         
         ax1 .plot((np.arange(3624,3624+167,1)), Demand[3624:3791],color = '#362510',label="Demanda",linewidth=2.0)
-        plt.bar((np.arange(3624,3624+167,1)), Q_defocus[3624:3791],color = 'red',label="Desenfoque",bottom=np.array(Q_prod[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
+        if sender =='CIMAV':
+            plt.bar((np.arange(3624,3624+167,1)), Q_defocus[3624:3791],color = 'red',label="Disipación",bottom=np.array(Q_prod[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
+        else:
+            plt.bar((np.arange(3624,3624+167,1)), Q_defocus[3624:3791],color = 'red',label="Desenfoque",bottom=np.array(Q_prod[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
            
         plt.bar((np.arange(3624,3624+167,1)), Q_charg[3624:3791],color = '#FFAE00',label="Carga",bottom=np.array(Q_prod[3624:3791])-np.array(Q_charg[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
     
@@ -1116,7 +1128,10 @@ def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,
     ax1 .plot(step_sim, Q_prod_lim,color = 'blue',label="Energía suministrada",linewidth=4)
     ax1 .plot(step_sim, Q_useful,color = 'green',label="Energía útil",linewidth=2)
     ax1 .plot(step_sim, Demand,color = '#362510',label="Demanda")
-    plt.bar(step_sim, Q_defocus,color = 'red',label="Desenfoque",bottom=Q_prod-Q_defocus,align='center')
+    if sender =='CIMAV':
+        plt.bar(step_sim, Q_defocus,color = 'red',label="Disipación",bottom=Q_prod-Q_defocus,align='center')
+    else:
+        plt.bar(step_sim, Q_defocus,color = 'red',label="Desenfoque",bottom=Q_prod-Q_defocus,align='center')
        
     plt.bar(step_sim, Q_charg,color = '#FFAE00',label="Carga",bottom=Q_prod-Q_charg-Q_defocus,align='center')
 
@@ -1356,7 +1371,10 @@ def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlt
         
         ax.set_ylabel('Producción y Demanda en kWh',color = 'black')
         ax.bar(meses_index, output3['Demanda'], width=0.8, color='#362510',label="Demanda")
-        ax.bar(meses_index, output1['Prod.mensual'], width=0.8, color='red',label="Desenfocada")
+        if sender =='CIMAV':
+            ax.bar(meses_index, output1['Prod.mensual'], width=0.8, color='red',label="Disipada")
+        else:
+            ax.bar(meses_index, output1['Prod.mensual'], width=0.8, color='red',label="Desenfocada")
         ax.bar(meses_index, output4['Prod.mensual_lim'], width=0.8, color='blue',label="Producción solar")
         plt.legend(loc=9, bbox_to_anchor=(0.5, -0.05), ncol=3)     
         ax2 = ax.twinx()          

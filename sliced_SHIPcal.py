@@ -139,7 +139,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     #--> Process parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.06 # Minimum flowrate before re-circulation [kg/s]
+    m_dot_min_kgs=0.06 #1e-10 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
@@ -164,6 +164,16 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
         
         coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'IAMfile_loc':IAMfile_loc,'Long':Long}
+        
+         
+        ## METEO
+        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
+        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
+        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
+        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
+        Positional_longitude = 'Not used'
+        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
@@ -172,7 +182,24 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         btrans,ntrans = IAM_fiteq(type_coll,2)
         REC_type = 1 #Death variable to avoid crashes with the previous code
         
-        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,}
+        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,'coll_weight':weight}
+        
+        ## METEO
+        localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
+        file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
+        file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
+        
+    elif origin==1: #sender == 'some front-end':
+    
+        ## METEO (free available meteo sets)
+        locationFromFrontEnd=inputs['location']
+        
+        meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
+        file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
+        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+        Positional_longitude = 'Not used'
+        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
     
     else: #Using other collectors (to be filled with customized data)
         
@@ -189,6 +216,22 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         type_coll = 'default'
         coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'IAMfile_loc':IAMfile_loc,'Long':Long}
         
+        ## METEO
+        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
+        # localMeteo="Cadiz.dat"
+        if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
+            meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
+            file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Positional_longitude = 'Not used'
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        else:
+            meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+            file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Positional_longitude = 'Not used'
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        
         ## --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
     """    
     orientation="NS"
@@ -202,21 +245,19 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     #roll=0 #Roll not implemented [rad]
     coll_par.update({'beta':0,'orient_az_rad':0,'roll':0})
     
+    
+    #By default water flows in closed loop
+    T_in_flag=1 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)#Temperature of the make-up water
+    T_in_C_AR=waterFromGrid_v3(file_loc,sender)
+    #Trim the T_in_C_AR [8760] to the simulation frame 
+    T_in_C_AR=waterFromGrid_trim(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim)
+    
     # --> Front-end inputs
     
     if origin==-2: #Simulation called from front-end -> www.ressspi.com
         
         #Retrieve front-end inputs
         [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
-         
-        ## METEO
-        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
-        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
-        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
-        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
-        Positional_longitude = 'Not used'
-        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
 
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
@@ -240,14 +281,14 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         co2factor=inputs['co2factor'] #[-]
          
     elif origin==-3: #Simulation called from CIMAV's front end
+    
+        T_in_flag=inputsDjango['T_in_flag'] #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
+        if T_in_flag == 0:        
+            T_process_out_C = np.average(T_in_C_AR)
+            inputsDjango['tempIN'] = T_process_out_C
         
         #Retrieve front-end inputs
         [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
-        
-        ## METEO
-        localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
-        file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
-        file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
@@ -269,16 +310,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         
         #Retrieve front-end inputs 
         [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
-        
-        ## METEO (free available meteo sets)
-        locationFromFrontEnd=inputs['location']
-        
-        meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
-        file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
-        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-        Positional_longitude = 'Not used'
-        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
@@ -302,22 +333,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
          
                   
     elif origin==0:  #Simulation called from Python file (called from the terminal)
-        
-        ## METEO
-        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        # localMeteo="Cadiz.dat"
-        if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
-            meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
-            file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
-            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-            Positional_longitude = 'Not used'
-            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
-        else:
-            meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
-            file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
-            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-            Positional_longitude = 'Not used'
-            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
@@ -369,6 +384,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     # --> Meteo variables
     if sender == 'CIMAV':
         Lat,Huso,Positional_longitude,output=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender)
+        coll_par.update({'beta':np.radians(Lat)})
     else:
         output,hour_year_ini,hour_year_fin=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso)
 
@@ -419,19 +435,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     out_s=0
     h_in=0
     h_out=0
-    
-    #Temperature of the make-up water
-    T_in_C_AR=waterFromGrid_v3(file_loc,sender)
-    #Trim the T_in_C_AR [8760] to the simulation frame 
-    T_in_C_AR=waterFromGrid_trim(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim)
-
-    #By default water flows in closed loop
-    T_in_flag=1 #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
-    
-    if sender=='CIMAV':
-        T_in_flag=inputsDjango['T_in_flag'] #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
-        if T_in_flag == 0:        
-            T_process_out_C = np.average(T_in_C_AR)
     
     integration_Dict = {'P_op_Mpa':P_op_bar/10,'T_in_C':T_process_out_C,'T_out_C':T_process_in_C,
                         'x_design':x_design,'outProcess_h':outProcess_h,'energStorageMax':energStorageMax,'T_in_flag':T_in_flag,
@@ -594,7 +597,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
     elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
         
         DELTA_ST=30 # Temperature delta over the design process temp for the storage
-        flow_rate_design_kgs=2 # Design flow rate (fix value for SL_L_S)
+        flow_rate_design_kgs=0.895 # Design flow rate (fix value for SL_L_S)
         
         T_in_K=T_in_C+273 #Initially the storage will have the same initial storage temperature
         T_ini_storage=T_in_K #Initial temperature of the storage
@@ -959,6 +962,8 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     almVolumen=desginDict['almVolumen']
         
     #Defined the variables from the initial_variables_dict
+    #The arrays that won't change are just referenced, the ones that might change are copied.
+    
     mofINV=modificators['mofINV']
     mofProd=modificators['mofProd']
     DNI=initial_variables_dict['DNI']
@@ -1101,8 +1106,8 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     #Sender dependent
     
     if sender == 'CIMAV':
-        eta1=coll_par['eta1']
-        eta2=coll_par['eta2']
+        #eta1=coll_par['eta1']
+        #eta2=coll_par['eta2']
         #mdot_test=coll_par['mdot_test_permeter']#[kg/sm2]
         blong=coll_par['blong']
         nlong=coll_par['nlong']
@@ -1116,11 +1121,10 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     meteoDict={'DNI':DNI.tolist(),'localMeteo':localMeteo}
     integrationDesign={'x_design':x_design,'porctSensible':initial_variables_dict['porctSensible'],'almVolumen':almVolumen,'energStorageMax':energStorageMax,
                        'T_out_process_C':T_out_C,'T_in_process_C':T_in_C,'T_out_HX_C':initial_variables_dict['T_out_HX_C']}
-    
     # BLOCK 2.2 - SIMULATION ANNUAL LOOP <><><><><><><><><><><><><><><><><><><><><><><><><><><>        
     
     # --> Instant = 0 (Initial conditions)
-    lim_inf_DNI_list=[0]
+    lim_inf_DNI_list=[float('inf')]
     bypass.append("OFF")
     Q_prod[0]=0
     T_in_K[0]=temp[0] #Ambient temperature 
@@ -1132,7 +1136,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     #            SOC[i]=100*(T_alm_K[i]-273)/(T_max_storage-273)
         SOC[0]=100*energyStored/energStorageMax
 
-        
+    nu_list = [0]
     for i in range(1,steps_sim): #--> <><><><>< ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
         
     # --> IAM calculation
@@ -1157,9 +1161,45 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 IAM_long[i],IAM_t[i]=0,0
             
             IAM[i]=IAM_long[i]*IAM_t[i]
-            Tm_Ta=0.5*(T_in_C+T_out_C)-(temp[i]-273)#Calculates Tm-Ta in order to calculate the minimum DNI for the colector at that ambient temperature 
-            lim_inf_DNI=(eta1*Tm_Ta + eta2*Tm_Ta**2)/rho_optic_0 #eta1 and eta2 are positives and the negative had to be put in the efficiency equation, from the clear of the equation rho_optic_0 is negative again and therefore everything is positive again.
+            
+            if DNI[i] > 0 and IAM[i] != 0:
+                if type_integration == 'SL_L_S':
+                    T_in_K[i]=T_alm_K[i-1]
+                elif T_in_flag==1:
+                   if bypass[i-1]=="REC" and T_out_K[i-1]>(T_in_C+273):
+                       T_in_K[i]=T_out_K[i-1]
+                   else:
+                       T_in_K[i]=T_in_C+273
+                else:
+                    if bypass[i-1]=="REC" and T_out_K[i-1]>(T_in_C_AR[i]+273):
+                        T_in_K[i]=T_out_K[i-1]
+                    else:
+                        T_in_K[i]=T_in_C_AR[i]+273
+                        
+                #Tm_Ta=0.5*(T_in_C+T_out_C)-(temp[i]-273)#Calculates Tm-Ta in order to calculate the minimum DNI for the colector at that ambient temperature 
+                T_av_K=(T_in_K[i]+T_out_C+273)/2 #[K]
+                if fluidInput == 'water':
+                    Cp_av_KJkgK = IAPWS97(P=P_op_Mpa, T=T_av_K).cp
+                    Cp_av_JkgK = Cp_av_KJkgK*1000 #[J/kg·K]
+                elif fluidInput=="oil":
+                    [rho_av,Cp_av_KJkgK,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
+                    Cp_av_JkgK = Cp_av_KJkgK*1000 #[J/kg·K]
+                elif fluidInput=="moltenSalt":
+                    [rho,Cp_av_KJkgK,k,Dv]=moltenSalt(T_av_K)
+                    Cp_av_JkgK = Cp_av_KJkgK*1000 #[J/kg·K]
+                coll_par.update({'T_in_K':T_in_K[i]})
+                F_Rta_eq,F_RU_L_eq,mdot_test_permeter = equiv_coll_series_o1(T_out_C+273,temp[i],DNI[i],IAM[i],Area,Cp_av_JkgK,**coll_par)
+                coll_par.update({'F_Rta_eq':F_Rta_eq,'F_RU_L_eq':F_RU_L_eq,'mdot_test_permeter':mdot_test_permeter})
+                lim_inf_DNI= F_RU_L_eq*(T_in_K[i]-temp[i])/(F_Rta_eq*IAM[i]) #(eta1*Tm_Ta + eta2*Tm_Ta**2)/rho_optic_0 #eta1 and eta2 are positives and the negative had to be put in the efficiency equation, from the clear of the equation rho_optic_0 is negative again and therefore everything is positive again.
+                nu_list += [F_Rta_eq*IAM[i] -F_RU_L_eq*(T_in_K[i]-temp[i])/DNI[i]]
+                # print(i)
+                # print(DNI[i])
+                # print(nu_list[i])
+            else:
+                lim_inf_DNI = float('inf')
+                nu_list += [0]
             lim_inf_DNI_list+=[lim_inf_DNI]
+            
         else:               # Using default's IAMs 
             if SUN_ELV[i]>0:
                 theta_transv_deg[i],theta_i_deg[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad)
@@ -1172,8 +1212,9 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 IAM_t[i]=0
                 IAM[i]=IAM_long[i]*IAM_t[i]
 
-            
+        
         if DNI[i]>lim_inf_DNI and DNI[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system
+            
             if type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
@@ -1183,10 +1224,10 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
             elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
-                [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],theta_i_rad[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,mofProd,flow_rate_design_kgs,type_coll,sender,coll_par)
+                [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flow_rate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],theta_i_rad[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,mofProd,flow_rate_design_kgs,sender,coll_par)
 
                 #Storage control
-                [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
+                [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)
                 
  
             elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":     
@@ -1312,6 +1353,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
             elif type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
+                Perd_termicas[i] = DNI[i]*Area_total + Q_prod_rec[i-1]*num_loops*1000 #All the energy is lost since the collectors are not working
                 [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
                 if Demand[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
@@ -1342,8 +1384,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
                 if Demand[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)                         
-               
-    
+            
     processDict={'T_in_flag':T_in_flag,'T_in_C_AR':T_in_C_AR.tolist(),'T_toProcess_C':T_toProcess_C.tolist()}
     
     # DataFRame summary of the simulation (only for SL_L_P)
@@ -1373,20 +1414,25 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
         
         tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
         totalDischarged=(sum(Q_discharg))
-    #    totalCharged=(sum(Q_charg))
-        Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
-        improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
-        solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
-    #    Energy_module_max=Production_max/num_modulos_tot
+        totalCharged=(sum(Q_charg))
+        totalDefocus = sum(Q_defocus)
+        Utilitation_ratio=100*((Production_lim)/(Production_max))
+        improvStorage=(100*Production_lim/(Production_lim-totalDischarged))-100 #Assuming discharged = Charged
+        solar_fraction_lim=100*(Production_lim)/Demand_anual 
+        Energy_module_max=Production_max/num_modulos_tot
     #    operation_hours=np.nonzero(Q_prod)
-        DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
+        DNI_anual_irradiation=sum(DNI)/1000 #kWh/year/m2
     #    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
         Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
-        
+
+        nonzeroflow_rate_kgs = [flow_rate_kgs[i] for i in np.nonzero(flow_rate_kgs)[0]]
+
         annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
+                        'totalCharged':totalCharged,'totalDischarged':totalDischarged,'totalDefocus':totalDefocus,
                         'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
                         'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
-                        'flow_rate_kgs':flow_rate_kgs.tolist()}
+                        'flow_rate_kgs':flow_rate_kgs.tolist(), 'flow_rate_kgs_average':np.mean(nonzeroflow_rate_kgs), 
+                        'colected_energ':Production_max/(DNI_anual_irradiation*Area_total)}
         
     
     #%%
@@ -1465,12 +1511,17 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 Energy_savingsList.append(round(Net_anual_savings[i]))
                 OMList.append(OM_cost[i])
                 fuelPrizeArrayList.append(fuelPrizeArray[i])
-                   
+            anual_energy_cost = fuelPrizeArray*Energy_Before_annual
+            tab_FCF_savings_anualcost = list(zip(Acum_FCF,Net_anual_savings,anual_energy_cost))
+            Energy_savings_mean = np.mean(Net_anual_savings)
+                
             finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
                      'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
                      'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
                      'co2TonPrice':co2TonPrice,'fuelIncremento':fuelCostRaise,'IPC':CPI,'Selling_price':Selling_price,
-                     'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE}
+                     'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE,
+                     'anual_energy_cost':anual_energy_cost.tolist(),
+                     'Energy_savings_mean':Energy_savings_mean,'tab_FCF_savings_anualcost':tab_FCF_savings_anualcost}
         
         else:
             n_years_sim=0 #No finance simulation
@@ -1486,7 +1537,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     if coll_par['auto'] == 'off':
         plotVars={'lang':lang,'Production_max':Production_max,'Production_lim':Production_lim,
                   'Perd_term_anual':Perd_term_anual,'DNI_anual_irradiation':DNI_anual_irradiation,
-                  'Area':Area,'num_loops':num_loops,'imageQlty':imageQlty,'plotPath':plotPath,
+                  'Area':Area,'num_loops':num_loops,'imageQlty':imageQlty,'plotPath':plotPath,'Energy_Before_annual':Energy_Before_annual,
                   'Demand':Demand.tolist(),'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'type_integration':type_integration,
                   'Q_charg':Q_charg.tolist(),'Q_discharg':Q_discharg.tolist(),'DNI':DNI.tolist(),'SOC':SOC.tolist(),
                   'Q_useful':Q_useful.tolist(),'Q_defocus':Q_defocus.tolist(),'T_alm_K':T_alm_K.tolist(),
@@ -1590,8 +1641,8 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 template_vars={} 
                 reportsVar={'version':version,'logo_output':'no_logo','version':version,'type_integration':type_integration,
                             'energyStored':energyStored,"location":localMeteo,
-                            'Area_total':Area_total,'n_coll_loop':n_coll_loop,
-                            'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
+                            'Area_total':Area_total,'n_coll_loop':n_coll_loop,'energStorageMax':energStorageMax,
+                            'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,'Energy_module_max':Energy_module_max,
                             'Production_max':Production_max,'Production_lim':Production_lim,
                             'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
                             'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
@@ -1599,6 +1650,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 reportsVar.update(confReport)
                 reportsVar.update(annualProdDict)
                 reportsVar.update(modificators)
+                reportsVar.update({'coll_weight':coll_par['coll_weight']})
                 if origin==0 or origin == -3:
                     reportOutputOffline(reportsVar)
         else:
@@ -1657,8 +1709,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=5
-n_coll_loop=15
+num_loops=20
+n_coll_loop=2
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1668,17 +1720,17 @@ n_coll_loop=15
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
-almVolumen=10000 #litros
+type_integration="SL_L_S"
+almVolumen=6000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'someoneelse','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=-0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-3 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1689,29 +1741,29 @@ elif origin==-3:
                   'businessModel': 'turnkey',
                   'co2TonPrice': 0.0,
                   'co2factor': 0.0,
-                  'collector_type': 'BOSCH SKW2.txt',
+                  'collector_type': 'MODULOSOLAR MAXOL MS25.txt',
                   'date': '2020-01-30 10:36:S',
-                  'demand': 100000.0,
+                  'demand': 120652.778, # 73243.6611111, #[kWh]
                   'demandUnit': '1',
                   'distance': 25.0,
                   'email': 'juanshifu2.5@hotmail.com',
                   'fluid': 'water',
-                  'fuel': 'gas_natural',
-                  'fuelPrice': 5,
-                  'fuelUnit': 87.0869417968939,
-                  'hourEND': 19,
-                  'hourINI': 8,
+                  'fuel': 'gas_licuado_petroleo',
+                  'fuelPrice': 1.0895,
+                  'fuelUnit': 1,
+                  'hourEND': 16,
+                  'hourINI': 9,
                   'industry': 'Nombredelaindustria',
                   'last_reg': 198,
-                  'location': 'Oaxaca de Juárez.dat',
+                  'location': 'Zacatecas.dat',
                   'name': 'Juan Antonio Aramburo Pasapera',
                   'pais': 'México',
                   'pressure': 1.0,
                   'pressureUnit': '1',
                   'semana': ['0', '1', '2', '3', '4', '5', '6'],
                   'surface': 100.0,
-                  'tempIN': 20.0,
-                  'tempOUT': 80.0,
+                  'tempIN': 40.0,
+                  'tempOUT': 75.0,
                   'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
     last_reg=inputsDjango['last_reg']
     
@@ -1724,9 +1776,9 @@ else:
 version, initial_variables_dict, coll_par = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
     
 initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) #This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
-#coll_par.update({'auto':'on'})
-#LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
+coll_par.update({'auto':'on'})
+LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
 #print(LCOE)
-coll_par.update({'auto':'off'})
-[jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
+#coll_par.update({'auto':'off'})
+#[jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
 """
