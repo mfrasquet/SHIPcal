@@ -358,8 +358,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput="oil" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=190 #HIGH - Process temperature [ºC]
-        T_process_out=80 #LOW - Temperature at the return of the process [ºC]
+        T_process_in=290 #HIGH - Process temperature [ºC]
+        T_process_out=180 #LOW - Temperature at the return of the process [ºC]
         P_op_bar=3 #[bar] 
         
         # Not implemented yet
@@ -606,21 +606,26 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        
+        # --------------  STEP 1 -------------- 
+            #The inlet temperature at the solar field 
         T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
-        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
-        
-        
         T_in_K=T_in_C+273
-        T_ini_storage=T_in_K #Initial temperature of the storage
-        
+            
+            #The outlet temperature at the solar field 
+        T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
         if fluidInput=="water": # Only applies to water
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273-5 
-        
         T_out_K=T_out_C+273
-       
+        
+        # --------------  STEP 2 -------------- 
+        T_ini_storage=T_in_K #Initial temperature of the storage
+        
+        # --------------  STEP 3 -------------- 
         T_min_storage=T_out_C+273 #MIN temperature storage to supply to the process # Process temp [K]  
         
+        # --------------  STEP 4 -------------- 
         if fluidInput=="water": # Only applies to water
             if T_out_C+DELTA_ST>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T #Max temperature storage [K]
@@ -628,6 +633,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K]
         else:
             T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K] 
+        
+        
+        # --------------  STEP 5 -------------- 
+        energyStored=0 # Initially the storage is empty
         
         if fluidInput=="water": # WATER STORAGE
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_K) 
@@ -638,8 +647,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             out_s=outputState.s
             h_out=outputState.h
             
-            #Storage calculations for water
-            energyStored=0 # Initially the storage is empty
             T_avg_K=(T_in_K+T_out_K)/2
             
             almacenamiento=IAPWS97(P=P_op_Mpa, T=T_out_K) #Propiedades en el almacenamiento
@@ -650,17 +657,15 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             almacenamiento=IAPWS97(P=P_op_Mpa, T=T_in_K) #Propiedades en el almacenamiento
             almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
             almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg      
+            
             storage_ini_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_in_K))/3600 #Storage capacity in kWh
-        
             storage_min_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K))/3600 #Storage capacity in kWh
+            
             energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
-        
             energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
         
         elif fluidInput=="oil": # THERMAL OIL STORAGE
-                       
-            #Storage calculations for water
-            energyStored=0 # Initially the storage is empty
+
             T_avg_K=(T_in_K+T_out_K)/2
             
             # Properties for MAX point
@@ -675,13 +680,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             storage_min_energy=(almVolumen*(1/1000)*(storage_min_rho)*storage_min_Cp*(T_out_K))/3600 #Storage capacity in kWh
             
             energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
-        
             energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
     
         elif fluidInput=="moltenSalt": # MOLTEN SALTS STORAGE
                        
-            #Storage calculations for water
-            energyStored=0 # Initially the storage is empty
             T_avg_K=(T_in_K+T_out_K)/2
             
             # Properties for MAX point
@@ -694,8 +696,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             [storage_min_rho,storage_min_Cp,k,Dv]=moltenSalt(T_out_K)
             storage_min_energy=(almVolumen*(1/1000)*(storage_min_rho)*storage_min_Cp*(T_out_K))/3600 #Storage capacity in kWh
             
-            energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
-        
+            energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh    
             energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
     
     
@@ -1539,7 +1540,7 @@ mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
 num_loops=8
-n_coll_loop=9
+n_coll_loop=4
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1600,5 +1601,5 @@ else:
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
     
-#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
