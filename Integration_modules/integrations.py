@@ -455,7 +455,7 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
     
     else: #The previous temperature of the storage is larger than the minimum limit, so there is energy available in the storage.
     
-        if Q_prod+energyStored<Demand: #B.2 Complete discharge #All the available energy is less than the demand so all has to be used.
+        if Q_prod+energyStored<=Demand: #B.2 Complete discharge #All the available energy is less than the demand so all has to be used.
             Q_prod_lim=Q_prod+energyStored #All the available energy is used to feed the process
             Q_useful=Q_prod+energyStored #All the energy is useful
             Q_discharg=energyStored #All the energy is discharged
@@ -493,7 +493,7 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
 
             SOC=100*(newEnerg/3600-storage_min_energy)/energStorageUseful #Porcentage of the storage tha is occupied.
              
-        elif (Q_prod>=Demand): #Charging #In this case the energy produced is larger than the demand,then the the storage charges up
+        else: #Charging #In this case the energy produced is larger than the demand,then the the storage charges up
             if ((Q_prod-Demand)+energyStored)<energStorageUseful and (T_alm_K_old<T_max_storage): # B.3.2 Still room in the storage for the full production
                 Q_useful=Q_prod#All the energy is useful since it can be either stored or used
                 Q_charg=(Q_prod-Demand) #The extra available energy after covering the demand.

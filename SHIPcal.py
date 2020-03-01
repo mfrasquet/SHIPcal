@@ -357,10 +357,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="water" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=190 #HIGH - Process temperature [ºC]
-        T_process_out=80 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=16 #[bar] 
+        fluidInput="oil" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=290 #HIGH - Process temperature [ºC]
+        T_process_out=180 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=6 #[bar] 
         
         # Not implemented yet
         """
@@ -623,7 +623,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_ini_storage=T_in_K #Initial temperature of the storage
         
         # --------------  STEP 3 -------------- 
-        T_min_storage=T_out_C+273 #MIN temperature storage to supply to the process # Process temp [K]  
+        T_min_storage=T_out_K #MIN temperature storage to supply to the process # Process temp [K]  
         
         # --------------  STEP 4 -------------- 
         if fluidInput=="water": # Only applies to water
@@ -1107,7 +1107,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 
 #                [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,flowrate_design_kgs,type_coll,sender)
                 
-                if (T_alm_K[i-1]+DELTA_ST-273)>=T_max_storage-273:
+                if (T_alm_K[i-1]+DELTA_ST)>=T_max_storage:
                     T_out_C=T_max_storage-273
                 else:
                     T_out_C=(T_alm_K[i-1]+DELTA_ST-273)
@@ -1120,17 +1120,17 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":     
                 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
                 
-                if fluidInput=="water":
-                    flowDemand[i]=Demand[i]/(h_process_in-h_process_out)#Not used, only for S_L_RF                  
-                     
-                elif fluidInput=="oil": 
-                    [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
-                    flowDemand[i]=Demand[i]/(Cp_av*(T_process_in_K-T_process_out_K)) #Not used, only for S_L_RF         
-                
-                elif fluidInput=="moltenSalt": 
-                    [rho_av,Cp_av,k,Dv]=moltenSalt(T_av_process_K)    
-                    flowDemand[i]=Demand[i]/(Cp_av*(T_process_in_K-T_process_out_K)) #Not used, only for S_L_RF         
-            
+#                if fluidInput=="water":
+#                    flowDemand[i]=Demand[i]/(h_process_in-h_process_out)#Not used, only for S_L_RF                  
+#                     
+#                elif fluidInput=="oil": 
+#                    [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_process_K)    
+#                    flowDemand[i]=Demand[i]/(Cp_av*(T_process_in_K-T_process_out_K)) #Not used, only for S_L_RF         
+#                
+#                elif fluidInput=="moltenSalt": 
+#                    [rho_av,Cp_av,k,Dv]=moltenSalt(T_av_process_K)    
+#                    flowDemand[i]=Demand[i]/(Cp_av*(T_process_in_K-T_process_out_K)) #Not used, only for S_L_RF         
+#            
                 [T_out_K[i],flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,Area_coll,rho_optic_0,eta1,eta2,mdot_test)
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
                                     
@@ -1612,5 +1612,5 @@ else:
     inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
     last_reg=inputsDjango['last_reg']
     
-#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
