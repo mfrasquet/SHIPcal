@@ -38,7 +38,7 @@ from Solar_modules.EQSolares import SolarData
 from Solar_modules.EQSolares import theta_IAMs
 from Solar_modules.EQSolares import IAM_calc
 from Finance_modules.FinanceModels import SP_plant_costFunctions
-from Integration_modules.integrations import offStorageSimple, offOnlyStorageSimple, operationOnlyStorageSimple, operationSimple, operationDSG, outputOnlyStorageSimple, outputWithoutStorageSimple, outputStorageSimple, offSimple,outputFlowsHTF,outputFlowsWater 
+from Integration_modules.integrations import offStorageSimple, offOnlyStorageSimple, operationOnlyStorageSimple, operationSimple, operationDSG, outputOnlyStorageSimple, outputWithoutStorageSimple, outputStorageSimple, offSimple,outputFlowsHTF,outputFlowsWater, directopearationSimple
 from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageAnnual, financePlot, prodMonths, savingsMonths
 
 
@@ -533,6 +533,32 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # ----------------------------------------
         # SL_L_P => Supply level with liquid heat transfer media parallel integration
         # PL_E_PM => Process level external HEX for heating of product or process medium
+            
+    elif type_integration == "SL_L_DRF":
+        
+        #Gets the temperatures
+        design_flowrate_kgs = coll_par['mdot_test_permeter']*Area
+        
+        if fluidInput=="water":    
+            if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
+                T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273
+        
+        if fluidInput=="water": 
+            output_ProcessState=IAPWS97(P=P_op_Mpa, T=T_in_C+273)
+
+            input_ProcessState=IAPWS97(P=P_op_Mpa, T=T_out_C+273)
+            
+            s_process_in=input_ProcessState.s
+            h_process_in=input_ProcessState.h
+
+            #Other auxiliar calculations necessary  (for plotting)
+            #These are from the view of the collectors
+            h_in=output_ProcessState.h    
+            in_s=output_ProcessState.s
+
+            out_s=input_ProcessState.s
+            h_out=input_ProcessState.h
+        
         
     elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":   
         
@@ -1021,13 +1047,18 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 [T_out_K[i],flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],theta_i_rad[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1],sender,coll_par)
                 [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)     
                 
+            elif type_integration=="SL_L_DRF":
+                [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_kgs[i]]=directopearationSimple(fluidInput,T_out_C,T_in_C,P_op_Mpa,temp[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,theta_i_rad[i],bypass,T_in_flag,T_in_C_AR[i],design_flowrate_kgs,mofProd,sender,coll_par)
+                #[Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputdirectopearationSimple(Q_prod[i],Demand[i])
+                [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
+            
             elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
                 [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],theta_i_rad[i],DNI[i],IAM[i],Area,n_coll_loop,num_loops,mofProd,flowrate_design_kgs,sender,coll_par)
 
                 #Storage control
-                [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)      
+                [T_alm_K[i],storage_energy[i],Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_out_K[i],T_alm_K[i-1],Q_prod[i],energyStored,Demand[i],energStorageMax,storage_energy[i-1],storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy)
                 
  
             elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":     
@@ -1133,7 +1164,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 [T_out_K[i],Q_prod[i],T_in_K[i],SOC[i]]=offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],energStorageMax,energyStored)
                 if Demand[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energyStored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energyStored,Demand[i],energStorageMax)
-               
+            
+            elif type_integration=="SL_L_DRF":
+                
+                Perd_termicas[i] = DNI[i]*Area_total #All the energy is lost since the collectors are not working
+                [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i])
+            
             elif type_integration=="SL_L_P" or type_integration=="PL_E_PM" or type_integration=="SL_L_RF":
                 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
                 

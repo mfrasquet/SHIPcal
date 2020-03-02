@@ -29,7 +29,7 @@ def offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,temp):
             T_in_K=T_in_C_AR+273 # Input from public water grid
     if fluidInput=="oil" or fluidInput=="moltenSalt" or fluidInput=="steam":
         T_in_K=temp
-    T_out_K=temp
+    T_out_K=T_in_K
     Q_prod=0 # There's no production  
     return [T_out_K,Q_prod,T_in_K]
 
@@ -196,6 +196,41 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
     
     return [T_out_K,Perd_termicas,Q_prod,T_in_K_old,flow_rate_kgs]
 
+def directopearationSimple(fluidInput,T_out_C,T_in_C,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,num_loops,theta_i_rad,bypass,T_in_flag,T_in_C_AR,design_flow_rate,FS,sender,coll_par):
+    if sender == 'CIMAV':
+        from CIMAV.CIMAV_modules.iteration_process import IT_temp as IT_temp_CIMAV
+        T_in_K = coll_par['T_in_K']
+        T_out_K,Q_prod,Perd_termicas = IT_temp_CIMAV(fluidInput,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,design_flow_rate,**coll_par)
+        
+    else:
+        if T_in_flag == 1 and fluidInput=='water':
+            T_in_K=T_in_C_AR+273
+        else:
+            T_in_K = T_in_C+273
+        T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,design_flow_rate,**coll_par)    #Here the T_out_K is the desired outlet temperature, it is used to calculate an average CP and the coll parameters
+        
+        if fluidInput=="water" or fluidInput=="steam":
+            outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
+            Cp_av=outlet.cp
+            #Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)
+            #Q_prod_rec=flow_rate_rec*(Cp_av)*(T_out_K-T_in_K) #[kW] Using Cp_av
+        
+        elif fluidInput=="oil":
+            T_av_K=(T_in_K+T_out_K)/2
+            [rho_av,Cp_av,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_av_K)
+            #Q_prod_rec=flow_rate_rec*Cp_av*(T_out_K-T_in_K)
+        
+        elif fluidInput=="moltenSalt":
+            T_av_K=(T_in_K+T_out_K)/2
+            [rho_av,Cp_av,k_av,Dv_av]=moltenSalt(T_av_K)
+            
+        Q_prod = design_flow_rate*Cp_av*(T_out_K-T_in_K) #In kW
+        
+    Q_prod *= num_loops*FS
+    Perd_termicas = Perd_termicas*num_loops + (1-FS)*Q_prod #Takes into account all the loops, before it was only the losses of one serie (one loop) and the losses by the modificator FS
+    bypass.append("OFF")
+    
+    return T_out_K,Perd_termicas,Q_prod,T_in_K,design_flow_rate
 
 def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,num_loops,FS,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old,sender,coll_par):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
@@ -622,7 +657,17 @@ def outputWithoutStorageSimple(Q_prod,Demand):
         Q_defocus=Q_prod-Demand
     return[Q_prod_lim,Q_defocus,Q_useful]
 
-
+def outputdirectopearationSimple(Q_prod,Demand):
+#SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
+    if Q_prod<=Demand:
+        Q_prod_lim=Q_prod
+        Q_useful=Q_prod
+        Q_defocus=0
+    else:
+        Q_prod_lim=Demand
+        Q_useful=Demand
+        Q_defocus=Q_prod-Demand
+    return[Q_prod,0,Q_prod]
 
 def outputStorageOilSimple(Q_prod,energyStored,Demand,energStorageMax):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration with storage pg52 

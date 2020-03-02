@@ -11,12 +11,10 @@ from matplotlib.sankey import Sankey
 import numpy as np
 import pandas as pd
 from iapws import IAPWS97
-from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,thermalOil,moltenSalt
+from General_modules.func_General import bar_MPa,thermalOil,moltenSalt
 import io
 import base64
 import os
-import PIL
-from PIL import Image
 
 
 def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath,**kwargs):
