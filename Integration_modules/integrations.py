@@ -228,7 +228,7 @@ def directopearationSimple(fluidInput,T_out_C,T_in_C,P_op_Mpa,temp,DNI,IAM,Area,
         
     Q_prod *= num_loops*FS
     Perd_termicas = Perd_termicas*num_loops + (1-FS)*Q_prod #Takes into account all the loops, before it was only the losses of one serie (one loop) and the losses by the modificator FS
-    bypass.append("OFF")
+    bypass.append("ON")
     
     return T_out_K,Perd_termicas,Q_prod,T_in_K,design_flow_rate
 
