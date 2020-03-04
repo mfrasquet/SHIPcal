@@ -184,6 +184,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         btrans,ntrans = IAM_fiteq(type_coll,2)
         REC_type = 1 #Death variable to avoid crashes with the previous code
         
+        m_dot_min_kgs = mdot_test*Area_coll
         coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,'coll_weight':weight}
         
         ## METEO
