@@ -1093,7 +1093,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 IAM_long[i]=0
                 IAM_t[i]=0
                 IAM[i]=IAM_long[i]*IAM_t[i]
-
+        
+        if DNI[i]>lim_inf_DNI and SUN_ELV[i]<0:
+            raise ValueError('DNI>0 when SUN_ELV<0. Check meteo file')
             
         if DNI[i]>lim_inf_DNI and DNI[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system
             if type_integration=="SL_L_PS":
