@@ -414,7 +414,7 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
             energyStored=0 #Reset the available energy for the next hour, this will be calculated later in case the temperature has raised enough.
             Q_charg=(Q_prod) #All the produced energy is stored in the storage.
             Q_discharg=0 #No energy is wasted
-            Q_defoscus=0 #No energy is wasted
+            Q_defocus=0 #No energy is wasted
             Q_prod_lim=0 #No energy is wasted
             newEnerg=(storage_energy_old+Q_prod)*3600 #KJ #The new energy that the storage will have is the previous total energy plus the produced. Nothing is send to the process because the energy is used to heat the storage
             
@@ -445,8 +445,8 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
             Q_charg=energStorageUseful-energyStored #The storage is charged to the maximum.
             Q_useful=Demand+(energStorageUseful-energyStored) #The energy that could be use. This could be obtained from the condition of the "if"
             Q_discharg=0 #The storage has charged up and fullfilled the demand so no discharge
-            Q_defoscus=Q_prod-Demand-Q_charg #The extra energy that could not be used is the difference between the produced energy and the useful energy
-            Q_prod_lim=Demand # Q_prod-Q_charg-Q_defoscus is a very difficult way to say that the Q_prod_lim = Demand
+            Q_defocus=Q_prod-Demand-Q_charg #The extra energy that could not be used is the difference between the produced energy and the useful energy
+            Q_prod_lim=Demand # Q_prod-Q_charg-Q_defocus is a very difficult way to say that the Q_prod_lim = Demand
             energyStored=energStorageUseful #New state of the storage #The storage is fully charged and all the posible available enery is available
             SOC=100 #The storage is fully charged
             T_alm_new=T_max_storage #Since the storage is fully charged its temperature is the maximum temperature
@@ -462,7 +462,7 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
             Q_charg=0 #Nothing has charged, all used for the process
             energyStored=0 #New state of the storage #Now the storage has no available energy
             SOC=0 #0% of the storage available
-            Q_defoscus=0 #Nothing is wasted
+            Q_defocus=0 #Nothing is wasted
             newEnerg=(storage_energy_old-Q_discharg)*3600 #From the total energy that the storage had in the previous step, now it has Q_discharg less energy (which should be the same as the same as the minimum possible energy that the storage could have in total)
             T_alm_new=T_min_storage+0.0001 #in K #Since now it has the minimum energy posible then it has the minimum temperature posible
             
@@ -473,7 +473,7 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
             Q_charg=0 #No charge
             Q_prod_lim=Demand #The demand has been fullfilled
             Q_useful=Demand #The energy that has been useful is the same as the demand
-            Q_defoscus=0 #Nothing is wasted
+            Q_defocus=0 #Nothing is wasted
             newEnerg=(storage_energy_old+Q_prod-Demand)*3600 #KJ #The new energy available is the total previous energy plus the produced energy minus the demanded energy
             
             #Calculates the fluid temperatures for calculating the new temperature of the storage
@@ -499,7 +499,7 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
                 Q_charg=(Q_prod-Demand) #The extra available energy after covering the demand.
                 energyStored=energyStored+(Q_charg) #New state of the storage #The extra energy after the demand is covered plus the previous total energy
                 Q_discharg=0 #No energy is taken from the storage
-                Q_defoscus=0 #No energy is wasted
+                Q_defocus=0 #No energy is wasted
                 Q_prod_lim=Demand #Q_prod-Q_charg #This is the demanded energy too.
                 newEnerg=(storage_energy_old+Q_charg)*3600 #KJ #The new energy of the storage is the previous total energy plus the energy that charged up
                 
@@ -529,15 +529,15 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
                     Q_useful=Demand #Only the energy to cover the demand is useful
                     
                 Q_discharg=0 #No energy was discharged
-                Q_defoscus=Q_prod-Q_useful #Demand-Q_charg #Some energy is lost, the lost energy is the difference between what was used (charge up the storage and to cover the demand) and the one produced
-                Q_prod_lim=Q_prod-Q_charg-Q_defoscus #This is the same as the demand
+                Q_defocus=Q_prod-Q_useful #Demand-Q_charg #Some energy is lost, the lost energy is the difference between what was used (charge up the storage and to cover the demand) and the one produced
+                Q_prod_lim=Demand #This is the same as the demand
                 energyStored=energStorageUseful #New state of the storage #Completely full
                 SOC=100 #The storage is 100% occupied
                 T_alm_new=T_max_storage #The new temperature of the storage is the maxiumum temperature since it is fully cahrged
                 newEnerg=storage_max_energy*3600 #kJ #The new total energy
             
     newEnerg=newEnerg/3600 #Changes from kJ -> kWh
-    return [T_alm_new,newEnerg,Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defoscus,Q_useful]
+    return [T_alm_new,newEnerg,Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defocus,Q_useful]
   
 
 
@@ -550,7 +550,7 @@ def outputStorageSimple(Q_prod,energyStored,Demand,energStorageMax):
         Q_charg=0
         energyStored=0 #New state of the storage
         SOC=0
-        Q_defoscus=0
+        Q_defocus=0
        
         
     elif (Q_prod<Demand) and (Q_prod+energyStored>Demand): #Partial discharge
@@ -561,7 +561,7 @@ def outputStorageSimple(Q_prod,energyStored,Demand,energStorageMax):
         Q_prod_lim=Demand
         Q_useful=Demand
         SOC=100*energyStored/energStorageMax
-        Q_defoscus=0
+        Q_defocus=0
             
     elif (Q_prod>=Demand): #Charging
         if ((Q_prod-Demand)+energyStored)<energStorageMax: #Still room in the storage
@@ -570,18 +570,18 @@ def outputStorageSimple(Q_prod,energyStored,Demand,energStorageMax):
             Q_charg=(Q_prod-Demand)
             Q_discharg=0
             SOC=100*energyStored/energStorageMax
-            Q_defoscus=0
+            Q_defocus=0
             Q_prod_lim=Q_prod-Q_charg
         else: #No more room in the storage
            Q_charg=energStorageMax-energyStored
            Q_useful=Demand+(energStorageMax-energyStored)
            Q_discharg=0
-           Q_defoscus=Q_prod-Demand-Q_charg
-           Q_prod_lim=Q_prod-Q_charg-Q_defoscus
+           Q_defocus=Q_prod-Demand-Q_charg
+           Q_prod_lim=Q_prod-Q_charg-Q_defocus
            energyStored=energStorageMax #New state of the storage
            SOC=100*energyStored/energStorageMax
            
-    return [Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defoscus,Q_useful]
+    return [Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defocus,Q_useful]
 
 def outputWithoutStorageSimple(Q_prod,Demand):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
@@ -606,7 +606,7 @@ def outputStorageOilSimple(Q_prod,energyStored,Demand,energStorageMax):
         Q_charg=0
         energyStored=0 #New state of the storage
         SOC=0
-        Q_defoscus=0
+        Q_defocus=0
        
         
     if (Q_prod<Demand) and (Q_prod+energyStored>Demand): #Partial discharge
@@ -617,7 +617,7 @@ def outputStorageOilSimple(Q_prod,energyStored,Demand,energStorageMax):
         Q_prod_lim=Demand
         Q_useful=Demand
         SOC=100*energyStored/energStorageMax
-        Q_defoscus=0
+        Q_defocus=0
             
     if (Q_prod>=Demand): #Charging
         if ((Q_prod-Demand)+energyStored)<energStorageMax: #Still room in the storage
@@ -626,18 +626,18 @@ def outputStorageOilSimple(Q_prod,energyStored,Demand,energStorageMax):
             Q_charg=(Q_prod-Demand)
             Q_discharg=0
             SOC=100*energyStored/energStorageMax
-            Q_defoscus=0
+            Q_defocus=0
             Q_prod_lim=Q_prod-Q_charg
         else: #No more room in the storage
            Q_charg=energStorageMax-energyStored
            Q_useful=Demand+(energStorageMax-energyStored)
            Q_discharg=0
-           Q_defoscus=Q_prod-Demand-Q_charg
-           Q_prod_lim=Q_prod-Q_charg-Q_defoscus
+           Q_defocus=Q_prod-Demand-Q_charg
+           Q_prod_lim=Q_prod-Q_charg-Q_defocus
            energyStored=energStorageMax #New state of the storage
            SOC=100*energyStored/energStorageMax
            
-    return [Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defoscus,Q_useful]
+    return [Q_prod_lim,Q_prod,Q_discharg,Q_charg,energyStored,SOC,Q_defocus,Q_useful]
 
 def moduleSimple(P_0,h_0,QModule,x_0,d_int,Long,m_dot,granoEpsilon):
     if x_0==0 or x_0==1:
