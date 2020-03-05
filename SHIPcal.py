@@ -1262,7 +1262,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
         elif origin==-3: #Use the CIMAV's costs functions
             destination=[Lat,Positional_longitude]
-            [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,num_loops,type_integration,almVolumen,fluidInput,type_coll,destination,inputsDjango['distance']) #Returns all the prices in mxn
+            [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,num_loops,type_integration,almVolumen,fluidInput,type_coll,destination,inputsDjango['distance'],Area_total) #Returns all the prices in mxn
 
         else: #If othe collector is selected, it uses default cost functions
             #This function calls the standard cost functions, if necessary, please modify them within the function

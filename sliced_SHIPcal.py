@@ -1264,7 +1264,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 IAM[i]=IAM_long[i]*IAM_t[i]
 
         
-        if DNI[i]>lim_inf_DNI and DNI[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system
+        if DNI[i]>lim_inf_DNI and DNI[i]>0 and Demand[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system If there is no demand it doesn't start either.
             
             if type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
@@ -1326,6 +1326,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                         T_toProcess_K[i]=T_in_C+273
                         T_toProcess_C[i]=T_in_C
                     else:
+                        print(i)
                         [T_toProcess_C[i],flowToMix[i],T_toProcess_K[i],flowToMix[i],flowToHx[i]]=outputFlowsWater(Q_prod_lim[i],P_op_Mpa,h_HX_out,h_process_out,T_in_C+273,flowDemand[i])     
                 else: 
                     
@@ -1488,7 +1489,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     
             elif origin==-3: #Use the CIMAV's costs functions
                 destination=[Lat,Positional_longitude]
-                [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,num_loops,type_integration,almVolumen,fluidInput,type_coll,destination,inputsDjango['distance']) #Returns all the prices in mxn
+                [Selling_price,Break_cost,OM_cost_year]=CIMAV_plant_costFunctions(num_modulos_tot,num_loops,type_integration,almVolumen,fluidInput,type_coll,destination,inputsDjango['distance'],Area_total) #Returns all the prices in mxn
     
             else: #If othe collector is selected, it uses default cost functions
                 #This function calls the standard cost functions, if necessary, please modify them within the function
@@ -1748,7 +1749,7 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=20
+num_loops=4
 n_coll_loop=2
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1759,7 +1760,7 @@ n_coll_loop=2
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_S"
+type_integration="SL_L_RF"
 almVolumen=6000 #litros
 
 # --------------------------------------------------
@@ -1776,35 +1777,41 @@ if origin==0:
     inputsDjango={}
     last_reg=666
 elif origin==-3:
-    inputsDjango={'T_in_flag': 1,
+    inputsDjango={'industry':'Nombredelaindustria',
+                  'name': 'Juan Antonio Aramburo Pasapera',
+                  'email': 'juanshifu2.5@hotmail.com',
+                  'pais':'México',
                   'businessModel': 'turnkey',
                   'co2TonPrice': 0.0,
                   'co2factor': 0.0,
-                  'collector_type': 'MODULOSOLAR MAXOL MS25.txt',
+                  'location':'Zacatecas.dat',
                   'date': '2020-01-30 10:36:S',
-                  'demand': 120652.778, # 73243.6611111, #[kWh]
-                  'demandUnit': '1',
-                  'distance': 25.0,
-                  'email': 'juanshifu2.5@hotmail.com',
-                  'fluid': 'water',
-                  'fuel': 'gas_licuado_petroleo',
-                  'fuelPrice': 1.0895,
+                  'fuel':'gas_licuado_petroleo',
+                  'fuelPrice': 0.6895821686746988,
                   'fuelUnit': 1,
-                  'hourEND': 16,
+                  'surface': 150,
+                  'distance':50,
+                  'collector_type': 'MODULOSOLAR MAXOL MS25.txt',
+                  'fluid':	'water',
+                  'pressure': 3,
+                  'pressureUnit':'1',
+                  'T_in_flag':1,
+                  'tempIN':	45,
+                  'tempOUT': 75,
+                  'demand':	6000,
+                  'demandUnit':'666',
                   'hourINI': 9,
-                  'industry': 'Nombredelaindustria',
-                  'last_reg': 198,
-                  'location': 'Zacatecas.dat',
-                  'name': 'Juan Antonio Aramburo Pasapera',
-                  'pais': 'México',
-                  'pressure': 1.0,
-                  'pressureUnit': '1',
+                  'hourEND': 16,
+                  'every_month':'on',
+                  'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
+                  'every_day':'on',
                   'semana': ['0', '1', '2', '3', '4', '5', '6'],
-                  'surface': 100.0,
-                  'tempIN': 40.0,
-                  'tempOUT': 75.0,
-                  'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
-    last_reg=inputsDjango['last_reg']
+                  'almVolumen':	'6000',
+                  'n_coll_loop':'2',
+                  'num_loops':'4',
+                  'type_integration':'SL_L_RF'
+                  }
+    last_reg=123
     
 else:
     #To perform simulations from command line using inputs like if they were from django
