@@ -308,8 +308,7 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
         flow_rate_rec=m_dot_min_kgs*coef_flow_rec #New flow_rate
         #New enthalpy at the output  
         h_out_kJkg=(((DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/flow_rate_rec)/1000)+inlet.h
-        x_out=IAPWS97(P=P_op_Mpa, h=h_out_kJkg).x
-        if h_out_kJkg<h_in_kJkg: #The recirculation generates losses
+        if h_out_kJkg<=h_in_kJkg: #The recirculation generates losses
             h_out_kJkg=h_in_kJkg
             x_out=IAPWS97(P=P_op_Mpa, h=h_out_kJkg).x
             Q_prod=0
@@ -317,6 +316,7 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
             T_out_K=T_in_K
             flow_rate_kgs=0
         else:
+            x_out=IAPWS97(P=P_op_Mpa, h=h_out_kJkg).x
             if x_out<=0: #After the recirculation the fluid still liquid
                 Q_prod=0
                 # Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*num_loops*FS/1000

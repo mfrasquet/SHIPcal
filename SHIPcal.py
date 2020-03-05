@@ -339,7 +339,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## METEO
 #        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        localMeteo="Bakersfield.dat"
+        localMeteo="Almeria.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -357,10 +357,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="oil" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=290 #HIGH - Process temperature [ºC]
-        T_process_out=180 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=3 #[bar] 
+        fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=170 #HIGH - Process temperature [ºC]
+        T_process_out=20 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=7 #[bar] 
         
         # Not implemented yet
         """
@@ -1090,9 +1090,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 IAM[i]=IAM_long[i]*IAM_t[i]
         
         if DNI[i]>lim_inf_DNI and SUN_ELV[i]<0: #Error in the meteo file
-            if SUN_ELV[i]>-0.05: #If the error is very low we continue with the simulation
-               SUN_ELV[i]=0.001
-            else:
+            if SUN_ELV[i]<-0.05: #If the error is very low we continue with the simulation
                 raise ValueError('DNI>0 when SUN_ELV<0. Check meteo file')
             
             
@@ -1184,6 +1182,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 #SL_S_PD Supply level with steam for direct steam generation
                 
                 [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],x_out[i],T_out_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1])
+             
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
             
             elif type_integration=="SL_S_PDS":
@@ -1529,12 +1528,12 @@ plots=[0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0] # Put 1 in the elements you want to plot
 
 finance_study=1
 
-month_ini_sim=6
-day_ini_sim=21
+month_ini_sim=1
+day_ini_sim=1
 hour_ini_sim=1
 
-month_fin_sim=6
-day_fin_sim=22
+month_fin_sim=12
+day_fin_sim=31
 hour_fin_sim=24
 
 
@@ -1545,8 +1544,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=8
-n_coll_loop=4
+num_loops=1
+n_coll_loop=16
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1556,7 +1555,7 @@ n_coll_loop=4
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_S"
+type_integration="SL_S_PD"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
