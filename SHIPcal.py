@@ -553,7 +553,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         # SL_L_P => Supply level with liquid heat transfer media parallel integration
         # PL_E_PM => Process level external HEX for heating of product or process medium
         
-    elif type_integration=="SL_L_P" or type_integration=="PL_E_PM":   
+    elif type_integration=="SL_L_P" or type_integration=="PL_E_PM" :   
            
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         
@@ -601,10 +601,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     # ----------------------------------------
         # SL_L_S => Supply level with liquid heat transfer media solar heating of storages
-        # SL_L_S3 => Supply level with liquid heat transfer media solar heating of storages (Pasteurization case)
+        # SL_L_S_PH => Supply level with liquid heat transfer media solar heating of storages (Preheating)
         
-    elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
-        
+    elif type_integration=="SL_L_S" or type_integration=="SL_L_S_PH":
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         
         # --------------  STEP 1 -------------- 
@@ -624,15 +623,26 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         # --------------  STEP 3 -------------- 
         T_min_storage=T_out_K #MIN temperature storage to supply to the process # Process temp [K]  
+        if type_integration=="SL_L_S_PH":
+            T_min_storage=T_in_K #MIN [K] When preheating the minimum temp is the process outlet    
         
         # --------------  STEP 4 -------------- 
-        if fluidInput=="water": # Only applies to water
-            if T_out_C+DELTA_ST>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -5 #Max temperature storage [K]
+        if type_integration=="SL_L_S":
+            if fluidInput=="water": # Only applies to water
+                if T_out_C+DELTA_ST>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
+                    T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -5 #Max temperature storage [K]
+                else:
+                    T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K]
             else:
                 T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K]
         else:
-            T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K] 
+            if fluidInput=="water": # Only applies to water
+                if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
+                    T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -5 #Max temperature storage [K]
+                else:
+                    T_max_storage=T_out_C+273 #Max temperature storage [K]
+            else:
+                T_max_storage=T_out_C+273 #Max temperature storage [K]
         
         
         # --------------  STEP 5 -------------- 
@@ -663,8 +673,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             almacenamiento=IAPWS97(P=P_op_Mpa, T=T_out_K) #Propiedades en el almacenamiento
             almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
             almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg      
-            
             storage_min_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K))/3600 #Storage capacity in kWh
+            
+            if type_integration=="SL_L_S_PH":
+                almacenamiento=IAPWS97(P=P_op_Mpa, T=T_in_K) #Propiedades en el almacenamiento
+                almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
+                almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg 
+                storage_min_energy=(almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_in_K))/3600 #Storage capacity in kWh
             
             energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
             energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
@@ -684,6 +699,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             [storage_min_rho,storage_min_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_out_K)
             storage_min_energy=(almVolumen*(1/1000)*(storage_min_rho)*storage_min_Cp*(T_out_K))/3600 #Storage capacity in kWh
             
+            if type_integration=="SL_L_S_PH":
+                [storage_min_rho,storage_min_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_in_K)
+                storage_min_energy=(almVolumen*(1/1000)*(storage_min_rho)*storage_min_Cp*(T_in_K))/3600 #Storage capacity in kWh
+            
             energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
             energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
     
@@ -700,6 +719,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
             [storage_min_rho,storage_min_Cp,k,Dv]=moltenSalt(T_out_K)
             storage_min_energy=(almVolumen*(1/1000)*(storage_min_rho)*storage_min_Cp*(T_out_K))/3600 #Storage capacity in kWh
+            
+            if type_integration=="SL_L_S_PH":
+                [storage_min_rho,storage_min_Cp,k,Dv]=moltenSalt(T_in_K)
+                storage_min_energy=(almVolumen*(1/1000)*(storage_min_rho)*storage_min_Cp*(T_in_K))/3600 #Storage capacity in kWh
             
             energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh    
             energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
@@ -1048,7 +1071,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Q_prod[0]=0
     T_in_K[0]=temp[0] #Ambient temperature 
     T_out_K[0]=temp[0] #Ambient temperature 
-    if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+    if type_integration=="SL_L_S" or type_integration=="SL_L_S_PH":
         T_alm_K[0]=T_ini_storage
         storage_energy[0]=storage_ini_energy
     #            SOC[i]=100*(T_alm_K[i]-273)/(T_max_storage-273)
@@ -1106,7 +1129,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 [T_out_K[i],flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1],sender,Area_coll,rho_optic_0,eta1,eta2,mdot_test)
                 [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energy_stored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energy_stored,Demand[i],energStorageMax)     
            
-            elif type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+            elif type_integration=="SL_L_S" or type_integration=="SL_L_S_PH":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
 #                [T_out_K[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_kgs[i]]=operationOnlyStorageSimple(fluidInput,T_max_storage,T_alm_K[i-1],P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,flowrate_design_kgs,type_coll,sender)
@@ -1207,7 +1230,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         else: # Status: OFF -> There's not enough DNI to put the solar plant in production     
             
-            if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+            if type_integration=="SL_L_S" or type_integration=="SL_L_S_PH":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
 
                 [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i])
@@ -1564,9 +1587,9 @@ n_coll_loop=8
 #SL_S_FW -> Supply level solar steam for heating of boiler feed water without storage
 #SL_S_FWS -> Supply level solar steam for heating of boiler feed water with storage
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
-#SL_L_S -> Storage
-#SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_S"
+#SL_L_S -> Storage parallel
+#SL_L_S_PH -> Storage preheat
+type_integration="SL_L_S_PH"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
