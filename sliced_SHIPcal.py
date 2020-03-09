@@ -179,13 +179,13 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
-        Area_coll,rho_optic_0,eta1,eta2,mdot_test,Long,weight=CIMAV_collectors(type_coll)
+        Area_coll,rho_optic_0,eta1,eta2,mdot_test,Long,weight,coll_optic=CIMAV_collectors(type_coll)
         blong,nlong = IAM_fiteq(type_coll,1)
         btrans,ntrans = IAM_fiteq(type_coll,2)
         REC_type = 1 #Death variable to avoid crashes with the previous code
         
         m_dot_min_kgs = mdot_test*Area_coll
-        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,'coll_weight':weight}
+        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,'coll_weight':weight, 'coll_optic':coll_optic}
         
         ## METEO
         localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
@@ -372,7 +372,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     
     # --> Meteo variables
     if sender == 'CIMAV':
-        Lat,Huso,Positional_longitude,output=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender)
+        Lat,Huso,Positional_longitude,output=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender, optic_type=coll_optic)
         coll_par.update({'beta':np.radians(Lat)})
     else:
         output,hour_year_ini,hour_year_fin=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso)
@@ -393,7 +393,8 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     output[11]->step_sim
             
     """
-
+    
+    time_angle = output[:,4]
     SUN_ELV=output[:,5] # Sun elevation [rad]
     SUN_AZ=output[:,6] # Sun azimuth [rad]
     DNI=output[:,9] # Direct Normal Irradiation [W/m²]
@@ -469,7 +470,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     
     #coll_par depends of the sender so it is defined above
     #integration_Dict depends of the integration method so it is calculated before.
-    meteoDict={'DNI':DNI,'localMeteo':localMeteo,'Lat':Lat,'Positional_longitude':Positional_longitude,'SUN_ELV':SUN_ELV,'SUN_AZ':SUN_AZ, 'temp':temp,'T_in_C_AR':T_in_C_AR}
+    meteoDict={'DNI':DNI,'localMeteo':localMeteo,'Lat':Lat,'Positional_longitude':Positional_longitude,'SUN_ELV':SUN_ELV,'SUN_AZ':SUN_AZ, 'temp':temp,'T_in_C_AR':T_in_C_AR,'time_angle':time_angle}
     financial_param = {'businessModel':businessModel,'Fuel_price':Fuel_price,'co2TonPrice':co2TonPrice,'co2factor':co2factor,'finance_study':finance_study,'costRaise':costRaise,'fuelCostRaise':fuelCostRaise,'CPI':CPI,'priceReduction':priceReduction,'n_years_sim':n_years_sim }
     process_param= {'lim_inf_DNI':lim_inf_DNI,'m_dot_min_kgs':m_dot_min_kgs,'coef_flow_rec':coef_flow_rec,'Boiler_eff':Boiler_eff,
                     'fluidInput':fluidInput,
@@ -1017,6 +1018,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     Positional_longitude=initial_variables_dict['Positional_longitude']
     SUN_ELV=initial_variables_dict['SUN_ELV']
     SUN_AZ=initial_variables_dict['SUN_AZ']
+    time_angle=initial_variables_dict['time_angle']
     temp=initial_variables_dict['temp']
     T_in_C_AR=initial_variables_dict['T_in_C_AR']
     businessModel=initial_variables_dict['businessModel']
@@ -1203,6 +1205,10 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
             if SUN_ELV[i]>0 and SUN_ELV[i]<180: #If the sun is above the horizon
                 #Calculates the tranversal and longitudinal incidenc angle. This is to say the angle betwwn the proyection  longitudinal/transversal and the area vector from the collector
                 theta_transv_deg[i],theta_i_deg[i] = theta_IAMs_CIMAV(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+                
+                if coll_par['coll_optic'] == 'concentrator': #If it is a concentrator type collector it will have a default hourly tracking moving the area vector from east yo west, with 0 at midday, -90° at the sunrise.
+                    theta_transv_deg[i] = 0
+                
                 #Dado el angulo de incidencia longitudina/transversal se calcula el IAM correspondiente con los parametros correspondientes
                 IAM_long[i] = IAM_calculator(blong,nlong,theta_i_deg[i])
                 IAM_t[i] = IAM_calculator(btrans,ntrans,theta_transv_deg[i])
@@ -1326,7 +1332,6 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                         T_toProcess_K[i]=T_in_C+273
                         T_toProcess_C[i]=T_in_C
                     else:
-                        print(i)
                         [T_toProcess_C[i],flowToMix[i],T_toProcess_K[i],flowToMix[i],flowToHx[i]]=outputFlowsWater(Q_prod_lim[i],P_op_Mpa,h_HX_out,h_process_out,T_in_C+273,flowDemand[i])     
                 else: 
                     
@@ -1675,10 +1680,36 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 reportsVar.update(processDict)
                 reportsVar.update(integrationDesign)   
                 template_vars=reportOutput(origin,reportsVar,-1,"",pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)),Energy_Before_annual,sankeyDict)
-            
+            elif origin==-3:
+                template_vars={}
+                reportsVar={'type_integration':type_integration,'coll_weight':coll_par['coll_weight'],
+                            'energyStored':energyStored,'m_dot_min_kgs':m_dot_min_kgs,
+                            'Area_total':Area_total,'energStorageMax':energStorageMax,
+                            'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
+                            'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
+                reportsVar.update({'AmortYear':AmortYear,'CO2':CO2,'co2Savings':co2Savings,
+                                   'Energy_savingsList':Energy_savingsList,'co2TonPrice':co2TonPrice,
+                                   'Selling_price':Selling_price,'IRR':IRR,'tonCo2Saved':tonCo2Saved,'IRR10':IRR10,
+                                   'OM_cost_year':OMList, 'LCOE':LCOE,'anual_energy_cost':anual_energy_cost.tolist(),
+                                   'Energy_savings_mean':Energy_savings_mean,'tab_FCF_savings_anualcost':tab_FCF_savings_anualcost}) #Finance fields
+                reportsVar.update(annualProdDict)
+                
+                template_vars={'version':version,'logo_output':'no_logo','type_integration':type_integration,
+                            'energyStored':energyStored,"location":localMeteo,
+                            'Area_total':Area_total,'n_coll_loop':n_coll_loop,'energStorageMax':energStorageMax,
+                            'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
+                            'Production_max':Production_max,'Production_lim':Production_lim,
+                            'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
+                            'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
+                template_vars.update(finance)
+                template_vars.update(confReport)
+                template_vars.update(annualProdDict)
+                template_vars.update(modificators)
+                reportOutputOffline(template_vars)
+                            
             else:
                 template_vars={} 
-                reportsVar={'version':version,'logo_output':'no_logo','version':version,'type_integration':type_integration,
+                reportsVar={'version':version,'logo_output':'no_logo','type_integration':type_integration,
                             'energyStored':energyStored,"location":localMeteo,
                             'Area_total':Area_total,'n_coll_loop':n_coll_loop,'energStorageMax':energStorageMax,
                             'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
@@ -1689,9 +1720,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 reportsVar.update(confReport)
                 reportsVar.update(annualProdDict)
                 reportsVar.update(modificators)
-                if origin==0 or origin == -3:
-                    if origin == -3:
-                        reportsVar.update({'coll_weight':coll_par['coll_weight']})
+                if origin==0:
                     reportOutputOffline(reportsVar)
         else:
             template_vars={}
@@ -1749,7 +1778,7 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=4
+num_loops=10
 n_coll_loop=2
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1760,7 +1789,7 @@ n_coll_loop=2
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_RF"
+type_integration="SL_L_P"
 almVolumen=6000 #litros
 
 # --------------------------------------------------
@@ -1791,7 +1820,7 @@ elif origin==-3:
                   'fuelUnit': 1,
                   'surface': 150,
                   'distance':50,
-                  'collector_type': 'MODULOSOLAR MAXOL MS25.txt',
+                  'collector_type': 'POWER THROUGH 250 INVENTIVE POWER.txt',
                   'fluid':	'water',
                   'pressure': 3,
                   'pressureUnit':'1',
@@ -1822,9 +1851,9 @@ else:
 version, initial_variables_dict, coll_par = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
     
 initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) #This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
-coll_par.update({'auto':'on'})
-LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
+#coll_par.update({'auto':'on'})
+#LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
 #print(LCOE)
-#coll_par.update({'auto':'off'})
-#[jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
+coll_par.update({'auto':'off'})
+[jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
 """

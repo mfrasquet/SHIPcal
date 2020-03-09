@@ -163,11 +163,12 @@ def IAM_calc(ang_target,IAM_type,file_loc):
             IAM=IAMdata1+incre_IAM_target
     return [IAM]
 
-def Meteo_data (file_meteo,sender='notCIMAV', collector='plane'): #This function exports the TMY file to 'data', the DNI and temperature array of values for  each hour in the year from the file_meteo path to file
+def Meteo_data (file_meteo,sender='notCIMAV', optic_type='0'): #This function exports the TMY file to 'data', the DNI and temperature array of values for  each hour in the year from the file_meteo path to file
     #Only if the optional argument sender is received and is == 'CIMAV'
+    
     if sender == 'CIMAV':
         data = np.loadtxt(file_meteo, delimiter="\t", skiprows=4) #Will read this format, since the first 4 rows has the place, location and headings data
-        if collector=='concentrator':
+        if optic_type=='concentrator':
             DNI=data[:,5]#If the collector is a concentrator type collector this variable will carry the DNI
         else:
             DNI=data[:,6]#But if it is not a concentrator type it will carry the global radiation
@@ -208,7 +209,7 @@ def Meteo_data (file_meteo,sender='notCIMAV', collector='plane'): #This function
 #dia_fin_sim=22
 #hora_fin_sim=24
                                                                                                          #Sender is an optional argument, if not received continues normaly
-def SolarData(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender='notCIMAV',Lat=0,Huso=0): #This function returns an "output" array with the month, day of the month, hour of the day, hour of the year hour angle,SUN_ELVevation, suN_AZimuth,DECLINATION, SUN_ZENITHAL, DNI,temp_sim,step_sim for every hour between the starting and ending hours in the year.  It also returns the starting and ending hour in the year.
+def SolarData(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender='notCIMAV',Lat=0,Huso=0, optic_type='0'): #This function returns an "output" array with the month, day of the month, hour of the day, hour of the year hour angle,SUN_ELVevation, suN_AZimuth,DECLINATION, SUN_ZENITHAL, DNI,temp_sim,step_sim for every hour between the starting and ending hours in the year.  It also returns the starting and ending hour in the year.
 
     hour_year_ini=calc_hour_year(mes_ini_sim,dia_ini_sim,hora_ini_sim)#Calls a function within this same script yo calculate the corresponding hout in the year for the day/month/hour of start and end
     hour_year_fin=calc_hour_year(mes_fin_sim,dia_fin_sim,hora_fin_sim)
@@ -221,7 +222,7 @@ def SolarData(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_
     
     #Llamada al archivo de meteo completo
     if sender == 'CIMAV':
-        Lat,Huso,Positional_longitude,data,DNI,temp=Meteo_data(file_loc,sender)
+        Lat,Huso,Positional_longitude,data,DNI,temp=Meteo_data(file_loc,sender,optic_type)
     else:
         (data,DNI,temp)=Meteo_data(file_loc,sender)#Calls another function within this same script that reads the TMY.dat file 
         #They are already np.arrays
