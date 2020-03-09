@@ -149,7 +149,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## SL_L_S
     DELTA_ST=30 # Temperature delta over the design process temp for the storage
     DELTA_HX=5 # Degrees for temperature delta experienced in the storage exchanger (for design) 
-    flowrate_design_kgs=2 # Design flow rate (fix value for SL_L_S)
+#    flowrate_design_kgs=2 # Design flow rate (fix value for SL_L_S)
     
     
     #%%
