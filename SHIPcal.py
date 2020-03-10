@@ -186,12 +186,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
-        Area_coll,rho_optic_0,eta1,eta2,mdot_test,Long,weight=CIMAV_collectors(type_coll)
+        Area_coll,rho_optic_0,eta1,eta2,mdot_test,Long,weight,coll_optic=CIMAV_collectors(type_coll)
         blong,nlong = IAM_fiteq(type_coll,1)
         btrans,ntrans = IAM_fiteq(type_coll,2)
         REC_type = 1 #Death variable to avoid crashes with the previous code
         
-        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,'coll_weight':weight}
+        coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,'coll_weight':weight,'coll_optic':coll_optic}
         coll_par.update({'auto':'off'}) #Turns off the automatic version of calculating the equivalent parameters and turns on the reports and plots.
         
         ## METEO
@@ -399,7 +399,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     # --> Meteo variables
     if sender == 'CIMAV':
-        Lat,Huso,Positional_longitude,output=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender)
+        Lat,Huso,Positional_longitude,output=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender, optic_type=coll_optic)
         coll_par.update({'beta':np.radians(Lat)})
     else:
         output,hour_year_ini,hour_year_fin=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso)
@@ -978,6 +978,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             if SUN_ELV[i]>0 and SUN_ELV[i]<180: #If the sun is above the horizon
                 #Calculates the tranversal and longitudinal incidenc angle. This is to say the angle betwwn the proyection  longitudinal/transversal and the area vector from the collector
                 theta_transv_deg[i],theta_i_deg[i] = theta_IAMs_CIMAV(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+                
+                if coll_par['coll_optic'] == 'concentrator': #If it is a concentrator type collector it will have a default hourly tracking moving the area vector from east yo west, with 0 at midday, -90° at the sunrise.
+                    theta_transv_deg[i] = 0
+                
                 #Given the longitudinal/transversal incidence angle the IAM's are calculated with the collector parameters. 
                 IAM_long[i] = IAM_calculator(blong,nlong,theta_i_deg[i])
                 IAM_t[i] = IAM_calculator(btrans,ntrans,theta_transv_deg[i])
@@ -1475,13 +1479,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
-"""
+
 # Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
@@ -1504,12 +1508,12 @@ plots=[0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0] # Put 1 in the elements you want to plot
 
 finance_study=1
 
-month_ini_sim=6
-day_ini_sim=21
+month_ini_sim=1
+day_ini_sim=1
 hour_ini_sim=1
 
-month_fin_sim=6
-day_fin_sim=22
+month_fin_sim=12
+day_fin_sim=31
 hour_fin_sim=24
 
 
@@ -1521,8 +1525,8 @@ mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
 
-num_loops=8
-n_coll_loop=9
+num_loops=20
+n_coll_loop=2
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1533,17 +1537,17 @@ n_coll_loop=9
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
 
-type_integration="SL_L_S"
+type_integration="SL_L_PS"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-3 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1556,7 +1560,7 @@ elif origin==-3:
                   'co2factor': 0.0,
                   'collector_type': 'MODULOSOLAR MAXOL MS25.txt',
                   'date': '2020-01-30 10:36:S',
-                  'demand': 120652.778,
+                  'demand': 65600.778,
                   'demandUnit': '1',
                   'distance': 25.0,
                   'email': 'juanshifu2.5@hotmail.com',
@@ -1564,8 +1568,8 @@ elif origin==-3:
                   'fuel': 'gas_licuado_petroleo',
                   'fuelPrice': 1.0895,
                   'fuelUnit': 1,
-                  'hourEND': 23,
-                  'hourINI': 0,
+                  'hourEND': 17,
+                  'hourINI': 9,
                   'industry': 'Nombredelaindustria',
                   'last_reg': 198,
                   'location': 'Zacatecas.dat',
@@ -1575,8 +1579,8 @@ elif origin==-3:
                   'pressureUnit': '1',
                   'semana': ['0', '1', '2', '3', '4', '5', '6'],
                   'surface': 100.0,
-                  'tempIN': 55.0,
-                  'tempOUT': 75.0,
+                  'tempIN': 30.0,
+                  'tempOUT': 45.0,
                   'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
     last_reg=inputsDjango['last_reg']
 else:
@@ -1585,4 +1589,3 @@ else:
     last_reg=inputsDjango['last_reg']
     
 [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
-"""

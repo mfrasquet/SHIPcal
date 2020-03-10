@@ -1734,7 +1734,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
-"""
+
 # Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
@@ -1778,7 +1778,7 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=10
+num_loops=20
 n_coll_loop=2
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1789,8 +1789,8 @@ n_coll_loop=2
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S3 -> Storage plus pasteurizator plus washing
-type_integration="SL_L_P"
-almVolumen=6000 #litros
+type_integration="SL_L_PS"
+almVolumen=10000 #litros
 
 # --------------------------------------------------
 confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
@@ -1806,41 +1806,36 @@ if origin==0:
     inputsDjango={}
     last_reg=666
 elif origin==-3:
-    inputsDjango={'industry':'Nombredelaindustria',
-                  'name': 'Juan Antonio Aramburo Pasapera',
-                  'email': 'juanshifu2.5@hotmail.com',
-                  'pais':'México',
+    inputsDjango={'T_in_flag': 1,
                   'businessModel': 'turnkey',
                   'co2TonPrice': 0.0,
                   'co2factor': 0.0,
-                  'location':'Zacatecas.dat',
+                  'collector_type': 'MODULOSOLAR MAXOL MS25.txt',
                   'date': '2020-01-30 10:36:S',
-                  'fuel':'gas_licuado_petroleo',
-                  'fuelPrice': 0.6895821686746988,
+                  'demand': 65600.778,
+                  'demandUnit': '1',
+                  'distance': 25.0,
+                  'email': 'juanshifu2.5@hotmail.com',
+                  'fluid': 'water',
+                  'fuel': 'gas_licuado_petroleo',
+                  'fuelPrice': 1.0895,
                   'fuelUnit': 1,
-                  'surface': 150,
-                  'distance':50,
-                  'collector_type': 'POWER THROUGH 250 INVENTIVE POWER.txt',
-                  'fluid':	'water',
-                  'pressure': 3,
-                  'pressureUnit':'1',
-                  'T_in_flag':1,
-                  'tempIN':	45,
-                  'tempOUT': 75,
-                  'demand':	6000,
-                  'demandUnit':'666',
+                  'hourEND': 17,
                   'hourINI': 9,
-                  'hourEND': 16,
-                  'every_month':'on',
-                  'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
-                  'every_day':'on',
+                  'industry': 'Nombredelaindustria',
+                  'last_reg': 198,
+                  'location': 'Zacatecas.dat',
+                  'name': 'Juan Antonio Aramburo Pasapera',
+                  'pais': 'México',
+                  'pressure': 1.0,
+                  'pressureUnit': '1',
                   'semana': ['0', '1', '2', '3', '4', '5', '6'],
-                  'almVolumen':	'6000',
-                  'n_coll_loop':'2',
-                  'num_loops':'4',
-                  'type_integration':'SL_L_RF'
+                  'surface': 100.0,
+                  'tempIN': 30.0,
+                  'tempOUT': 45.0,
+                  'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
                   }
-    last_reg=123
+    last_reg=inputsDjango['last_reg']
     
 else:
     #To perform simulations from command line using inputs like if they were from django
@@ -1856,4 +1851,4 @@ initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) 
 #print(LCOE)
 coll_par.update({'auto':'off'})
 [jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
-"""
+
