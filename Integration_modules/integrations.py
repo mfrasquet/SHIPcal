@@ -490,6 +490,17 @@ def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almV
                 [storage_rho,storage_Cp,k,Dv]=moltenSalt(T_alm_K_old)
             
             T_alm_new=(newEnerg/(storage_Cp*almVolumen*(0.001)*(storage_rho))) #in K #The new temperature of the storage with the energy that gained in this hour.
+            if np.isnan(T_alm_new):
+                print(newEnerg)
+                print(storage_Cp)
+                print(almVolumen)
+                print(storage_rho)
+                
+            try:
+                IAPWS97(P=P_op_Mpa, T=T_alm_new).x
+            except:
+                print(P_op_Mpa)
+                print(T_alm_new)
             
             if T_alm_new>T_min_storage: #in case that the new temperature is larger than the minimum temperature of the storage 
                 energyStored=(newEnerg/3600-storage_min_energy)  #Calculates the energy above the minimum level of energy
