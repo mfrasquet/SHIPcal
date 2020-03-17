@@ -1476,7 +1476,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                         'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
                         'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
                         'flowrate_kgs':flowrate_kgs.tolist(), 'flowrate_kgs_average':np.mean(nonzeroflowrate_kgs), 'energStorageMax':energStorageMax,
-                        'colected_energ':Production_max/(DNI_anual_irradiation*Area_total),'Energy_module_max':Energy_module_max,}
+                        'Energy_module_max':Energy_module_max,}
         
     
     #%%
@@ -1556,7 +1556,6 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 OMList.append(OM_cost[i])
                 fuelPrizeArrayList.append(fuelPrizeArray[i])
             anual_energy_cost = fuelPrizeArray*Energy_Before_annual
-            tab_FCF_savings_anualcost = list(zip(Acum_FCF,Net_anual_savings,anual_energy_cost))
             Energy_savings_mean = np.mean(Net_anual_savings)
                 
             finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
@@ -1565,7 +1564,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                      'co2TonPrice':co2TonPrice,'fuelIncremento':fuelCostRaise,'IPC':CPI,'Selling_price':Selling_price,
                      'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE,
                      'anual_energy_cost':anual_energy_cost.tolist(),
-                     'Energy_savings_mean':Energy_savings_mean,'tab_FCF_savings_anualcost':tab_FCF_savings_anualcost}
+                     'Energy_savings_mean':Energy_savings_mean}
         
         else:
             n_years_sim=0 #No finance simulation
@@ -1691,7 +1690,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                                    'Energy_savingsList':Energy_savingsList,'co2TonPrice':co2TonPrice,
                                    'Selling_price':Selling_price,'IRR':IRR,'tonCo2Saved':tonCo2Saved,'IRR10':IRR10,
                                    'OM_cost_year':OMList, 'LCOE':LCOE,'anual_energy_cost':anual_energy_cost.tolist(),
-                                   'Energy_savings_mean':Energy_savings_mean,'tab_FCF_savings_anualcost':tab_FCF_savings_anualcost}) #Finance fields
+                                   'Energy_savings_mean':Energy_savings_mean}) #Finance fields
                 reportsVar.update(annualProdDict)
                 
                 template_vars={'version':version,'logo_output':'no_logo','type_integration':type_integration,
