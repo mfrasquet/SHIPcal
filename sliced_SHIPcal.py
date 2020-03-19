@@ -1541,9 +1541,9 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 Selling_price=0 #No existe inversión
                 FCF[0]=0
                 
-            Energy_savingsList=[]
-            OMList=[]
-            fuelPrizeArrayList=[]
+            Energy_savingsList=Net_anual_savings.tolist()
+            OMList=OM_cost.tolist()
+            fuelPrizeArrayList=fuelPrizeArray.tolist()
             Acum_FCFList=[]
             for i in range(0,len(Acum_FCF)):
                 if Acum_FCF[i]<0:
@@ -1551,13 +1551,10 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 else:
                     Acum_FCFList.append(str(int(Acum_FCF[i])))
             
-            for i in range(0,len(fuelPrizeArray)):
-                Energy_savingsList.append(round(Net_anual_savings[i]))
-                OMList.append(OM_cost[i])
-                fuelPrizeArrayList.append(fuelPrizeArray[i])
             anual_energy_cost = fuelPrizeArray*Energy_Before_annual
             Energy_savings_mean = np.mean(Net_anual_savings)
-                
+            fraction_savings = np.mean(Net_anual_savings/anual_energy_cost)*100
+            
             finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
                      'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
                      'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
@@ -1686,8 +1683,8 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                             'Area_total':Area_total,'energStorageMax':energStorageMax,
                             'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
                             'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
-                reportsVar.update({'AmortYear':AmortYear,'CO2':CO2,'co2Savings':co2Savings,
-                                   'Energy_savingsList':Energy_savingsList,'co2TonPrice':co2TonPrice,
+                reportsVar.update({'AmortYear':AmortYear,'CO2':CO2,'co2Savings':co2Savings,'fuelPrizeArray':fuelPrizeArray,
+                                   'Energy_savingsList':Energy_savingsList,'co2TonPrice':co2TonPrice,'fraction_savings':fraction_savings,
                                    'Selling_price':Selling_price,'IRR':IRR,'tonCo2Saved':tonCo2Saved,'IRR10':IRR10,
                                    'OM_cost_year':OMList, 'LCOE':LCOE,'anual_energy_cost':anual_energy_cost.tolist(),
                                    'Energy_savings_mean':Energy_savings_mean}) #Finance fields
