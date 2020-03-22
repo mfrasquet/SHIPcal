@@ -191,7 +191,7 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
             SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
             Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
         
-    Perd_termicas = Perd_termicas*num_loops + (1-FS)*Q_prods
+    Perd_termicas = Perd_termicas*num_loops + (1-FS)*Q_prod
     
     return [T_out_K,Perd_termicas,Q_prod,T_in_K_old,flow_rate_kgs]
 
