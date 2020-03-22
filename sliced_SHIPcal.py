@@ -660,7 +660,12 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
         DELTA_ST=30 # Temperature delta over the design process temp for the storage
         flowrate_design_kgs=2 # Design flow rate (fix value for SL_L_S)
 
+        #---------------  STEP 1 -------------- 
+        #The inlet temperature at the solar field 
         T_in_K=T_in_C+273#The inlet temperature at the solar field is the same than the return of the process
+        #The outlet temperature at the solar field
+
+        # --------------  STEP 2 -------------- 
         T_ini_storage=T_in_K #Initial temperature of the storage
         
         if fluidInput=="water": # Only applies to water
@@ -668,9 +673,11 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
                 T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273-5 
         
         T_out_K=T_out_C+273
-       
-        T_min_storage=T_out_C+273 #MIN temperature storage to supply to the process # Process temp [K]  
+
+        # --------------  STEP 3 -------------- 
+        T_min_storage=T_out_K #MIN temperature storage to supply to the process # Process temp [K]  
         
+        # --------------  STEP 4 -------------- 
         if fluidInput=="water": # Only applies to water
             if T_out_C+DELTA_ST>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
                 T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T #Max temperature storage [K]
@@ -678,6 +685,9 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
                 T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K]
         else:
             T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K] 
+        
+        # --------------  STEP 5 -------------- 
+        #energyStored=0 # Initially the storage is empty The storage is always empty at the beginning. It is already taken into account in the next function
         
         if fluidInput=="water": # WATER STORAGE
             inputState=IAPWS97(P=P_op_Mpa, T=T_in_K)  #From the collectors point of view
@@ -1269,6 +1279,9 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 IAM_t[i]=0
                 IAM[i]=IAM_long[i]*IAM_t[i]
 
+        if DNI[i]>lim_inf_DNI and SUN_ELV[i]<0: #Error in the meteo file
+            if SUN_ELV[i]<-0.05: #If the error is very low we continue with the simulation
+                raise ValueError('DNI>0 when SUN_ELV<0. Check meteo file')
         
         if DNI[i]>lim_inf_DNI and DNI[i]>0 and Demand[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system If there is no demand it doesn't start either.
             
