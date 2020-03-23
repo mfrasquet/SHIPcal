@@ -229,8 +229,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     if origin==-2: #Simulation called from front-end -> www.ressspi.com
         
         #Retrieve front-end inputs
-        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
-         
+        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango) 
         ## METEO
         meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
         locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
@@ -242,7 +241,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## INTEGRATION
         type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
         almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
-
+        
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput=inputs['fluid'] #Type of fluid 
@@ -251,9 +250,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         P_op_bar=P_op_bar #[bar]
             
             #>> ENERGY DEMAND
-       
-        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
-        # file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
+        
+        if inputs['location_aux']=="":
+            file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        else:
+            file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi/"+inputs['location_aux'], sep=',')   
 
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
@@ -1593,7 +1594,7 @@ n_coll_loop=8
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage parallel
 #SL_L_S_PH -> Storage preheat
-type_integration="SL_L_S_PH"
+type_integration="SL_L_P"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1603,7 +1604,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1641,8 +1642,8 @@ elif origin==-3:
     last_reg=inputsDjango['last_reg']
 else:
     #To perform simulations from command line using inputs like if they were from django
-    inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
+    inputsDjango= {'date': '2020-03-23', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'prueba2', 'sectorIndustry': 'Chemical', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Adelaide', 'location_aux': 'variable', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 25.0, 'tempOUT': 130.0, 'connection': '', 'process': '', 'demand': 2000.0, 'demandUnit': 'MWh', 'hourINI': 6, 'hourEND': 22, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 711}
     last_reg=inputsDjango['last_reg']
     
-#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+# [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
