@@ -979,7 +979,7 @@ def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         plt.legend(loc='upper left', borderaxespad=0.)
     
         ax2 = ax1.twinx()  
-        if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+        if type_integration=="SL_L_S" or type_integration=="SL_L_S_PH":
             ax2 .plot(np.arange(167), np.array(T_alm_K[0:167])-273,'r',label="Temperatura",linewidth=2.0)
         ax2 .plot(np.arange(167), SOC[0:167],color='orange',linestyle=':',label="Carga del almacenamiento",linewidth=2.0)
         ax2.set_xlabel('simulación (hora del año)')
@@ -1009,7 +1009,7 @@ def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         plt.legend(loc='upper left', borderaxespad=0.)
         
         ax2 = ax1.twinx()
-        if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+        if type_integration=="SL_L_S" or type_integration=="SL_L_S_PH":
             ax2 .plot(np.arange(167), np.array(T_alm_K[0:167])-273,'r',label="Temperature",linewidth=2.0)
       
         ax2 .plot(np.arange(167), SOC[0:167],color='orange',linestyle=':',label="Storage's state of charge",linewidth=2.0)
@@ -1065,7 +1065,7 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         
         
         ax2 = ax1.twinx()
-        if type_integration=="SL_L_S" or type_integration=="SL_L_S3":
+        if type_integration=="SL_L_S" or type_integration=="SL_L_S_PH":
              ax2 .plot((np.arange(3624,3624+167,1)), np.array(T_alm_K[3624:3791])-273,'r',label="Carga del almacenamiento",linewidth=2.0,zorder=11)
         ax2 .plot((np.arange(3624,3624+167,1)), SOC[3624:3791],color='orange',linestyle=':',label="Carga del almacenamiento",linewidth=2.0,zorder=11)
         ax2.set_xlabel('simulación (hora del año)')
