@@ -357,7 +357,7 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
     if Perd_termicas==0:
         Perd_termicas=Q_loss_rec*n_coll_loop*Long/1000
 
-    return [flow_rate_kgs,Perd_termicas,Q_prod,x_out,T_out_K,flow_rate_rec,Q_prod_rec,bypass]
+    return [flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,x_out,T_out_K,flow_rate_rec,Q_prod_rec,bypass]
 
 
 def outputKettle(P_op_Mpa,almVolumen,T_alm_K_old,Q_prod,T_in_C_AR):
