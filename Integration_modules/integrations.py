@@ -330,7 +330,12 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
                 outlet=IAPWS97(P=P_op_Mpa, x=0)
                 h_out_kJkg=outlet.h
                 Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*FS/1000 #Q_prod_rec to calculate flow_rate inside the loop
-                flow_rate_rec=Q_prod_rec/(h_out_kJkg-h_in_kJkg)
+                #Try-Except in order to avoid infinite flow rate when h_out=h_in (after several unsuccessful attempts to reach x_out)
+                try:
+                    flow_rate_rec=Q_prod_rec/(h_out_kJkg-h_in_kJkg)
+                except:
+                    flow_rate_rec=0
+                    
                 Q_prod=0
                 T_out_K=outlet.T
                 Q_prod_rec=Q_prod_rec*num_loops*FS # Total Q_prod_rec in the field
