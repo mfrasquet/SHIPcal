@@ -361,8 +361,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             #>> PROCESS
         fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
         T_process_in=290 #HIGH - Process temperature [ºC]
-        T_process_out=180 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=20 #[bar] 
+        T_process_out=20 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=30 #[bar] 
         
         # Not implemented yet
         """
@@ -376,7 +376,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=900*8760 #[kWh]
+        totalConsumption=1875*8760 #[kWh]
         file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         # file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
 
@@ -946,38 +946,46 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
     elif type_integration=="SL_S_PD":
         
-        
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
-        T_in_C=T_process_out #The inlet temperature at the solar field is the same than the return of the process
-       
-        x_design=0.4
+        
+        # Outlet of the process
+        T_process_out_C=T_process_out
+        T_process_out_K=T_process_out_C+273
 
-        almVolumen=0 #litros
-        energStorageMax=0 #kWh
-        energy_stored=0 #kWh
-        T_in_K=T_in_C+273 #Temp return of condensates
-        initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
-        h_in=initial.h #kJ/kg
-        in_s=initial.s
-        sat_liq=IAPWS97(P=P_op_Mpa, x=0)
-        outputState=IAPWS97(P=P_op_Mpa, x=x_design)
-        T_out_K=outputState.T 
-        T_out_C=outputState.T-273 #Temperature of saturation at that level
-        
-        out_s=outputState.s
-        h_out=outputState.h
-        
+        #Inlet of the process
         input_ProcessState=IAPWS97(P=P_op_Mpa, x=1)
+        T_process_in_K=input_ProcessState.T
+        T_process_in_C=T_process_in_K-273
+        
         s_process_in=input_ProcessState.s
         h_process_in=input_ProcessState.h
 
+        # --------------  STEP 1 -------------- 
+            #The inlet temperature at the solar field 
+        T_in_C=T_process_out_C #The inlet temperature at the solar field is the same than the return of the process
+        T_in_K=T_in_C+273
+
+        sat_liq=IAPWS97(P=P_op_Mpa, x=0)
+
+        if T_in_K>sat_liq.T: #Ensure the inlet is in liquid phase
+            T_in_K=sat_liq.T  
+
+        initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
+        h_in=initial.h #kJ/kg
+        in_s=initial.s
         
-        #Not used
-        porctSensible=0
-        sat_vap=0 #Not used
-        T_process_out_C=0 #Not used
-        T_process_in_C=T_out_C #Not used
-        T_out_HX_C=0 #Not used
+            #The outlet temperature at the solar field 
+        T_out_K=input_ProcessState.T 
+        T_out_C=input_ProcessState.T-273 #Temperature of saturation at that level
+        
+        # --------------  STEP 2 --------------
+        # Design point   
+        x_design=0.8 #Design steam quality
+
+        outputState=IAPWS97(P=P_op_Mpa, x=x_design)
+        out_s=outputState.s
+        h_out=outputState.h
+        
         
     elif type_integration=="SL_S_PDS":
         
@@ -1581,8 +1589,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=8
-n_coll_loop=8
+num_loops=5
+n_coll_loop=24
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
