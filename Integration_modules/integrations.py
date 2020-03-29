@@ -286,7 +286,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
 
 
-def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,x_desing,Q_prod_rec_old):
+def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,x_desing,Q_prod_rec_old,subcooling):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     Perd_termicas=0
     T_in_K=T_in_C+273 #Normal operation
@@ -327,8 +327,8 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
                 Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)*num_loops*FS
                 
             else: #After the recirculation the fluid is biphasic and this could generate problems with the pump
-                outlet=IAPWS97(P=P_op_Mpa, x=0)
-                h_out_kJkg=outlet.h
+                outletSat=IAPWS97(P=P_op_Mpa, x=0)
+                h_out_kJkg=IAPWS97(P=P_op_Mpa, T=outletSat.T-subcooling).h
                 Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*FS/1000 #Q_prod_rec to calculate flow_rate inside the loop
                 #Try-Except in order to avoid infinite flow rate when h_out=h_in (after several unsuccessful attempts to reach x_out)
                 if h_out_kJkg-h_in_kJkg>0:

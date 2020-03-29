@@ -141,14 +141,16 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     m_dot_min_kgs=0.06 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
+    subcooling=5 #Deegre of subcooling
     
         ## SL_L_RF
     heatFactor=.8 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
-    DELTA_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
     HX_eff=0.9 # Simplification for HX efficiency
-        ## SL_L_S
     DELTA_ST=30 # Temperature delta over the design process temp for the storage
-    DELTA_HX=5 # Degrees for temperature delta experienced in the storage exchanger (for design) 
+    
+    ## SL_L_S_PH & SL_L_RF
+    DELTA_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
+
 #    flowrate_design_kgs=2 # Design flow rate (fix value for SL_L_S)
     
     
@@ -617,7 +619,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         T_out_C=T_process_in #The outlet temperature at the solar field is the same than the process temperature
         if fluidInput=="water": # Only applies to water
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273-5 
+                T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273-subcooling
         T_out_K=T_out_C+273
         
         # --------------  STEP 2 -------------- 
@@ -632,7 +634,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         if type_integration=="SL_L_S":
             if fluidInput=="water": # Only applies to water
                 if T_out_C+DELTA_ST>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                    T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -5 #Max temperature storage [K]
+                    T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -subcooling #Max temperature storage [K]
                 else:
                     T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K]
             else:
@@ -640,7 +642,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         else:
             if fluidInput=="water": # Only applies to water
                 if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                    T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -5 #Max temperature storage [K]
+                    T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -subcooling #Max temperature storage [K]
                 else:
                     T_max_storage=T_out_C+273 #Max temperature storage [K]
             else:
@@ -802,7 +804,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         porctLatent=latentPart/total
         Demand2=Demand*porctSensible
         
-        T_out_K=IAPWS97(P=P_op_Mpa, x=0).T-5 #Heating point
+        T_out_K=IAPWS97(P=P_op_Mpa, x=0).T-subcooling #Heating point
         T_out_C=T_out_K-273 
           
         in_s=initial.s
@@ -883,7 +885,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         porctLatent=latentPart/total
         Demand2=Demand*porctSensible
         
-        T_out_K=IAPWS97(P=P_op_Mpa, x=0).T-5 #Heating point
+        T_out_K=IAPWS97(P=P_op_Mpa, x=0).T-subcooling #Heating point
         T_out_C=T_out_K-273 
           
         in_s=initial.s
@@ -1227,7 +1229,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             
             elif type_integration=="SL_S_PD":
                 #SL_S_PD Supply level with steam for direct steam generation
-                [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],x_out[i],T_out_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1])
+                [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],x_out[i],T_out_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1],subcooling)
              
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
             elif type_integration=="SL_S_PDS":
