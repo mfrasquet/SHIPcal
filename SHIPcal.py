@@ -138,7 +138,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #--> Integration parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.06 # Minimum flowrate before re-circulation [kg/s]
+    m_dot_min_kgs=0.02 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     subcooling=5 #Deegre of subcooling
@@ -1575,12 +1575,12 @@ plots=[0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0] # Put 1 in the elements you want to plot
 
 finance_study=1
 
-month_ini_sim=6
-day_ini_sim=21
+month_ini_sim=1
+day_ini_sim=1
 hour_ini_sim=1
 
-month_fin_sim=6
-day_fin_sim=22
+month_fin_sim=12
+day_fin_sim=31
 hour_fin_sim=24
 
 
@@ -1591,8 +1591,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=5
-n_coll_loop=24
+num_loops=1
+n_coll_loop=8
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1602,7 +1602,7 @@ n_coll_loop=24
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage parallel
 #SL_L_S_PH -> Storage preheat
-type_integration="SL_S_FWS"
+type_integration="SL_S_PD"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1612,7 +1612,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1650,7 +1650,7 @@ elif origin==-3:
     last_reg=inputsDjango['last_reg']
 else:
     #To perform simulations from command line using inputs like if they were from django
-    inputsDjango= {'date': '2020-03-23', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'prueba2', 'sectorIndustry': 'Chemical', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Adelaide', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 25.0, 'tempOUT': 130.0, 'connection': '', 'process': '', 'demand': 2000.0, 'demandUnit': 'MWh', 'hourINI': 6, 'hourEND': 22, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 711}
+    inputsDjango= {'date': '2020-03-29', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'SOLPINTER', 'sectorIndustry': 'Dummy', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Almeria', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'steam', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 20.0, 'tempOUT': 130.0, 'connection': '', 'process': '', 'demand': 2000.0, 'demandUnit': 'MWh', 'hourINI': 4, 'hourEND': 21, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.091, 'Feb': 0.091, 'Mar': 0.091, 'Apr': 0.091, 'May': 0.091, 'Jun': 0.091, 'Jul': 0.091, 'Aug': 0.0, 'Sep': 0.091, 'Oct': 0.091, 'Nov': 0.091, 'Dec': 0.091, 'last_reg': 709}
     last_reg=inputsDjango['last_reg']
     
 #[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
