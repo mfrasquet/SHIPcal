@@ -327,12 +327,12 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
                 Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)*num_loops*FS
                 
             else: #After the recirculation the fluid is biphasic and this could generate problems with the pump
-                outletSat=IAPWS97(P=P_op_Mpa, x=0)
-                h_out_kJkg=IAPWS97(P=P_op_Mpa, T=outletSat.T-subcooling).h
+                T_sub=IAPWS97(P=P_op_Mpa, x=0).T-subcooling
+                h_sub=IAPWS97(P=P_op_Mpa, T=T_sub).h
                 Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*FS/1000 #Q_prod_rec to calculate flow_rate inside the loop
                 #Try-Except in order to avoid infinite flow rate when h_out=h_in (after several unsuccessful attempts to reach x_out)
-                if h_out_kJkg-h_in_kJkg>0:
-                    flow_rate_rec=Q_prod_rec/(h_out_kJkg-h_in_kJkg)
+                if h_sub-h_in_kJkg>0:
+                    flow_rate_rec=Q_prod_rec/(h_sub-h_in_kJkg)
                 else:
                     flow_rate_rec=0
                     
