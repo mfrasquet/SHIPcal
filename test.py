@@ -30,20 +30,7 @@ mofProd=1 #Factor de seguridad a la producción de los módulos
 
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 
-# -------------------- SIZE OF THE PLANT ---------
-num_loops=5
-n_coll_loop=24
 
-#SL_L_P -> Supply level liquid parallel integration without storage
-#SL_L_PS -> Supply level liquid parallel integration with storage
-#SL_L_RF -> Supply level liquid return flow boost
-#SL_S_FW -> Supply level solar steam for heating of boiler feed water without storage
-#SL_S_FWS -> Supply level solar steam for heating of boiler feed water with storage
-#SL_S_PD -> Supply level solar steam for direct solar steam generation 
-#SL_L_S -> Storage parallel
-#SL_L_S_PH -> Storage preheat
-
-almVolumen=0 #litros
 
 def print_results(integration,fluid,plotVars,max_ref,lim_ref,Q_charg=1):
     error=''
@@ -58,11 +45,6 @@ def print_results(integration,fluid,plotVars,max_ref,lim_ref,Q_charg=1):
 
     
     return error,aux
-
-
-
-
-
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
