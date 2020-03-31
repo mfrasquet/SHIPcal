@@ -8,6 +8,25 @@ Created on Sun Mar 29 17:27:44 2020
 
 from SHIPcal import SHIPcal
 
+"""
+    #--> Integration parameters
+    
+    lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
+    m_dot_min_kgs=0.06 # Minimum flowrate before re-circulation [kg/s]
+    coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
+    Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
+    subcooling=5 #Deegre of subcooling
+    
+        ## SL_L_RF
+    heatFactor=.9 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
+    HX_eff=0.9 # Simplification for HX efficiency
+    DELTA_ST=30 # Temperature delta over the design process temp for the storage
+    
+    ## SL_L_S_PH & SL_L_RF
+    DELTA_HX=5 # Degrees for temperature delta experienced in the heat exchanger (for design) 
+
+"""
+
 errorList=[]
 
 last_reg='666'
@@ -150,7 +169,7 @@ for type_integration in ["SL_L_P","SL_L_PS","SL_L_S","SL_L_S_PH","SL_L_RF"]:
     
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #Tests "Water" 
-print("TESTS THERMAL WATER ##############################################")
+print("TESTS WATER ##############################################")
       
       
 solutions={'SL_L_P':[12437.409006259013,11650.137743509606,0],
@@ -201,7 +220,7 @@ for type_integration in ["SL_L_P","SL_L_PS","SL_L_S","SL_L_S_PH","SL_L_RF"]:
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #Tests "Steam" 
-print("TESTS THERMAL WATER ##############################################")
+print("TESTS STEAM ##############################################")
       
       
 solutions={'SL_S_PD':[19957.777876359476,19665.50597226274,0],
