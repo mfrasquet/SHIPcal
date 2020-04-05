@@ -42,9 +42,15 @@ def offDSG_Rec(PerdSD,fluidInput,bypass,T_in_flag,T_in_C_AR,temp,SD_energy_old,S
             T_in_K=temp
         else:
             T_in_K=T_in_C_AR+273 # Input from public water grid
+    #Simplified ambient losses
     SD_energy=SD_energy_old-PerdSD
     SDState=IAPWS97(P=P_op_Mpa, T=T_SD_K_old)
     T_SD_K=3600*SD_energy_old/(SD_mass*SDState.cp)+273
+    if T_SD_K<temp: #Avoid cooling more than ambient temp
+        SD_energy=SD_energy_old
+        T_SD_K=T_SD_K_old
+        
+    
     T_out_K=temp
     Q_prod=0 # There's no production  
     
