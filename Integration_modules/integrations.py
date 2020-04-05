@@ -33,6 +33,35 @@ def offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,temp):
     Q_prod=0 # There's no production  
     return [T_out_K,Q_prod,T_in_K]
 
+def offDSG_Rec(PerdSD,SD_limit_energy,fluidInput,bypass,T_in_flag,T_in_C_AR,temp,SD_energy_old,SD_mass,T_SD_K_old,P_op_Mpa):
+            
+    bypass.append("OFF")
+    
+    if fluidInput=="steam":
+        if T_in_flag==1: # Closed circuit
+            T_in_K=temp
+        else:
+            T_in_K=T_in_C_AR+273 # Input from public water grid
+    #Simplified ambient losses
+    SD_energy=SD_energy_old-PerdSD
+    try:
+        SDState=IAPWS97(P=P_op_Mpa, T=T_SD_K_old)
+    except:        
+        raise ValueError('Error in steam drum',T_SD_K_old-273)
+
+    SD_h=3600*SD_energy/SD_mass
+    SDState=IAPWS97(P=P_op_Mpa, h=SD_h)
+    T_SD_K=SDState.T
+        
+    if T_SD_K<283 or SD_energy<SD_limit_energy: #Avoid cooling more than ambient temp or limit
+        T_SD_K=283
+        SD_energy=SD_energy_old
+
+    T_out_K=temp
+    Q_prod=0 # There's no production  
+    
+    return [T_out_K,Q_prod,T_in_K,T_SD_K,SD_energy]
+
 #def offOilSimple(bypass,T_in_K_old):
 #         
 #    bypass.append("OFF")
@@ -62,7 +91,7 @@ def offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,temp,energStorageMax,
     T_out_K=temp
     Q_prod=0 #No hay produccion
     SOC=100*energy_stored/energStorageMax
-    return [T_out_K,Q_prod,T_in_K,SOC]
+    return [bypass,T_out_K,Q_prod,T_in_K,SOC]
 def offOnlyStorageSimple(temp,energStorageMax,energy_stored,T_K_alm_old,storage_energy_old,SOC_old):
 
     T_in_K=temp
@@ -365,6 +394,58 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
     return [flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,x_out,T_out_K,flow_rate_rec,Q_prod_rec,bypass]
 
 
+def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K_old,SD_mass,SD_energy_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,x_desing):
+#SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
+    Perd_termicas=0
+    
+    #Solar Loop
+    #Inlet
+    T_in_K=T_SD_K_old #The inlet temp. of the solar field is equal to the temperature of the SD (in the prev. step)
+    inlet=IAPWS97(P=P_op_Mpa, T=T_in_K)
+    h_in_kJkg=inlet.h
+    #Outlet
+    outlet=IAPWS97(P=P_op_Mpa, x=x_desing)
+    h_out_kJkg=outlet.h
+    T_out_K=outlet.T
+    
+    #Flow rate in the solar field calculation
+    DELTA_T_loss=outlet.T-temp
+    Q_loss_rec=Rec_loss(REC_type,DELTA_T_loss,theta_i_rad,DNI) #W/m
+    Q_loss_rec=Q_loss_rec[0]
+    flow_rate_kgs=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/((outlet.h-inlet.h)*1000)
+
+    if flow_rate_kgs<=m_dot_min_kgs:
+        #Energy coming from Solar field
+        flow_rate_kgs=m_dot_min_kgs
+        Q_prod=inlet.h+(flow_rate_kgs/(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long))/1000
+
+    else:
+        #Energy coming from Solar field
+        Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
+    
+    #New energy state of the Steam Drum
+    SD_energy_new=SD_energy_old+Q_prod
+    SD_h=3600*SD_energy_new/SD_mass
+    SDState=IAPWS97(P=P_op_Mpa, h=SD_h)
+    T_SD_K=SDState.T
+    
+    #Quantity of steam delivered to the process
+    if SD_energy_new>SD_min_energy:
+        Q_prod_steam=SD_energy_new-SD_min_energy
+        SD_energy_new=SD_min_energy
+        T_SD_K=IAPWS97(P=P_op_Mpa, x=0).T
+        
+    else:
+        if IAPWS97(P=P_op_Mpa, T=T_SD_K).x==1:
+            T_SD_K=IAPWS97(P=P_op_Mpa, x=0).T 
+        Q_prod_steam=0
+    
+    bypass.append("PROD")
+    return [flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,T_out_K,T_SD_K,SD_energy_new,Q_prod_steam]
+
+
+
+
 def outputKettle(P_op_Mpa,almVolumen,T_alm_K_old,Q_prod,T_in_C_AR):
     
     almacenamiento=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Propiedades en el almacenamiento
@@ -399,17 +480,7 @@ def outputKettle(P_op_Mpa,almVolumen,T_alm_K_old,Q_prod,T_in_C_AR):
     return (m_vap/3600, T_alm)
 
 
-
-
-#    storage_energy_new=(storage_energy_old+Q_prod)*3600 #KJ 
-#    almacenamiento=IAPWS97(P=P_op_Mpa, T=T_alm_K_old) #Propiedades en el almacenamiento
-#    almacenamiento_CP=almacenamiento.cp #Capacidad calorifica del proceso KJ/kg/K
-#    almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg     
-#    T_alm_new=(storage_energy_new/(almacenamiento_CP*almVolumen*(1/1000)*(1/almacenamiento_rho))) #in K
-
-    
-def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_in_alm_K,T_alm_K_old,Q_prod,energy_stored,Demand,energStorageMax,storage_energy_old,storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy): 
-       
+def outputOnlyStorageSimple(fluidInput,P_op_Mpa,T_min_storage,T_max_storage,almVolumen,T_in_alm_K,T_alm_K_old,Q_prod,energy_stored,Demand,energStorageMax,storage_energy_old,storage_ini_energy,storage_min_energy,energStorageUseful,storage_max_energy):    
     if T_min_storage>=T_alm_K_old: # The storage is still under the minimum temperatura -> Charge
         #energy_stored: is the energy above/under the storage_min_energy(energy at the minimum/initial/inlet design temperature) that the previous hour left as result in the storage. This is the available energy from the preious step
         #energStorageUseful: is the energy difference between the energy that the storage would have at the T_max_storage temperature and thes storage_min_energy(energy at the minimum/minimum/initial/inlet)
@@ -556,7 +627,6 @@ def outputStorageSimple(Q_prod,energy_stored,Demand,energStorageMax):
         energy_stored=0 #New state of the storage
         SOC=0
         Q_defocus=0
-       
         
     elif (Q_prod<Demand) and (Q_prod+energy_stored>Demand): #Partial discharge
         
@@ -600,7 +670,17 @@ def outputWithoutStorageSimple(Q_prod,Demand):
         Q_defocus=Q_prod-Demand
     return[Q_prod_lim,Q_defocus,Q_useful]
 
-
+def outputDSG_Rec(Q_prod,Q_prod_steam,Demand):
+#SL_S_PDR
+    if Q_prod_steam<=Demand:
+        Q_prod_lim=Q_prod_steam
+        Q_useful=Q_prod
+        Q_defocus=0
+    else:
+        Q_prod_lim=Demand
+        Q_useful=Demand
+        Q_defocus=Q_prod_steam-Demand
+    return[Q_prod_lim,Q_defocus,Q_useful]
 
 def outputStorageOilSimple(Q_prod,energy_stored,Demand,energStorageMax):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration with storage pg52 

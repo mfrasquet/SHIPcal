@@ -1590,3 +1590,45 @@ def savingsMonths(sender,origin,Q_prod_lim,Demand,Fuel_price,Boiler_eff,lang,plo
     if origin==0:
         plt.show()
         return output_excel
+    
+    
+def SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,Q_prod,Q_prod_steam,SD_energy,T_in_K,T_out_K,T_SD_K,plotPath,imageQlty,**kwargs):
+    fig = plt.figure()
+    if origin==-2 or origin == -3:
+        fig.patch.set_alpha(0)
+    fig.suptitle('Direct steam Generation RECIRCULATION', fontsize=14, fontweight='bold')
+    ax1 = fig.add_subplot(111)  
+    ax1 .plot(step_sim, Q_prod,'m:',label="Producción solar")
+    ax1 .plot(step_sim, Q_prod_steam,'g:',label="Producción vapor")    
+    ax1 .plot(step_sim, SD_energy,color='orange',label="Energia en SD")
+    ax1 .axhline(y=SD_min_energy,xmin=0,xmax=steps_sim,c="black",linewidth=0.5,zorder=0)
+    ax1.set_ylim([0,max(SD_min_energy,max(Q_prod_steam))*1.1])
+    ax1.set_xlabel('Simulación (hora del año)')
+    ax1.set_ylabel('Energía - kWh')
+    plt.legend(bbox_to_anchor=(1.15, .5), loc=2, borderaxespad=0.)
+    ax2 = ax1.twinx()          
+    ax2 .plot(step_sim, T_in_K-273,'-',color = '#1F85DE',label="Temp_in Solar")
+    ax2 .plot(step_sim, T_out_K-273,'-',color = 'red',label="Temp_out Solar")
+    ax2 .plot(step_sim, T_SD_K-273,':',color = 'orange',label="Temp_alm")
+    ax2.set_ylabel('Temp - C')
+    ax2.set_ylim([0,(np.max([np.max(T_SD_K),np.max(T_out_K)])-273)*1.2])
+    plt.legend(bbox_to_anchor=(1.15, 1), loc=2, borderaxespad=0.)    
+            
+#    output1=pd.DataFrame(flow_rate_kgs)
+#    output1.columns=['Flow_rate']
+#    output2=pd.DataFrame(T_in_K)
+#    output2.columns=['T_in_K']
+#    output3=pd.DataFrame(T_out_K)
+#    output3.columns=['T_out_K']
+#    output_excel_FlowratesTemps=pd.concat([output1,output2,output3], axis=1)
+    
+    if origin==-2 or origin == -3:
+        f = io.BytesIO()           # Python 3
+        plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
+        plt.clf()
+        image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
+        f.close()
+        return image_base64
+    if origin==-1:
+        fig.savefig(str(plotPath)+'flowrates.png', format='png', dpi=imageQlty)
+  
