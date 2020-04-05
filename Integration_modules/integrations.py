@@ -33,7 +33,7 @@ def offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,temp):
     Q_prod=0 # There's no production  
     return [T_out_K,Q_prod,T_in_K]
 
-def offDSG_Rec(PerdSD,fluidInput,bypass,T_in_flag,T_in_C_AR,temp,SD_energy_old,SD_mass,T_SD_K_old,P_op_Mpa):
+def offDSG_Rec(PerdSD,SD_limit_energy,fluidInput,bypass,T_in_flag,T_in_C_AR,temp,SD_energy_old,SD_mass,T_SD_K_old,P_op_Mpa):
             
     bypass.append("OFF")
     
@@ -44,13 +44,16 @@ def offDSG_Rec(PerdSD,fluidInput,bypass,T_in_flag,T_in_C_AR,temp,SD_energy_old,S
             T_in_K=T_in_C_AR+273 # Input from public water grid
     #Simplified ambient losses
     SD_energy=SD_energy_old-PerdSD
-    SDState=IAPWS97(P=P_op_Mpa, T=T_SD_K_old)
-    T_SD_K=3600*SD_energy_old/(SD_mass*SDState.cp)+273
-    if T_SD_K<temp: #Avoid cooling more than ambient temp
+    try:
+        SDState=IAPWS97(P=P_op_Mpa, T=T_SD_K_old)
+    except:        
+        raise ValueError('Error in steam drum',T_SD_K_old-273)
+
+    T_SD_K=3600*SD_energy_old/(SD_mass*SDState.cp)+273     
+    if T_SD_K<283 or SD_energy<SD_limit_energy: #Avoid cooling more than ambient temp or limit
+        T_SD_K=283
         SD_energy=SD_energy_old
-        T_SD_K=T_SD_K_old
-        
-    
+
     T_out_K=temp
     Q_prod=0 # There's no production  
     
@@ -388,7 +391,7 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
     return [flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,x_out,T_out_K,flow_rate_rec,Q_prod_rec,bypass]
 
 
-def operationDSG_Rec(bypass,SD_min_energy,SD_max_energy,T_SD_K_old,SD_mass,SD_energy_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,x_desing):
+def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,SD_max_energy,T_SD_K_old,SD_mass,SD_energy_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,x_desing):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     Perd_termicas=0
     
@@ -408,8 +411,14 @@ def operationDSG_Rec(bypass,SD_min_energy,SD_max_energy,T_SD_K_old,SD_mass,SD_en
     Q_loss_rec=Q_loss_rec[0]
     flow_rate_kgs=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/((outlet.h-inlet.h)*1000)
 
-    #Energy coming from Solar field
-    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
+    if flow_rate_kgs<=m_dot_min_kgs:
+        #Energy coming from Solar field
+        flow_rate_kgs=m_dot_min_kgs
+        Q_prod=inlet.h+(flow_rate_kgs/(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long))/1000
+
+    else:
+        #Energy coming from Solar field
+        Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
     
     #New energy state of the Steam Drum
     SD_energy_new=SD_energy_old+Q_prod
@@ -420,13 +429,15 @@ def operationDSG_Rec(bypass,SD_min_energy,SD_max_energy,T_SD_K_old,SD_mass,SD_en
     if SD_energy_new>SD_min_energy:
         Q_prod_steam=SD_energy_new-SD_min_energy
         SD_energy_new=SD_min_energy
-        T_SD_K=IAPWS97(P=P_op_Mpa, x=0).T
+        T_SD_K=IAPWS97(P=P_op_Mpa, x=0.2).T
         
     else:
+        if IAPWS97(P=P_op_Mpa, T=T_SD_K).x==1:
+            T_SD_K=IAPWS97(P=P_op_Mpa, x=0).T 
         Q_prod_steam=0
     
     bypass.append("PROD")
-    return [flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,T_out_K,T_SD_K,SD_energy_new]
+    return [flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,T_out_K,T_SD_K,SD_energy_new,Q_prod_steam]
 
 
 
@@ -655,7 +666,17 @@ def outputWithoutStorageSimple(Q_prod,Demand):
         Q_defocus=Q_prod-Demand
     return[Q_prod_lim,Q_defocus,Q_useful]
 
-
+def outputDSG_Rec(Q_prod,Q_prod_steam,Demand):
+#SL_S_PDR
+    if Q_prod_steam<=Demand:
+        Q_prod_lim=Q_prod_steam
+        Q_useful=Q_prod
+        Q_defocus=0
+    else:
+        Q_prod_lim=Demand
+        Q_useful=Demand
+        Q_defocus=Q_prod_steam-Demand
+    return[Q_prod_lim,Q_defocus,Q_useful]
 
 def outputStorageOilSimple(Q_prod,energy_stored,Demand,energStorageMax):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration with storage pg52 
