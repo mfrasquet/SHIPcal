@@ -49,7 +49,10 @@ def offDSG_Rec(PerdSD,SD_limit_energy,fluidInput,bypass,T_in_flag,T_in_C_AR,temp
     except:        
         raise ValueError('Error in steam drum',T_SD_K_old-273)
 
-    T_SD_K=3600*SD_energy_old/(SD_mass*SDState.cp)+273     
+    SD_h=3600*SD_energy/SD_mass
+    SDState=IAPWS97(P=P_op_Mpa, h=SD_h)
+    T_SD_K=SDState.T
+        
     if T_SD_K<283 or SD_energy<SD_limit_energy: #Avoid cooling more than ambient temp or limit
         T_SD_K=283
         SD_energy=SD_energy_old
@@ -391,7 +394,7 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
     return [flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,x_out,T_out_K,flow_rate_rec,Q_prod_rec,bypass]
 
 
-def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,SD_max_energy,T_SD_K_old,SD_mass,SD_energy_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,x_desing):
+def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K_old,SD_mass,SD_energy_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,x_desing):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     Perd_termicas=0
     
@@ -422,14 +425,15 @@ def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,SD_max_energy,T_SD_K_old
     
     #New energy state of the Steam Drum
     SD_energy_new=SD_energy_old+Q_prod
-    SDState=IAPWS97(P=P_op_Mpa, T=T_SD_K_old)
-    T_SD_K=3600*SD_energy_new/(SD_mass*SDState.cp)+273
+    SD_h=3600*SD_energy_new/SD_mass
+    SDState=IAPWS97(P=P_op_Mpa, h=SD_h)
+    T_SD_K=SDState.T
     
     #Quantity of steam delivered to the process
     if SD_energy_new>SD_min_energy:
         Q_prod_steam=SD_energy_new-SD_min_energy
         SD_energy_new=SD_min_energy
-        T_SD_K=IAPWS97(P=P_op_Mpa, x=0.2).T
+        T_SD_K=IAPWS97(P=P_op_Mpa, x=0).T
         
     else:
         if IAPWS97(P=P_op_Mpa, T=T_SD_K).x==1:

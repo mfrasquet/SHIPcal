@@ -1592,7 +1592,7 @@ def savingsMonths(sender,origin,Q_prod_lim,Demand,Fuel_price,Boiler_eff,lang,plo
         return output_excel
     
     
-def SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,SD_max_energy,Q_prod,Q_prod_steam,SD_energy,T_in_K,T_out_K,T_SD_K,plotPath,imageQlty,**kwargs):
+def SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,Q_prod,Q_prod_steam,SD_energy,T_in_K,T_out_K,T_SD_K,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
     if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
@@ -1602,7 +1602,6 @@ def SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,SD_max_energy,Q
     ax1 .plot(step_sim, Q_prod_steam,'g:',label="Producción vapor")    
     ax1 .plot(step_sim, SD_energy,color='orange',label="Energia en SD")
     ax1 .axhline(y=SD_min_energy,xmin=0,xmax=steps_sim,c="black",linewidth=0.5,zorder=0)
-    ax1 .axhline(y=SD_max_energy,xmin=0,xmax=steps_sim,c="black",linewidth=0.5,zorder=0)
     ax1.set_ylim([0,max(SD_min_energy,max(Q_prod_steam))*1.1])
     ax1.set_xlabel('Simulación (hora del año)')
     ax1.set_ylabel('Energía - kWh')
