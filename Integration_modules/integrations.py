@@ -416,9 +416,9 @@ def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K_old,SD_mass,SD_en
 
     if flow_rate_kgs<=m_dot_min_kgs:
         #Energy coming from Solar field
-        flow_rate_kgs=m_dot_min_kgs
-        Q_prod=inlet.h+(flow_rate_kgs/(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long))/1000
-
+        flow_rate_kgs=m_dot_min_kgs        
+        Q_prod=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/1000
+        Q_prod=Q_prod*num_loops*FS
     else:
         #Energy coming from Solar field
         Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
