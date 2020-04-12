@@ -389,7 +389,7 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
     return [flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,x_out,T_out_K,flow_rate_rec,Q_prod_rec,bypass]
 
 
-def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K_old,SD_mass,SD_energy_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,x_desing):
+def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K_old,SD_mass,SD_energy_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,x_desing,PerdSD):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     Perd_termicas=0
     
@@ -419,7 +419,7 @@ def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K_old,SD_mass,SD_en
         Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
     
     #New energy state of the Steam Drum
-    SD_energy_new=SD_energy_old+Q_prod
+    SD_energy_new=SD_energy_old+Q_prod-PerdSD
     SD_h=3600*SD_energy_new/SD_mass
     SDState=IAPWS97(P=P_op_Mpa, h=SD_h)
     T_SD_K=SDState.T
@@ -665,17 +665,30 @@ def outputWithoutStorageSimple(Q_prod,Demand):
         Q_defocus=Q_prod-Demand
     return[Q_prod_lim,Q_defocus,Q_useful]
 
-def outputDSG_Rec(Q_prod,Q_prod_steam,Demand):
+def outputDSG_Rec(SD_max_energy,SD_min_energy,SD_energy,SD_energy_old,Q_prod,Q_prod_steam,Demand):
 #SL_S_PDR
     if Q_prod_steam<=Demand:
         Q_prod_lim=Q_prod_steam
         Q_useful=Q_prod
+        Q_drum=SD_energy-SD_energy_old
         Q_defocus=0
     else:
-        Q_prod_lim=Demand
-        Q_useful=Demand
-        Q_defocus=Q_prod_steam-Demand
-    return[Q_prod_lim,Q_defocus,Q_useful]
+        if SD_energy+Q_prod_steam-Demand<SD_max_energy: #All the excess is absorbed by the steam drum
+            SD_energy=SD_energy+Q_prod_steam-Demand
+            Q_prod_lim=Demand
+            Q_useful=Q_prod_steam
+            Q_drum=Q_prod_steam-Demand
+            Q_defocus=0
+            Q_prod_steam=Demand
+        else:
+            Q_drum=(SD_max_energy-SD_min_energy)
+            Q_defocus=Q_prod_steam-Demand-(SD_max_energy-SD_min_energy)
+            Q_prod_steam=Demand
+            SD_energy=SD_max_energy
+            Q_prod_lim=Demand
+            Q_useful=Q_drum+Q_prod_steam
+            
+    return[Q_prod_lim,Q_defocus,Q_useful,SD_energy,Q_prod_steam,Q_drum]
 
 def outputStorageOilSimple(Q_prod,energy_stored,Demand,energStorageMax):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration with storage pg52 

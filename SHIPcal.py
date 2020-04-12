@@ -39,7 +39,7 @@ from Solar_modules.EQSolares import theta_IAMs
 from Solar_modules.EQSolares import IAM_calc
 from Finance_modules.FinanceModels import SP_plant_costFunctions
 from Integration_modules.integrations import offStorageSimple, offOnlyStorageSimple, operationOnlyStorageSimple, operationSimple, operationDSG, outputOnlyStorageSimple, outputWithoutStorageSimple, outputStorageSimple, offSimple,outputFlowsHTF,outputFlowsWater,operationDSG_Rec,offDSG_Rec,outputDSG_Rec
-from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageAnnual, financePlot, prodMonths, savingsMonths,SL_S_PDR_Plot
+from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageNonAnnual, financePlot, prodMonths, savingsMonths,SL_S_PDR_Plot,storageNonAnnualSL_S_PDR
 
 
 def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
@@ -1023,13 +1023,16 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         # --------------- STEP 2 ---------------
         #Steam drum properties
-        SD_mass=500*int(num_modulos_tot/4) #mass in the steam drum [kg]
+        SD_mass=200*int(num_modulos_tot/4) #mass in the steam drum [kg]
         
         #Limit conditions
         SD_limit_energy=SD_mass*IAPWS97(P=P_op_Mpa, T=283).h/3600 #Inf. Limit temperature for the steam drum in kWh
         #Minimum conditions
-        SD_min_energy=SD_mass*IAPWS97(P=P_op_Mpa, x=0).h/3600 #Min temperature for the steam drum in kWh
-           
+        SD_min_energy=SD_mass*IAPWS97(P=P_op_Mpa, x=0.2).h/3600 #Min temperature for the steam drum in kWh
+        #Maximum conditions
+        SD_max_energy=SD_mass*IAPWS97(P=P_op_Mpa, x=0.6).h/3600 #Min temperature for the steam drum in kWh
+             
+        
         PerdSD=(SD_min_energy-SD_limit_energy)/48 # SD ambient Loss Kwh - All energy is lost after 2 days
         
         # --------------- STEP 3 ---------------
@@ -1130,6 +1133,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     SD_energy=np.zeros(steps_sim)
     x_out=np.zeros(steps_sim)
     Q_prod_steam=np.zeros(steps_sim)
+    Q_drum=np.zeros(steps_sim)
     
     if sender=='CIMAV':
         blong,nlong = IAM_fiteq(type_coll,1)
@@ -1305,8 +1309,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             
             elif type_integration=="SL_S_PDR":
                 #SL_S_PD Supply level with steam for direct steam generation
-                [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],T_out_K[i],T_SD_K[i],SD_energy[i],Q_prod_steam[i]]=operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K[i-1],SD_mass,SD_energy[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,x_design)
-                [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputDSG_Rec(Q_prod[i],Q_prod_steam[i],Demand[i])
+                [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],T_out_K[i],T_SD_K[i],SD_energy[i],Q_prod_steam[i]]=operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K[i-1],SD_mass,SD_energy[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,x_design,PerdSD)
+                [Q_prod_lim[i],Q_defocus[i],Q_useful[i],SD_energy[i],Q_prod_steam[i],Q_drum[i]]=outputDSG_Rec(SD_max_energy,SD_min_energy,SD_energy[i],SD_energy[i-1],Q_prod[i],Q_prod_steam[i],Demand[i])
             
             elif type_integration=="SL_S_PDS":
                 #SL_S_PDS Supply level with steam for direct steam generation with water storage
@@ -1548,9 +1552,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         if plots[8]==1: #(8) Plot flowrates  & Temp & Prod
             flowRatesPlot(sender,origin,step_sim,steps_sim,flowrate_kgs,flowrate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
         if plots[9]==1: #(9)Plot Storage non-annual simulation  
-            storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
+            storageNonAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
         if plots[16]==1 and type_integration=='SL_S_PDR': #(16)Plot for SL_S_PDR
-            SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,Q_prod,Q_prod_steam,SD_energy,T_in_K,T_out_K,T_SD_K,plotPath,imageQlty)
+            SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,SD_max_energy,Q_prod,Q_prod_steam,SD_energy,T_in_K,T_out_K,T_SD_K,plotPath,imageQlty)
+        if plots[17]==1 and type_integration=='SL_S_PDR': #(17)Plot for SL_S_PDR 
+            storageNonAnnualSL_S_PDR(sender,origin,SOC,Q_useful,Q_prod_steam,Q_prod,Q_drum,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
 
     # Property plots
     if fluidInput=="water": #WATER
@@ -1635,7 +1641,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,1,1] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -1736,5 +1742,5 @@ else:
     inputsDjango= {'date': '2020-03-29', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'SOLPINTER', 'sectorIndustry': 'Dummy', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'MexicoDF', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'steam', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 20.0, 'tempOUT': 130.0, 'connection': '', 'process': '', 'demand': 2000.0, 'demandUnit': 'MWh', 'hourINI': 4, 'hourEND': 21, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.091, 'Feb': 0.091, 'Mar': 0.091, 'Apr': 0.091, 'May': 0.091, 'Jun': 0.091, 'Jul': 0.091, 'Aug': 0.0, 'Sep': 0.091, 'Oct': 0.091, 'Nov': 0.091, 'Dec': 0.091, 'last_reg': 709}
     last_reg=inputsDjango['last_reg']
     
-#[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+[jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 
