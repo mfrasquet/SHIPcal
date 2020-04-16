@@ -944,9 +944,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         energy_stored=0 #Initial storage
     
     # ----------------------------------------
-        # SL_S_PD => Supply level with steam direct solar steam generation
+        # SL_S_PDOT => Supply level with steam direct solar steam generation once-thorugh
         
-    elif type_integration=="SL_S_PD":
+    elif type_integration=="SL_S_PDOT":
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         
@@ -988,7 +988,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         out_s=outputState.s
         h_out=outputState.h
         
-    elif type_integration=="SL_S_PDR":
+    elif type_integration=="SL_S_PD": #Direct steam generation (Steam drum)
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
        
@@ -1147,7 +1147,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     Q_prod[0]=0
     T_in_K[0]=temp[0] #Ambient temperature 
     T_out_K[0]=temp[0] #Ambient temperature 
-    if type_integration=="SL_S_PDR":
+    if type_integration=="SL_S_PD":
         #Initial temperature of the steam drum
         T_SD_K[0]=T_SD_in_K #Initial temperature of the storage
         iniState=IAPWS97(P=P_op_Mpa, T=T_SD_in_K)
@@ -1301,14 +1301,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 [T_out_K[i],flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,Area_coll,rho_optic_0,eta1,eta2,mdot_test)
                 [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energy_stored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energy_stored,Demand2[i],energStorageMax)     
             
-            elif type_integration=="SL_S_PD":
-                #SL_S_PD Supply level with steam for direct steam generation
+            elif type_integration=="SL_S_PDOT":
+                #SL_S_PDOT Supply level with steam for direct steam generation
                 [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],x_out[i],T_out_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1],subcooling)
              
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
             
-            elif type_integration=="SL_S_PDR":
-                #SL_S_PD Supply level with steam for direct steam generation
+            elif type_integration=="SL_S_PD":
+                #SL_S_PDOT Supply level with steam for direct steam generation
                 [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],T_out_K[i],T_SD_K[i],SD_energy[i],Q_prod_steam[i]]=operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K[i-1],SD_mass,SD_energy[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,x_design,PerdSD)
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i],SD_energy[i],Q_prod_steam[i],Q_drum[i]]=outputDSG_Rec(SD_max_energy,SD_min_energy,SD_energy[i],SD_energy[i-1],Q_prod[i],Q_prod_steam[i],Demand[i])
             
@@ -1355,12 +1355,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 if Demand2[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energy_stored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energy_stored,Demand2[i],energStorageMax)                         
             
-            elif type_integration=="SL_S_PD":
-                #SL_S_PD Supply level with steam for direct steam generation
+            elif type_integration=="SL_S_PDOT":
+                #SL_S_PDOT Supply level with steam for direct steam generation
                 [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i])
             
-            elif type_integration=="SL_S_PDR":
-                #SL_S_PDR Supply level with steam for direct steam generation
+            elif type_integration=="SL_S_PD":
+                #SL_S_PD Supply level with steam for direct steam generation
                 [T_out_K[i],Q_prod[i],T_in_K[i],T_SD_K[i],SD_energy[i]]=offDSG_Rec(PerdSD,SD_limit_energy,fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i],SD_energy[i-1],SD_mass,T_SD_K[i-1],P_op_Mpa)
 
             elif type_integration=="SL_S_PDS":
@@ -1553,9 +1553,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             flowRatesPlot(sender,origin,step_sim,steps_sim,flowrate_kgs,flowrate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
         if plots[9]==1: #(9)Plot Storage non-annual simulation  
             storageNonAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
-        if plots[16]==1 and type_integration=='SL_S_PDR': #(16)Plot for SL_S_PDR
+        if plots[16]==1 and type_integration=='SL_S_PD': #(16)Plot for SL_S_PD
             SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,SD_max_energy,Q_prod,Q_prod_steam,SD_energy,T_in_K,T_out_K,T_SD_K,plotPath,imageQlty)
-        if plots[17]==1 and type_integration=='SL_S_PDR': #(17)Plot for SL_S_PDR 
+        if plots[17]==1 and type_integration=='SL_S_PD': #(17)Plot for SL_S_PD 
             storageNonAnnualSL_S_PDR(sender,origin,SOC,Q_useful,Q_prod_steam,Q_prod,Q_drum,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
 
     # Property plots
@@ -1658,7 +1658,7 @@ plots=[0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,1,1] # Put 1 in the elements you want to 
 #(13) P- Plot thermal oil/molten salt properties Viscosities vs Temp 
 #(14) Plot Production 
 #(15) A- Plot Month savings 
-#(16) NA- Plot for SL_S_PDR
+#(16) NA- Plot for SL_S_PD
 
 
 
@@ -1688,10 +1688,10 @@ n_coll_loop=24
 #SL_L_RF -> Supply level liquid return flow boost
 #SL_S_FW -> Supply level solar steam for heating of boiler feed water without storage
 #SL_S_FWS -> Supply level solar steam for heating of boiler feed water with storage
-#SL_S_PD -> Supply level solar steam for direct solar steam generation 
+#SL_S_PDOT -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage parallel
 #SL_L_S_PH -> Storage preheat
-type_integration="SL_S_FW"
+type_integration="SL_S_PD"
 almVolumen=0 #litros
 
 # --------------------------------------------------
