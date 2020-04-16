@@ -681,8 +681,8 @@ def outputDSG_Rec(SD_max_energy,SD_min_energy,SD_energy,SD_energy_old,Q_prod,Q_p
             Q_defocus=0
             Q_prod_steam=Demand
         else: #Full load - The Steam drum reaches its maximum energy level, and the excess must be defocus
-            Q_drum=(SD_max_energy-SD_min_energy)
-            Q_defocus=Q_prod_steam-Demand-(SD_max_energy-SD_min_energy)
+            Q_drum=(SD_max_energy-SD_energy)
+            Q_defocus=Q_prod_steam-Demand-(SD_max_energy-SD_energy)
             Q_prod_steam=Demand
             SD_energy=SD_max_energy
             Q_prod_lim=Demand
