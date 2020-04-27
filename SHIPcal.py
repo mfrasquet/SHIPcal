@@ -415,7 +415,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     # --> Meteo variables
    
-    output,hour_year_ini,hour_year_fin=SolarData(file_loc,Lat,Huso,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender)
+    output,i_initial,i_final=SolarData(file_loc,Lat,Huso,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender)
 
     """
     Output key:
@@ -944,9 +944,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         energy_stored=0 #Initial storage
     
     # ----------------------------------------
-        # SL_S_PDOT => Supply level with steam direct solar steam generation once-thorugh
+        # SL_S_PD_OT => Supply level with steam direct solar steam generation once-thorugh
         
-    elif type_integration=="SL_S_PDOT":
+    elif type_integration=="SL_S_PD_OT":
         
         P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
         
@@ -1301,14 +1301,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 [T_out_K[i],flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationSimple(fluidInput,bypass,T_in_flag,T_in_K[i-1],T_in_C_AR[i],T_out_K[i-1],T_in_C,P_op_Mpa,bypass[i-1],T_out_C,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec[i-1], sender,Area_coll,rho_optic_0,eta1,eta2,mdot_test)
                 [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energy_stored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energy_stored,Demand2[i],energStorageMax)     
             
-            elif type_integration=="SL_S_PDOT":
-                #SL_S_PDOT Supply level with steam for direct steam generation
+            elif type_integration=="SL_S_PD_OT":
+                #SL_S_PD_OT Supply level with steam for direct steam generation
                 [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],x_out[i],T_out_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1],subcooling)
              
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
             
             elif type_integration=="SL_S_PD":
-                #SL_S_PDOT Supply level with steam for direct steam generation
+                #SL_S_PD_OT Supply level with steam for direct steam generation
                 [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],T_out_K[i],T_SD_K[i],SD_energy[i],Q_prod_steam[i]]=operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K[i-1],SD_mass,SD_energy[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,x_design,PerdSD)
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i],SD_energy[i],Q_prod_steam[i],Q_drum[i]]=outputDSG_Rec(SD_max_energy,SD_min_energy,SD_energy[i],SD_energy[i-1],Q_prod[i],Q_prod_steam[i],Demand[i])
             
@@ -1355,8 +1355,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 if Demand2[i]>0:
                     [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energy_stored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energy_stored,Demand2[i],energStorageMax)                         
             
-            elif type_integration=="SL_S_PDOT":
-                #SL_S_PDOT Supply level with steam for direct steam generation
+            elif type_integration=="SL_S_PD_OT":
+                #SL_S_PD_OT Supply level with steam for direct steam generation
                 [T_out_K[i],Q_prod[i],T_in_K[i]]=offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR[i],temp[i])
             
             elif type_integration=="SL_S_PD":
@@ -1688,7 +1688,7 @@ n_coll_loop=24
 #SL_L_RF -> Supply level liquid return flow boost
 #SL_S_FW -> Supply level solar steam for heating of boiler feed water without storage
 #SL_S_FWS -> Supply level solar steam for heating of boiler feed water with storage
-#SL_S_PDOT -> Supply level solar steam for direct solar steam generation 
+#SL_S_PD_OT -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage parallel
 #SL_L_S_PH -> Storage preheat
 type_integration="SL_S_PD"
