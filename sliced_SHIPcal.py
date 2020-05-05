@@ -139,7 +139,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     #--> Process parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.06 #1e-10 # Minimum flowrate before re-circulation [kg/s]
+    m_dot_min_kgs=0.02 #1e-10 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=2 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     
@@ -259,8 +259,10 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
             
             #>> ENERGY DEMAND
        
-        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
-        # file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
+        if inputs['location_aux']=="":
+            file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        else:
+            file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi/"+inputs['location_aux'], sep=',')
 
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
@@ -325,10 +327,10 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="water" #"water" "steam" "oil" "moltenSalt"
-        T_out_C=130 #HIGH - Process temperature [ºC]
-        T_in_C=90 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=6 #[bar] 
+        fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
+        T_out_C=290 #HIGH - Process temperature [ºC]
+        T_in_C=20 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=30 #[bar] 
         
         # Not implemented yet
         """
@@ -425,8 +427,9 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     out_s=0
     h_in=0
     h_out=0
+    subcooling=5 #Deegre of subcooling
     
-    integration_Dict = {'P_op_Mpa':P_op_bar/10,'T_in_C':T_in_C,'T_out_C':T_out_C,
+    integration_Dict = {'P_op_Mpa':P_op_bar/10,'T_in_C':T_in_C,'T_out_C':T_out_C,'subcooling':subcooling,
                         'x_design':x_design,'h_process_in':h_process_in,'energStorageMax':energStorageMax,'T_in_flag':T_in_flag,
                         's_process_in':s_process_in,'h_process_in':h_process_in,'in_s':in_s,'out_s':out_s,'h_in':h_in,'h_out':h_out,
                         'T_out_HX_C':T_out_HX_C,'porctSensible':porctSensible}
@@ -500,6 +503,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
     T_out_C=initial_variables_dict['T_out_C'] #T_out_C outlet temperature from the collector #The outlet temperature towards the process is the same than the delivered from the collector.
     fluidInput = initial_variables_dict['fluidInput']
     Demand = initial_variables_dict['Demand']
+    subcooling = initial_variables_dict['subcooling']
     T_in_C_AR = initial_variables_dict['T_in_C_AR']
     DELTA_HX=initial_variables_dict['DELTA_HX'] # Degrees for temperature delta experienced in the heat exchanger (for design) 
     type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
@@ -510,7 +514,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
     
     if type_integration=="SL_L_RF": 
         ## SL_L_RF
-        heatFactor=.8 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
+        heatFactor=.9 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
         HX_eff=0.9 # Simplification for HX efficiency
         
         #Gets temperatures
@@ -671,7 +675,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
         
         if fluidInput=="water": # Only applies to water
             if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273-5 
+                T_out_C=IAPWS97(P=P_op_Mpa, x=0).T-273-subcooling 
         
         T_out_K=T_out_C+273
 
@@ -684,7 +688,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
         if type_integration=="SL_L_S":
             if fluidInput=="water": # Only applies to water
                 if T_out_C+DELTA_ST>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                    T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -5 #Max temperature storage [K]
+                    T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -subcooling #Max temperature storage [K]
                 else:
                     T_max_storage=T_out_C+DELTA_ST+273 #Max temperature storage [K]
             else:
@@ -692,7 +696,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
         else:
             if fluidInput=="water": # Only applies to water
                 if T_out_C>IAPWS97(P=P_op_Mpa, x=0).T-273: #Make sure you are in liquid phase
-                    T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -5 #Max temperature storage [K]
+                    T_max_storage=IAPWS97(P=P_op_Mpa, x=0).T -subcooling #Max temperature storage [K]
                 else:
                     T_max_storage=T_out_C+273 #Max temperature storage [K]
             else:
@@ -843,7 +847,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
         #porctLatent=latentPart/total #Not used
         Demand2=Demand*porctSensible
         
-        T_out_K=IAPWS97(P=P_op_Mpa, x=0).T-5 #Heating point
+        T_out_K=IAPWS97(P=P_op_Mpa, x=0).T-subcooling #Heating point
         T_out_C=T_out_K-273 
           
         outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
@@ -917,7 +921,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
         #porctLatent=latentPart/total #Not used
         Demand2=Demand*porctSensible
         
-        T_out_K=IAPWS97(P=P_op_Mpa, x=0).T-5 #Heating point
+        T_out_K=IAPWS97(P=P_op_Mpa, x=0).T-subcooling #Heating point
         T_out_C=T_out_K-273 
           
         outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
@@ -977,30 +981,43 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
     # ----------------------------------------
     # SL_S_PD => Supply level with steam direct solar steam generation
         
-    elif type_integration=="SL_S_PD":
-          
-        x_design=0.4
-
-        T_in_K=T_in_C+273 #Temp return of condensates
-        almVolumen=0 #litros
-        initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
-        h_in=initial.h #kJ/kg
-        in_s=initial.s
-        sat_liq=IAPWS97(P=P_op_Mpa, x=0)
-        outputState=IAPWS97(P=P_op_Mpa, x=x_design)
-        T_out_K=outputState.T 
-        T_out_C=outputState.T-273 #Temperature of saturation at that level
+    elif type_integration=="SL_S_PD":  
         
-        out_s=outputState.s
-        h_out=outputState.h
-        
+        #Inlet towards the process
         input_ProcessState=IAPWS97(P=P_op_Mpa, x=1)
         s_process_in=input_ProcessState.s
         h_process_in=input_ProcessState.h
         
-        initial_variables_dict.update({'T_in_C':0,'T_out_C':T_out_C,
+        #The outlet temperature at the solar field 
+        T_out_K=input_ProcessState.T 
+        T_out_C=input_ProcessState.T-273 #Temperature of saturation at that level
+
+        # --------------  STEP 1 --------------
+        
+        #Outlet from the process
+        T_in_K=T_in_C+273 #Temp return of condensates
+        
+        sat_liq=IAPWS97(P=P_op_Mpa, x=0)
+
+        if T_in_K>sat_liq.T: #Ensure the inlet is in liquid phase
+            T_in_K=sat_liq.T  
+        
+
+        initial=IAPWS97(P=P_op_Mpa, T=T_in_K)
+        h_in=initial.h #kJ/kg
+        in_s=initial.s
+        
+        # --------------  STEP 2 --------------
+        # Design point   
+        x_design=0.8 #Design steam quality
+        
+        outputState=IAPWS97(P=P_op_Mpa, x=x_design)
+        out_s=outputState.s
+        h_out=outputState.h
+        
+        initial_variables_dict.update({'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'s_process_in':s_process_in,
-                                 'h_process_in':h_process_in,'h_process_in':h_process_in,'x_design':x_design})
+                                 'h_process_in':h_process_in,'x_design':x_design})
         
     elif type_integration=="SL_S_PDS":
          
@@ -1125,6 +1142,8 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     T_in_C=initial_variables_dict['T_in_C']
     T_out_C=initial_variables_dict['T_out_C']
     DELTA_HX=initial_variables_dict['DELTA_HX']
+    subcooling=initial_variables_dict['subcooling']
+    
     #Integration dependent
     
     if type_integration=="SL_L_RF": 
@@ -1228,7 +1247,8 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
         storage_energy[0]=storage_ini_energy
         #SOC[i]=100*(T_alm_K[i]-273)/(T_max_storage-273)
         SOC[0]=100*energy_stored/energStorageMax
-
+    
+    mismatchDNI=0
     nu_list = [0] #Records the hourly efficiency for CIMAV's collectors
     for i in range(1,steps_sim): #--> <><><><>< ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
         
@@ -1313,12 +1333,13 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 IAM[i]=IAM_long[i]*IAM_t[i]
 
         if DNI[i]>lim_inf_DNI and SUN_ELV[i]<0: #Error in the meteo file
-            if SUN_ELV[i]<-0.05: #If the error is very low we continue with the simulation
+            mismatchDNI+=DNI[i]
+            if mismatchDNI/sum(DNI)>0.02: #If the error is very low we continue with the simulation
                 raise ValueError('DNI>0 when SUN_ELV<0. Check meteo file')
         
         
-        if DNI[i]>lim_inf_DNI and DNI[i]>0 and Demand[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system If there is no demand it doesn't start either.
-            
+        if DNI[i]>lim_inf_DNI and SUN_ELV[i]>0 and DNI[i]>0:# Status: ON -> There's is and it is anenough DNI to start the system
+             
             if type_integration=="SL_L_PS":
                 #SL_L_PS Supply level with liquid heat transfer media Parallel integration with storeage pg52 
                 
@@ -1427,13 +1448,13 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
             elif type_integration=="SL_S_PD":
                 #SL_S_PD Supply level with steam for direct steam generation
                 
-                [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],x_out[i],T_out_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1])
+                [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],x_out[i],T_out_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1],subcooling)
                 [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
             
             elif type_integration=="SL_S_PDS":
                 #SL_S_PDS Supply level with steam for direct steam generation with water storage
                 
-                [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],x_out[i],T_out_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1])
+                [flowrate_kgs[i],Perd_termicas[i],Q_prod[i],T_in_K[i],x_out[i],T_out_K[i],flowrate_rec[i],Q_prod_rec[i],newBypass]=operationDSG(bypass,bypass[i-1],T_out_K[i-1],T_in_C,P_op_Mpa,temp[i],REC_type,theta_i_rad[i],DNI[i],Long,IAM[i],Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_design,Q_prod_rec[i-1],subcooling)
                 #[Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
                 [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energy_stored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energy_stored,Demand[i],energStorageMax)     
             
@@ -1796,7 +1817,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
-"""
+
 # Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
@@ -1851,7 +1872,7 @@ n_coll_loop=8
 #SL_S_PD -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S_PH -> Storage preheat
-type_integration="SL_L_P"
+type_integration="SL_S_PD"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1912,4 +1933,4 @@ initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) 
 #print(LCOE)
 coll_par.update({'auto':'off'})
 [jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
-"""
+
