@@ -1120,7 +1120,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict):#This second section 
         almacenamiento_rho=almacenamiento.v #volumen específico del agua consumida en m3/kg
         energStorageMax=almVolumen*(1/1000)*(1/almacenamiento_rho)*almacenamiento_CP*(T_out_K-T_in_K)/3600 #Storage capacity in kWh
         
-        initial_variables_dict.update({'T_in_C':0,'T_out_C':T_out_C,
+        initial_variables_dict.update({'T_in_C':T_in_C,'T_out_C':T_out_C,
                                  'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'s_process_in':s_process_in,
                                  'h_process_in':h_process_in,'h_process_in':h_process_in,'x_design':x_design,
                                  'energStorageMax':energStorageMax})
@@ -1343,7 +1343,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     mismatchDNI=0
     nu_list = [0] #Records the hourly efficiency for CIMAV's collectors
     for i in range(1,steps_sim): #--> <><><><>< ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
-        
+        print(i)
     # --> IAM calculation
         if sender=='solatom': #Using Solatom's IAMs
             if SUN_ELV[i]>0:
@@ -1968,18 +1968,25 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=1
-n_coll_loop=18
+num_loops=5
+n_coll_loop=40
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
 #SL_L_RF -> Supply level liquid return flow boost
+#SL_L_DRF -> Supply level liquid return flow boost with no heat exchanger (The simplest)
 #SL_S_FW -> Supply level solar steam for heating of boiler feed water without storage
 #SL_S_FWS -> Supply level solar steam for heating of boiler feed water with storage
-#SL_S_PD_OT -> Supply level solar steam for direct solar steam generation 
+#SL_S_PD_OT -> Supply level solar steam for direct solar steam generation #For CIMAV only works for a large number of plane collectors +30
 #SL_L_S -> Storage
 #SL_L_S_PH -> Storage preheat
-type_integration="SL_L_PS"
+#PL_E_PM ->
+#SL_S_MW ->
+#SL_S_MWS ->
+#SL_S_PD ->
+#SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
+
+type_integration="SL_S_PD_OT" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------

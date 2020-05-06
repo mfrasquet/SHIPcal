@@ -1203,6 +1203,49 @@ def storageNonAnnualSL_S_PDR(sender,origin,SOC,Q_useful,Q_prod_steam,Q_prod,Q_dr
     if origin==-1:
         fig.savefig(str(plotPath)+'almacenamiento_Anual.png', format='png', dpi=imageQlty)
 
+def storageNonAnnualSL_S_PDR(sender,origin,SOC,Q_useful,Q_prod_steam,Q_prod,Q_drum,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty,**kwargs):
+    fig = plt.figure(figsize=(14, 3.5))
+    if origin==-2 or origin == -3:
+        fig.patch.set_alpha(0)
+    fig.suptitle('Almacenamiento', fontsize=14, fontweight='bold',y=1)
+    ax1 = fig.add_subplot(111)  
+
+    plt.bar(step_sim, Q_prod-Q_charg,color = '#1F85DE',label="Producción solar en el campo",align='center')
+    plt.bar(step_sim, Q_prod_steam,color = '#7EE4E9',label="Producción de Vapor",align='center')
+    ax1 .plot(step_sim, Q_prod_lim,color = 'blue',label="Energía suministrada",linewidth=4)
+    ax1 .plot(step_sim, Q_useful,color = 'green',label="Energía útil",linewidth=2)
+    ax1 .plot(step_sim, Demand,color = '#362510',label="Demanda")
+    
+    plt.bar(step_sim, Q_drum,color = '#FFAE00',label="Energía al drum",bottom=Q_prod_steam,align='center')
+    plt.bar(step_sim, Q_defocus,color = 'red',label="Desenfoque",bottom=Q_prod_steam+Q_drum,align='center')
+       
+    ax1.set_ylabel('Producción & Demanda - kWh')
+    ax1.set_ylim([0,max(np.max(Q_prod_steam+Q_drum+Q_defocus),np.max(Demand))*1.2])
+    ax1.set_xlim([0,steps_sim])
+
+    plt.legend(loc='upper left', borderaxespad=0.)
+    
+    ax2 = ax1.twinx()  
+    ax2 .plot(step_sim, SOC,'.r-',label="Carga del almacenamiento")
+    ax2.set_xlabel('simulación (hora del año)')
+    ax2.set_ylabel('Estado de carga almacenamiento %',color = '#CA6A16')
+    ax2.set_ylim([0,101])
+    ax2.set_xlim([0,steps_sim])
+   
+    plt.tight_layout()
+    
+    
+    if origin==-2 or origin == -3:
+        f = io.BytesIO()           # Python 3
+        plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
+        plt.clf()
+        image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
+        f.close()
+        return image_base64
+    if origin==-1:
+        fig.savefig(str(plotPath)+'almacenamiento_Anual.png', format='png', dpi=imageQlty)
+
+
 def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
     if origin==-2 or origin == -3:
@@ -1673,13 +1716,13 @@ def SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,SD_max_energy,Q
     ax2.set_ylim([0,(np.max([np.max(T_SD_K),np.max(T_out_K)])-273)*1.2])
     plt.legend(bbox_to_anchor=(1.15, 1), loc=2, borderaxespad=0.)    
 
-#    output1=pd.DataFrame(flow_rate_kgs)
-#    output1.columns=['Flow_rate']
-#    output2=pd.DataFrame(T_in_K)
-#    output2.columns=['T_in_K']
-#    output3=pd.DataFrame(T_out_K)
-#    output3.columns=['T_out_K']
-#    output_excel_FlowratesTemps=pd.concat([output1,output2,output3], axis=1)
+    # output1=pd.DataFrame(flow_rate_kgs)
+    # output1.columns=['Flow_rate']
+    # output2=pd.DataFrame(T_in_K)
+    # output2.columns=['T_in_K']
+    # output3=pd.DataFrame(T_out_K)
+    # output3.columns=['T_out_K']
+    # output_excel_FlowratesTemps=pd.concat([output1,output2,output3], axis=1)
 
     if origin==-2 or origin == -3:
         f = io.BytesIO()           # Python 3
@@ -1690,5 +1733,4 @@ def SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,SD_max_energy,Q
         return image_base64
     if origin==-1:
         fig.savefig(str(plotPath)+'flowrates.png', format='png', dpi=imageQlty)
-
 
