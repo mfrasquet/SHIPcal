@@ -86,7 +86,8 @@ def offStorageSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,temp,energStorageMax,
     T_out_K=temp
     Q_prod=0 #No hay produccion
     SOC=100*energy_stored/energStorageMax
-    return [bypass,T_out_K,Q_prod,T_in_K,SOC]
+    return [T_out_K,Q_prod,T_in_K,SOC]
+    #return [bypass,T_out_K,Q_prod,T_in_K,SOC]
 
 def offOnlyStorageSimple(temp,energStorageMax,energy_stored,T_K_alm_old,storage_energy_old,SOC_old):
 

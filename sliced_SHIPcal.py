@@ -1343,7 +1343,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     mismatchDNI=0
     nu_list = [0] #Records the hourly efficiency for CIMAV's collectors
     for i in range(1,steps_sim): #--> <><><><>< ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
-        print(i)
+        
     # --> IAM calculation
         if sender=='solatom': #Using Solatom's IAMs
             if SUN_ELV[i]>0:
@@ -1979,17 +1979,17 @@ n_coll_loop=18
 #SL_S_PD_OT -> Supply level solar steam for direct solar steam generation 
 #SL_L_S -> Storage
 #SL_L_S_PH -> Storage preheat
-type_integration="SL_S_PD"
+type_integration="SL_L_PS"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'alguien','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-3 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
