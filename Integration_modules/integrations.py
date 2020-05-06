@@ -128,7 +128,7 @@ def inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old):
         T_in_K=T_in_C+273
 
     return [T_in_K]
-def operationOilKettleSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old,T_alm_K,DeltaKettle):
+def operationOilKettleSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old,T_alm_K,DeltaKettle):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52    
     [T_in_K]=inputsWithDNI_HTFSimple(T_in_K_old,T_out_K_old,T_in_C,bypass_old)    
     #Calculo el flowrate necesario para poder dar el salto de temp necesario
@@ -156,18 +156,18 @@ def operationOilKettleSimple(bypass,T_in_K_old,T_out_K_old,T_in_C,P_op_Mpa,bypas
         #PRODUCCION
         if bypass_old=="REC":
             if Q_prod_rec_old>0:
-                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kWh
+                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*mofProd+Q_prod_rec_old*num_loops*mofProd #In kWh
             else:
-                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS#In kWh
+                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*mofProd#In kWh
         else:
-            Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS #In kW
+            Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*mofProd #In kW
         flow_rate_rec=0
         Q_prod_rec=0
         bypass.append("PROD")
         newBypass="PROD"
     return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
     
-def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,flow_rate_kgs,type_coll,sender):
+def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,mofProd,flow_rate_kgs,type_coll,sender):
 #SL_L_S Supply level with liquid heat transfer media just for heat a storage
     
     if sender == 'CIMAV':
@@ -191,19 +191,19 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
             outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
             h_out_kJkg=outlet.h
             
-        Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
+        Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd
         
     elif fluidInput =="oil":
         [SF_inlet_rho,SF_inlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_in_K_old)
         [SF_outlet_rho,SF_outlet_Cp,k_av,Dv_av,Kv_av,thermalDiff_av,Prant_av]=thermalOil(T_out_K)
         SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
-        Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
+        Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*mofProd #kWh
         
     elif fluidInput =="moltenSalt":
         [rho,SF_inlet_Cp,k,Dv]=moltenSalt(T_in_K_old)
         [rho,SF_outlet_Cp,k,Dv]=moltenSalt(T_out_K)
         SF_avg_Cp=(SF_outlet_Cp+SF_inlet_Cp)/2
-        Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*FS #kWh
+        Q_prod=flow_rate_kgs*SF_avg_Cp*(T_out_K-T_in_K_old)*num_loops*mofProd #kWh
         
         
     #T_out_K=T_max_storage    #Not used
@@ -211,7 +211,7 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
     return [T_out_K,Perd_termicas,Q_prod,T_in_K_old,flow_rate_kgs]
 
 
-def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old, sender,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll):
+def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old,T_out_C,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,Q_prod_rec_old, sender,Area_coll,rho_optic_0_coll,eta1_coll,eta2_coll,mdot_test_permeter_coll):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     if fluidInput=="water" or fluidInput=="steam":
         [h_in_kJkg,T_in_K]=inputsWithDNIWaterSimple(T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old,T_in_C,P_op_Mpa,bypass_old)
@@ -279,29 +279,29 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
             h_out_kJkg=outlet.h
             if bypass_old=="REC":
                 if Q_prod_rec_old>0:
-                    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kW
+                    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd+Q_prod_rec_old*num_loops*mofProd #In kW
                 else:
-                    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
+                    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd
             else:
-                Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS #In kW
+                Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd #In kW
         
         if fluidInput=="oil":
             if bypass_old=="REC":
                 if Q_prod_rec_old>0:
-                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kWh
+                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*mofProd+Q_prod_rec_old*num_loops*mofProd #In kWh
                 else:
-                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS#In kWh
+                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*mofProd#In kWh
             else:
-                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS #In kW
+                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*mofProd #In kW
                
         if fluidInput=="moltenSalt":
             if bypass_old=="REC":
                 if Q_prod_rec_old>0:
-                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS+Q_prod_rec_old*num_loops*FS #In kWh
+                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*mofProd+Q_prod_rec_old*num_loops*mofProd #In kWh
                 else:
-                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS#In kWh
+                    Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*mofProd#In kWh
             else:
-                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*FS #In kW
+                Q_prod=flow_rate_kgs*Cp_av*(T_out_K-T_in_K)*num_loops*mofProd #In kW
                 
         flow_rate_rec=0
         Q_prod_rec=0
@@ -310,7 +310,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     return [T_out_K,flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,flow_rate_rec,Q_prod_rec,newBypass]
 
 
-def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,coef_flow_rec,m_dot_min_kgs,x_desing,Q_prod_rec_old,subcooling):
+def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,mofProd,coef_flow_rec,m_dot_min_kgs,x_desing,Q_prod_rec_old,subcooling):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     Perd_termicas=0
     T_in_K=T_in_C+273 #Normal operation
@@ -343,17 +343,17 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
             x_out=IAPWS97(P=P_op_Mpa, h=h_out_kJkg).x
             if x_out<=0: #After the recirculation the fluid still liquid
                 Q_prod=0
-                # Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*num_loops*FS/1000
+                # Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*num_loops*mofProd/1000
                 T_out_K,Perd_termicas=IT_temp("steam",T_in_K,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,flow_rate_rec,rho_optic_0)    
                 Perd_termicas=Perd_termicas/1000
                 outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
                 h_out_kJkg=outlet.h
-                Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)*num_loops*FS
+                Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd
                 
             else: #After the recirculation the fluid is biphasic and this could generate problems with the pump
                 T_sub=IAPWS97(P=P_op_Mpa, x=0).T-subcooling
                 h_sub=IAPWS97(P=P_op_Mpa, T=T_sub).h
-                Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*FS/1000 #Q_prod_rec to calculate flow_rate inside the loop
+                Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*mofProd/1000 #Q_prod_rec to calculate flow_rate inside the loop
                 #Try-Except in order to avoid infinite flow rate when h_out=h_in (after several unsuccessful attempts to reach x_out)
                 if h_sub-h_in_kJkg>0:
                     flow_rate_rec=Q_prod_rec/(h_sub-h_in_kJkg)
@@ -362,20 +362,20 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
                     
                 Q_prod=0
                 T_out_K=outlet.T
-                Q_prod_rec=Q_prod_rec*num_loops*FS # Total Q_prod_rec in the field
+                Q_prod_rec=Q_prod_rec*num_loops*mofProd # Total Q_prod_rec in the field
         Q_prod_rec=Q_prod_rec+Q_prod_rec_old   
         bypass.append("REC")
         newBypass="REC" 
     else:    
         if bypass_old=="REC":
             if Q_prod_rec_old>0:
-                Q_prod=flow_rate_kgs*(outlet.h-h_in_kJkg)*num_loops*FS+Q_prod_rec_old #In kW
+                Q_prod=flow_rate_kgs*(outlet.h-h_in_kJkg)*num_loops*mofProd+Q_prod_rec_old #In kW
             else:
-                Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
+                Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd
         else:
             x_out=x_desing
             outlet=IAPWS97(P=P_op_Mpa, x=x_out)
-            Q_prod=flow_rate_kgs*(outlet.h-h_in_kJkg)*num_loops*FS #In kW
+            Q_prod=flow_rate_kgs*(outlet.h-h_in_kJkg)*num_loops*mofProd #In kW
                 
         x_out=x_desing
         T_out_K=IAPWS97(P=P_op_Mpa, x=x_out).T
@@ -389,7 +389,7 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
     return [flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,x_out,T_out_K,flow_rate_rec,Q_prod_rec,bypass]
 
 
-def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K_old,SD_mass,SD_energy_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,FS,x_desing):
+def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K_old,SD_mass,SD_energy_old,T_in_C,P_op_Mpa,temp,REC_type,theta_i_rad,DNI,Long,IAM,Area,n_coll_loop,rho_optic_0,num_loops,mofProd,x_desing,PerdSD):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration pg52 
     Perd_termicas=0
     
@@ -413,13 +413,13 @@ def operationDSG_Rec(m_dot_min_kgs,bypass,SD_min_energy,T_SD_K_old,SD_mass,SD_en
         #Energy coming from Solar field
         flow_rate_kgs=m_dot_min_kgs        
         Q_prod=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)/1000
-        Q_prod=Q_prod*num_loops*FS
+        Q_prod=Q_prod*num_loops*mofProd
     else:
         #Energy coming from Solar field
-        Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*FS
+        Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd
     
     #New energy state of the Steam Drum
-    SD_energy_new=SD_energy_old+Q_prod
+    SD_energy_new=SD_energy_old+Q_prod-PerdSD
     SD_h=3600*SD_energy_new/SD_mass
     SDState=IAPWS97(P=P_op_Mpa, h=SD_h)
     T_SD_K=SDState.T
@@ -665,17 +665,30 @@ def outputWithoutStorageSimple(Q_prod,Demand):
         Q_defocus=Q_prod-Demand
     return[Q_prod_lim,Q_defocus,Q_useful]
 
-def outputDSG_Rec(Q_prod,Q_prod_steam,Demand):
+def outputDSG_Rec(SD_max_energy,SD_min_energy,SD_energy,SD_energy_old,Q_prod,Q_prod_steam,Demand):
 #SL_S_PDR
     if Q_prod_steam<=Demand:
         Q_prod_lim=Q_prod_steam
         Q_useful=Q_prod
+        Q_drum=max(0,SD_energy-SD_energy_old) #Q_drum cannot be negative
         Q_defocus=0
     else:
-        Q_prod_lim=Demand
-        Q_useful=Demand
-        Q_defocus=Q_prod_steam-Demand
-    return[Q_prod_lim,Q_defocus,Q_useful]
+        if SD_energy+Q_prod_steam-Demand<SD_max_energy: #Partial load - All the excess is absorbed by the steam drum
+            SD_energy=SD_energy+Q_prod_steam-Demand
+            Q_prod_lim=Demand
+            Q_useful=Q_prod_steam
+            Q_drum=Q_prod_steam-Demand
+            Q_defocus=0
+            Q_prod_steam=Demand
+        else: #Full load - The Steam drum reaches its maximum energy level, and the excess must be defocus
+            Q_drum=(SD_max_energy-SD_energy)
+            Q_defocus=Q_prod_steam-Demand-(SD_max_energy-SD_energy)
+            Q_prod_steam=Demand
+            SD_energy=SD_max_energy
+            Q_prod_lim=Demand
+            Q_useful=Q_drum+Q_prod_steam
+            
+    return[Q_prod_lim,Q_defocus,Q_useful,SD_energy,Q_prod_steam,Q_drum]
 
 def outputStorageOilSimple(Q_prod,energy_stored,Demand,energStorageMax):
 #SL_L_P Supply level with liquid heat transfer media Parallel integration with storage pg52 
