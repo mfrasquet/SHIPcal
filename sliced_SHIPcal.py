@@ -1343,7 +1343,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     mismatchDNI=0
     nu_list = [0] #Records the hourly efficiency for CIMAV's collectors
     for i in range(1,steps_sim): #--> <><><><>< ANNUAL SIMULATION LOOP <><><><><><><><><><><><>
-        print(i)
+        
     # --> IAM calculation
         if sender=='solatom': #Using Solatom's IAMs
             if SUN_ELV[i]>0:
@@ -1968,8 +1968,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=5
-n_coll_loop=40
+num_loops=1
+n_coll_loop=8
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1986,7 +1986,7 @@ n_coll_loop=40
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_S_PD_OT" 
+type_integration="SL_L_S" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
