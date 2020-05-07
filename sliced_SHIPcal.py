@@ -142,12 +142,14 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     m_dot_min_kgs=0.06 #1e-10 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=2 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
+    subcooling=5 #Deegre of subcooling
     
     #%%
     # BLOCK 1.3 - SYSTEM VARIABLES <><><><><><><><><><><><><><><><><><><><><><><><><><><>    
     
     #--> Simulation modifiers (useful to control extraordinary situations)
     mofDNI=modificators['mofDNI'] # DNI modificator to take into correct Meteonorm data if necessary [-] 
+    #The other modificators are called in SHIPcal_auto
     
         ## --> Solar collector 
         
@@ -164,18 +166,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         D,Area_coll,rho_optic_0,huella_coll,Long,Apert_coll=solatom_param(type_coll)
         
         coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'IAMfile_loc':IAMfile_loc,'Long':Long}
-        
-        #Retrieve front-end inputs
-        [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
-        
-        ## METEO
-        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
-        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
-        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
-        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
-        Positional_longitude = 'Not used'
-        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
@@ -187,11 +177,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         m_dot_min_kgs = mdot_test*Area_coll
         coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'eta1':eta1,'eta2':eta2,'mdot_test_permeter':mdot_test,'Long':Long,'blong':blong,'nlong':nlong,'btrans':btrans,'ntrans':ntrans,'coll_weight':weight, 'coll_optic':coll_optic}
         
-        ## METEO
-        localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
-        file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
-        file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
-    
     else: #Using other collectors (to be filled with customized data)
         
         ## IAM 
@@ -207,13 +192,33 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         type_coll = 'default'
         coll_par = {'type_coll':type_coll,'REC_type':REC_type,'Area_coll':Area_coll,'rho_optic_0':rho_optic_0,'IAMfile_loc':IAMfile_loc,'Long':Long}
         
+    if origin == -2:
+        #Retrieve front-end inputs
+        [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
+        
+        ## METEO
+        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
+        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
+        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
+        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
+        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
+        Positional_longitude = 'Not used'
+        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
+        
+    elif origin == -3:
+        ## METEO
+        localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
+        file_loc_list=[os.path.dirname(os.path.dirname(__file__)),'CIMAV/meteorologic_database',inputsDjango['pais'],inputsDjango['location']] #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
+        file_loc='/'.join(file_loc_list) #Converts file_loc_list into a single string for later use
+        
+    else:
         ## METEO
         if origin == 1:
             #Retrieve front-end inputs 
             [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
             ## METEO (free available meteo sets)
             localMeteo=inputs['location'] #locationFromFrontEnd
-        else:
+        else: #Contains origin == 0 and will be the default if no new database for a specific implementation has been added.
             #localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
             localMeteo="Bakersfield.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
@@ -226,6 +231,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
             file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        
         
         ## --> TO BE IMPLEMENTED Not used for the moment, it will change in future versions
     """    
@@ -277,7 +283,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     elif origin==-3: #Simulation called from CIMAV's front end
     
         T_in_flag=inputsDjango['T_in_flag'] #Flag 1 means closed loop (water flowing from a piping closed loop); Flag 0 means open loop (water flowing from the grid)
-        if T_in_flag == 0:        
+        if T_in_flag == 0:    #To avoid crashes with certain integrations    
             T_in_C = np.average(T_in_C_AR)
             inputsDjango['tempIN'] = T_in_C
         
@@ -427,7 +433,6 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     out_s=0
     h_in=0
     h_out=0
-    subcooling=5 #Deegre of subcooling
     
     integration_Dict = {'P_op_Mpa':P_op_bar/10,'T_in_C':T_in_C,'T_out_C':T_out_C,'subcooling':subcooling,
                         'x_design':x_design,'h_process_in':h_process_in,'energStorageMax':energStorageMax,'T_in_flag':T_in_flag,
@@ -1986,17 +1991,17 @@ n_coll_loop=8
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_L_S" 
+type_integration="SL_L_P" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'alguien','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=-3 #0 if new record; -2 if it comes from www.ressspi.com
+origin=0 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
