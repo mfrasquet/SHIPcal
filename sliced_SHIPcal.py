@@ -1928,7 +1928,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
-
+"""
 # Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
@@ -1980,11 +1980,11 @@ n_coll_loop=8
 #SL_L_PS -> Supply level liquid parallel integration with storage
 #SL_L_RF -> Supply level liquid return flow boost
 #SL_L_DRF -> Supply level liquid return flow boost with no heat exchanger (The simplest)
+#SL_L_S -> Storage
+#SL_L_S_PH -> Storage preheat
 #SL_S_FW -> Supply level solar steam for heating of boiler feed water without storage
 #SL_S_FWS -> Supply level solar steam for heating of boiler feed water with storage
 #SL_S_PD_OT -> Supply level solar steam for direct solar steam generation #For CIMAV only works for a large number of plane collectors +30
-#SL_L_S -> Storage
-#SL_L_S_PH -> Storage preheat
 #PL_E_PM ->
 #SL_S_MW ->
 #SL_S_MWS ->
@@ -2052,4 +2052,4 @@ initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) 
 #print(LCOE)
 coll_par.update({'auto':'off'})
 [jSonResults,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
-
+"""
