@@ -227,7 +227,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     if origin==-2: #Simulation called from front-end -> www.ressspi.com
         
         #Retrieve front-end inputs
-        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango) 
+        [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango) 
         ## METEO
         meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
         locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
@@ -267,7 +267,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif origin==-3: #Simulation called from CIMAV's front end
         
         #Retrieve front-end inputs
-        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
+        [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReportCIMAV(inputsDjango)
         
         ## METEO
         localMeteo=inputsDjango['location']#posiblemente se pueda borrar después
@@ -299,7 +299,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif origin==1: #Simulation called from external front-end. Available from 1 to inf+
         
         #Retrieve front-end inputs 
-        [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
+        [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
         
         ## METEO (free available meteo sets)
         locationFromFrontEnd=inputs['location']
@@ -1590,9 +1590,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
     if steps_sim==8759: #The report is only available when annual simulation is performed
         if origin==-2:
-            fileName="results"+str(reg)
+            fileName="results"+str(pk)
             reportsVar={'logo_output':'no_logo','date':inputs['date'],'type_integration':type_integration,
-                        'fileName':fileName,'reg':reg,
+                        'fileName':fileName,'reg':pk,
                         'Area_total':Area_total,'n_coll_loop':n_coll_loop,
                         'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs}
 
@@ -1679,7 +1679,7 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=1
+num_loops=2
 n_coll_loop=8
 
 
@@ -1698,7 +1698,7 @@ n_coll_loop=8
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_S_PDS" 
+type_integration="SL_L_S" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1708,7 +1708,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=1 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1747,8 +1747,60 @@ elif origin==-3:
     
 else:
     #To perform simulations from command line using inputs like if they were from django
-    inputsDjango= {'date': '2020-03-29', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'SOLPINTER', 'sectorIndustry': 'Dummy', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'MexicoDF', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'steam', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 20.0, 'tempOUT': 130.0, 'connection': '', 'process': '', 'demand': 2000.0, 'demandUnit': 'MWh', 'hourINI': 4, 'hourEND': 21, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.091, 'Feb': 0.091, 'Mar': 0.091, 'Apr': 0.091, 'May': 0.091, 'Jun': 0.091, 'Jul': 0.091, 'Aug': 0.0, 'Sep': 0.091, 'Oct': 0.091, 'Nov': 0.091, 'Dec': 0.091, 'last_reg': 709}
-    last_reg=inputsDjango['last_reg']
+    inputsDjango={'pressureUnit':'bar',
+                  'pressure':5,
+                  'demand':1875*8760,
+                  'demandUnit':'kWh',
+                  'hourEND':24,
+                  'hourINI':1,
+                  'Jan':1/12,
+                  'Feb':1/12,
+                  'Mar':1/12,
+                  'Apr':1/12,
+                  'May':1/12,
+                  'Jun':1/12,
+                  'Jul':1/12,
+                  'Aug':1/12,
+                  'Sep':1/12,
+                  'Oct':1/12,
+                  'Nov':1/12,
+                  'Dec':1/12,
+                  'Mond':0.143,
+                  'Tues':0.143,
+                  'Wend':0.143,
+                  'Thur':0.143,
+                  'Fri':0.143,
+                  'Sat':0.143,
+                  'Sun':0.143,
+                  'date':'2020-05-08',
+                  'name':'jaarpa',
+                  'industry':'comparison_test',
+                  'email':'jaarpa97@gmail.com',
+                  'sectorIndustry':'developing',
+                  'fuel':'Gasoil-B',
+                  'fuelPrice':0.05,
+                  'co2TonPrice':0,
+                  'co2factor':1,
+                  'fuelUnit':'kWh',
+                  'businessModel':'turnkey',
+                  'location':'Bakersfield',
+                  'location_aux':'',
+                  'surface':None,
+                  'terrain':'',
+                  'orientation':'NS',
+                  'inclination':'flat',
+                  'shadows':'free',
+                  'distance':None,
+                  'process':'',
+                  'fluid':'water',
+                  'connection':'',
+                  'tempOUT':65,
+                  'tempIN':20,
+                 }
+    
+    last_reg=666
+    #inputsDjango= {'date': '2020-03-29', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'SOLPINTER', 'sectorIndustry': 'Dummy', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'MexicoDF', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'steam', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 20.0, 'tempOUT': 130.0, 'connection': '', 'process': '', 'demand': 2000.0, 'demandUnit': 'MWh', 'hourINI': 4, 'hourEND': 21, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.091, 'Feb': 0.091, 'Mar': 0.091, 'Apr': 0.091, 'May': 0.091, 'Jun': 0.091, 'Jul': 0.091, 'Aug': 0.0, 'Sep': 0.091, 'Oct': 0.091, 'Nov': 0.091, 'Dec': 0.091, 'last_reg': 709}
+    #last_reg=inputsDjango['last_reg']
     
 [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
 """

@@ -140,7 +140,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
     m_dot_min_kgs=0.06 #1e-10 # Minimum flowrate before re-circulation [kg/s]
-    coef_flow_rec=2 # Multiplier for flowrate when recirculating [-]
+    coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     subcooling=5 #Deegre of subcooling
     
@@ -215,9 +215,9 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         ## METEO
         if origin == 1:
             #Retrieve front-end inputs 
-            [inputs,annualConsumptionkWh,reg,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
+            [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
             ## METEO (free available meteo sets)
-            localMeteo=inputs['location'] #locationFromFrontEnd
+            locationFromFrontEnd=inputs['location'] #locationFromFrontEnd
         else: #Contains origin == 0 and will be the default if no new database for a specific implementation has been added.
             #localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
             localMeteo="Bakersfield.dat"
@@ -228,6 +228,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         else:
             meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+            localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
             file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
@@ -1973,7 +1974,7 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=1
+num_loops=2
 n_coll_loop=8
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1991,7 +1992,7 @@ n_coll_loop=8
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_L_P" 
+type_integration="SL_L_S" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -2001,7 +2002,7 @@ desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':t
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=1 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -2040,8 +2041,61 @@ elif origin==-3:
     
 else:
     #To perform simulations from command line using inputs like if they were from django
-    inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
-    last_reg=inputsDjango['last_reg']
+    inputsDjango={'pressureUnit':'bar',
+                  'pressure':5,
+                  'demand':1875*8760,
+                  'demandUnit':'kWh',
+                  'hourEND':24,
+                  'hourINI':1,
+                  'Jan':1/12,
+                  'Feb':1/12,
+                  'Mar':1/12,
+                  'Apr':1/12,
+                  'May':1/12,
+                  'Jun':1/12,
+                  'Jul':1/12,
+                  'Aug':1/12,
+                  'Sep':1/12,
+                  'Oct':1/12,
+                  'Nov':1/12,
+                  'Dec':1/12,
+                  'Mond':0.143,
+                  'Tues':0.143,
+                  'Wend':0.143,
+                  'Thur':0.143,
+                  'Fri':0.143,
+                  'Sat':0.143,
+                  'Sun':0.143,
+                  'date':'2020-05-08',
+                  'name':'jaarpa',
+                  'industry':'comparison_test',
+                  'email':'jaarpa97@gmail.com',
+                  'sectorIndustry':'developing',
+                  'fuel':'Gasoil-B',
+                  'fuelPrice':0.05,
+                  'co2TonPrice':0,
+                  'co2factor':1,
+                  'fuelUnit':'kWh',
+                  'businessModel':'turnkey',
+                  'location':'Bakersfield',
+                  'location_aux':'',
+                  'surface':None,
+                  'terrain':'',
+                  'orientation':'NS',
+                  'inclination':'flat',
+                  'shadows':'free',
+                  'distance':None,
+                  'process':'',
+                  'fluid':'water',
+                  'connection':'',
+                  'tempOUT':65,
+                  'tempIN':20,
+                 }
+    
+    last_reg=666
+
+    #inputsDjango= {'date': '2018-11-04', 'name': 'miguel', 'email': 'mfrasquetherraiz@gmail.com', 'industry': 'Example', 'sectorIndustry': 'Food_beverages', 'fuel': 'Gasoil-B', 'fuelPrice': 0.063, 'co2TonPrice': 0.0, 'co2factor': 0.00027, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Sevilla', 'location_aux': '', 'surface': 1200, 'terrain': 'clean_ground', 'distance': 35, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'water', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 150.0, 'connection': 'storage', 'process': '', 'demand': 1500.0, 'demandUnit': 'MWh', 'hourINI': 8, 'hourEND': 18, 'Mond': 0.167, 'Tues': 0.167, 'Wend': 0.167, 'Thur': 0.167, 'Fri': 0.167, 'Sat': 0.167, 'Sun': 0.0, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 273}
+    #last_reg=inputsDjango['last_reg']
     
 
 version, initial_variables_dict, coll_par = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)

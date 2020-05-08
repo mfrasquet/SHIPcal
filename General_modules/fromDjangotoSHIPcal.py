@@ -52,7 +52,7 @@ def djangoReport(inputsDjango):
     
    
     dayArray=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    activeHours=int(inputsDjango['hourEND'])-int(inputsDjango['hourINI'])
+    activeHours=int(inputsDjango['hourEND'])-1-int(inputsDjango['hourINI'])
     porctDay=1/activeHours
     for j in range(int(inputsDjango['hourINI'])-1,int(inputsDjango['hourEND'])):
         dayArray[j]=porctDay
