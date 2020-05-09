@@ -1622,7 +1622,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             reportsVar.update(confReport)
             reportsVar.update(annualProdDict)
             reportsVar.update(modificators)
-            if origin==0 or origin == -3:
+            if origin==0 or origin == -3:# or origin == 1:
                 reportOutputOffline(reportsVar)
     else:
         template_vars={}
@@ -1679,8 +1679,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=2
-n_coll_loop=8
+num_loops=5
+n_coll_loop=24
 
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -1698,7 +1698,7 @@ n_coll_loop=8
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_L_S" 
+type_integration="PL_E_PM" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1748,7 +1748,7 @@ elif origin==-3:
 else:
     #To perform simulations from command line using inputs like if they were from django
     inputsDjango={'pressureUnit':'bar',
-                  'pressure':5,
+                  'pressure':30,
                   'demand':1875*8760,
                   'demandUnit':'kWh',
                   'hourEND':24,
@@ -1792,9 +1792,9 @@ else:
                   'shadows':'free',
                   'distance':None,
                   'process':'',
-                  'fluid':'water',
+                  'fluid':'steam',
                   'connection':'',
-                  'tempOUT':65,
+                  'tempOUT':235,
                   'tempIN':20,
                  }
     

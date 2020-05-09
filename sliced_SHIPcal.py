@@ -434,50 +434,16 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     out_s=0
     h_in=0
     h_out=0
+    DELTA_HX=5
     
     integration_Dict = {'P_op_Mpa':P_op_bar/10,'T_in_C':T_in_C,'T_out_C':T_out_C,'subcooling':subcooling,
                         'x_design':x_design,'h_process_in':h_process_in,'energStorageMax':energStorageMax,'T_in_flag':T_in_flag,
                         's_process_in':s_process_in,'h_process_in':h_process_in,'in_s':in_s,'out_s':out_s,'h_in':h_in,'h_out':h_out,
-                        'T_out_HX_C':T_out_HX_C,'porctSensible':porctSensible}
+                        'T_out_HX_C':T_out_HX_C,'porctSensible':porctSensible, 'DELTA_HX':DELTA_HX}
     
     
     # --> Simulation Loop variable init
-    array_zeros=np.zeros(steps_sim)
-    
-    """
-    # #theta_transv_rad=np.zeros(steps_sim)
-    # #h_out_kJkg=np.zeros(steps_sim)
-    # #h_in_kJkg=np.zeros(steps_sim)
-    # theta_i_rad=np.zeros(steps_sim)
-    # theta_i_deg=np.zeros(steps_sim)
-    # theta_transv_deg=np.zeros(steps_sim)
-    # IAM_long=np.zeros(steps_sim)
-    # IAM_t=np.zeros(steps_sim)
-    # IAM=np.zeros(steps_sim)
-    # T_in_K=np.zeros(steps_sim)
-    # T_out_K=np.zeros(steps_sim)
-    # flowrate_kgs=np.zeros(steps_sim)
-    # Perd_termicas=np.zeros(steps_sim)
-    # flowrate_rec=np.zeros(steps_sim)
-    # bypass=list()
-    # Q_prod=np.zeros(steps_sim)
-    # Q_prod_lim=np.zeros(steps_sim)
-    # Q_prod_rec=np.zeros(steps_sim)
-    # Q_defocus=np.zeros(steps_sim)
-    # SOC=np.zeros(steps_sim)
-    # Q_charg=np.zeros(steps_sim)
-    # Q_discharg=np.zeros(steps_sim)
-    # Q_useful=np.zeros(steps_sim)
-    # flowToHx=np.zeros(steps_sim)
-    # flowToMix=np.zeros(steps_sim)
-    # flowDemand=np.zeros(steps_sim)
-    # T_toProcess_K=np.zeros(steps_sim)
-    # T_toProcess_C=np.zeros(steps_sim)
-    # T_alm_K=np.zeros(steps_sim)
-    # storage_energy=np.zeros(steps_sim)
-    # x_out=np.zeros(steps_sim)
-    # Q_prod_steam=np.zeros(steps_sim)
-    """
+
     
     #coll_par depends of the sender so it is defined above
     #integration_Dict depends of the integration method so it is calculated before.
@@ -487,18 +453,18 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
                     'fluidInput':fluidInput,
                     'steps_sim':steps_sim,'step_sim':step_sim,'plotPath':plotPath, 'Energy_Before':Energy_Before, 'Energy_Before_annual':Energy_Before_annual,
                     'Demand':Demand}
-    initial_arrays = {'theta_i_rad':array_zeros.copy(),'theta_i_deg':array_zeros.copy(),'theta_transv_deg':array_zeros.copy(),'IAM_long':array_zeros.copy(),'IAM_t':array_zeros.copy(),'IAM':array_zeros.copy(),'T_in_K':array_zeros.copy(),'T_out_K':array_zeros.copy(),
-                      'flowrate_kgs':array_zeros.copy(),'Perd_termicas':array_zeros.copy(),'flowrate_rec':array_zeros.copy(),'bypass':list(),'Q_prod':array_zeros.copy(),'Q_prod_lim':array_zeros.copy(), 'T_SD_K':array_zeros.copy(), 'SD_energy':array_zeros.copy(),
-                      'Q_prod_rec':array_zeros.copy(),'Q_defocus':array_zeros.copy(),'SOC':array_zeros.copy(),'Q_charg':array_zeros.copy(),'Q_discharg':array_zeros.copy(),'Q_useful':array_zeros.copy(),'flowToHx':array_zeros.copy(),'flowToMix':array_zeros.copy(),
-                      'flowDemand':array_zeros.copy(),'T_toProcess_K':array_zeros.copy(),'T_toProcess_C':array_zeros.copy(),'T_alm_K':array_zeros.copy(),'storage_energy':array_zeros.copy(),'x_out':array_zeros.copy(), 'Q_prod_steam':array_zeros.copy(), 
-                      'Q_drum':array_zeros.copy()}
-    initial_variables_dict = {'DELTA_HX':5}
+    # initial_arrays = {'theta_i_rad':array_zeros.copy(),'theta_i_deg':array_zeros.copy(),'theta_transv_deg':array_zeros.copy(),'IAM_long':array_zeros.copy(),'IAM_t':array_zeros.copy(),'IAM':array_zeros.copy(),'T_in_K':array_zeros.copy(),'T_out_K':array_zeros.copy(),
+    #                   'flowrate_kgs':array_zeros.copy(),'Perd_termicas':array_zeros.copy(),'flowrate_rec':array_zeros.copy(),'bypass':list(),'Q_prod':array_zeros.copy(),'Q_prod_lim':array_zeros.copy(), 'T_SD_K':array_zeros.copy(), 'SD_energy':array_zeros.copy(),
+    #                   'Q_prod_rec':array_zeros.copy(),'Q_defocus':array_zeros.copy(),'SOC':array_zeros.copy(),'Q_charg':array_zeros.copy(),'Q_discharg':array_zeros.copy(),'Q_useful':array_zeros.copy(),'flowToHx':array_zeros.copy(),'flowToMix':array_zeros.copy(),
+    #                   'flowDemand':array_zeros.copy(),'T_toProcess_K':array_zeros.copy(),'T_toProcess_C':array_zeros.copy(),'T_alm_K':array_zeros.copy(),'storage_energy':array_zeros.copy(),'x_out':array_zeros.copy(), 'Q_prod_steam':array_zeros.copy(), 
+    #                   'Q_drum':array_zeros.copy()}
+    initial_variables_dict = {}
     #initial_variables_dict.update(coll_par)
-    #initial_variables_dict.update(integration_Dict)
+    initial_variables_dict.update(integration_Dict)
     initial_variables_dict.update(meteoDict)
     initial_variables_dict.update(financial_param)
     initial_variables_dict.update(process_param)
-    initial_variables_dict.update(initial_arrays)
+    #initial_variables_dict.update(initial_arrays)
     #initial_variables_dict.update(modificators)
         
     return version, initial_variables_dict, coll_par, integration_Dict
@@ -1148,6 +1114,45 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     almVolumen=desginDict['almVolumen']
         
     #Defined the variables from the initial_variables_dict
+    
+    steps_sim=initial_variables_dict['steps_sim']
+    step_sim=initial_variables_dict['step_sim']
+    
+    array_zeros=np.zeros(steps_sim)
+    
+    theta_i_deg=array_zeros.copy()
+    theta_i_rad=array_zeros.copy()
+    theta_transv_deg=array_zeros.copy()
+    IAM_long=array_zeros.copy()
+    IAM_t=array_zeros.copy()
+    IAM=array_zeros.copy()
+    T_in_K=array_zeros.copy()
+    T_out_K=array_zeros.copy()
+    flowrate_kgs=array_zeros.copy()
+    Perd_termicas=array_zeros.copy()
+    flowrate_rec=array_zeros.copy()
+    bypass=list()
+    Q_prod=array_zeros.copy()
+    Q_prod_lim=array_zeros.copy()
+    T_SD_K=array_zeros.copy()
+    SD_energy=array_zeros.copy()
+    Q_prod_rec=array_zeros.copy()
+    Q_defocus=array_zeros.copy()
+    SOC=array_zeros.copy()
+    Q_charg=array_zeros.copy()
+    Q_discharg=array_zeros.copy()
+    Q_useful=array_zeros.copy()
+    flowToHx=array_zeros.copy()
+    flowToMix=array_zeros.copy()
+    flowDemand=array_zeros.copy()
+    T_toProcess_K=array_zeros.copy()
+    T_toProcess_C=array_zeros.copy()
+    T_alm_K=array_zeros.copy()
+    storage_energy=array_zeros.copy()
+    x_out=array_zeros.copy()
+    Q_prod_steam=array_zeros.copy()
+    Q_drum=array_zeros.copy()
+    
     #The arrays that won't change are just referenced, the ones that might change are copied.
     
     mofINV=modificators['mofINV']
@@ -1176,44 +1181,10 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     coef_flow_rec=initial_variables_dict['coef_flow_rec']
     Boiler_eff=initial_variables_dict['Boiler_eff']
     fluidInput=initial_variables_dict['fluidInput']
-    steps_sim=initial_variables_dict['steps_sim']
-    step_sim=initial_variables_dict['step_sim']
     plotPath=initial_variables_dict['plotPath']
     Energy_Before=initial_variables_dict['Energy_Before']
     Energy_Before_annual=initial_variables_dict['Energy_Before_annual']
     Demand=initial_variables_dict['Demand']
-    theta_i_rad=initial_variables_dict['theta_i_rad']
-    theta_i_deg=initial_variables_dict['theta_i_deg']
-    theta_transv_deg=initial_variables_dict['theta_transv_deg']
-    IAM_long=initial_variables_dict['IAM_long']
-    IAM_t=initial_variables_dict['IAM_t']
-    IAM=initial_variables_dict['IAM']
-    T_in_K=initial_variables_dict['T_in_K']
-    T_out_K=initial_variables_dict['T_out_K']
-    flowrate_kgs=initial_variables_dict['flowrate_kgs']
-    Perd_termicas=initial_variables_dict['Perd_termicas']
-    flowrate_rec=initial_variables_dict['flowrate_rec']
-    bypass=initial_variables_dict['bypass'].copy()
-    Q_prod=initial_variables_dict['Q_prod']
-    Q_prod_lim=initial_variables_dict['Q_prod_lim']
-    Q_prod_rec=initial_variables_dict['Q_prod_rec']
-    Q_defocus=initial_variables_dict['Q_defocus']
-    SOC=initial_variables_dict['SOC']
-    Q_charg=initial_variables_dict['Q_charg']
-    Q_discharg=initial_variables_dict['Q_discharg']
-    Q_useful=initial_variables_dict['Q_useful']
-    flowToHx=initial_variables_dict['flowToHx']
-    flowToMix=initial_variables_dict['flowToMix']
-    flowDemand=initial_variables_dict['flowDemand']
-    T_toProcess_K=initial_variables_dict['T_toProcess_K']
-    T_toProcess_C=initial_variables_dict['T_toProcess_C']
-    T_alm_K=initial_variables_dict['T_alm_K']
-    storage_energy=initial_variables_dict['storage_energy']
-    x_out=initial_variables_dict['x_out']
-    SD_energy = initial_variables_dict['SD_energy']
-    T_SD_K = initial_variables_dict['T_SD_K']
-    Q_prod_steam = initial_variables_dict['Q_prod_steam']
-    Q_drum = initial_variables_dict['Q_drum']
     
     #Integration
     x_design=initial_variables_dict['x_design']
@@ -1918,7 +1889,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 reportsVar.update(confReport)
                 reportsVar.update(annualProdDict)
                 reportsVar.update(modificators)
-                if origin==0:
+                if origin==0:# or origin == 1:
                     reportOutputOffline(reportsVar)
         else:
             template_vars={}
@@ -1977,8 +1948,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=2
-n_coll_loop=8
+num_loops=5
+n_coll_loop=24
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -1995,7 +1966,7 @@ n_coll_loop=8
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_L_S" 
+type_integration="PL_E_PM" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -2045,7 +2016,7 @@ elif origin==-3:
 else:
     #To perform simulations from command line using inputs like if they were from django
     inputsDjango={'pressureUnit':'bar',
-                  'pressure':5,
+                  'pressure':30,
                   'demand':1875*8760,
                   'demandUnit':'kWh',
                   'hourEND':24,
@@ -2089,9 +2060,9 @@ else:
                   'shadows':'free',
                   'distance':None,
                   'process':'',
-                  'fluid':'water',
+                  'fluid':'steam',
                   'connection':'',
-                  'tempOUT':65,
+                  'tempOUT':235,
                   'tempIN':20,
                  }
     

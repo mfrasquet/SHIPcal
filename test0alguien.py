@@ -142,10 +142,10 @@ for integration in ['SL_L_P', 'SL_L_PS', 'SL_L_RF', 'SL_L_S', 'SL_L_S_PH']:#Test
     
     
     initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict,integration_Dict) #This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
-    #ref_initial_variables_dict=initial_variables_dict.copy()
-    #coll_par.update({'auto':'on'})
-    #LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
-    #print(LCOE)
+    ##ref_initial_variables_dict=initial_variables_dict.copy()
+    ##coll_par.update({'auto':'on'})
+    ##LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
+    ##print(LCOE)
     coll_par.update({'auto':'off'})
 
     [s_jSonResults,s_plotVars,s_reportsVar,o_version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
@@ -168,16 +168,16 @@ desginDict.update({'num_loops':5,'n_coll_loop':24})
 
 o_version, initial_variables_dict, coll_par, integration_Dict = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
 
-for integration in ['SL_S_FW','SL_S_FWS','SL_S_PD_OT','PL_E_PM','SL_S_MW','SL_S_MWS','SL_S_PD','SL_S_PDS']: #Tests for steam phase integrations
+for integration in ['SL_S_MWS','PL_E_PM','SL_S_MW','SL_S_PD','SL_S_FW','SL_S_FWS','SL_S_PD_OT','SL_S_PDS']: #Tests for steam phase integrations
     
     desginDict.update({'type_integration':integration})
     
     [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
         
     initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict, integration_Dict) #This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
-    #coll_par.update({'auto':'on'})
-    #LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
-    #print(LCOE)
+    ##coll_par.update({'auto':'on'})
+    ##LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
+    ##print(LCOE)
     coll_par.update({'auto':'off'})
 
     [s_jSonResults,s_plotVars,s_reportsVar,o_version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
