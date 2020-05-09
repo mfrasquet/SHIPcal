@@ -494,18 +494,21 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
                       'Q_drum':array_zeros.copy()}
     initial_variables_dict = {'DELTA_HX':5}
     #initial_variables_dict.update(coll_par)
-    initial_variables_dict.update(integration_Dict)
+    #initial_variables_dict.update(integration_Dict)
     initial_variables_dict.update(meteoDict)
     initial_variables_dict.update(financial_param)
     initial_variables_dict.update(process_param)
     initial_variables_dict.update(initial_arrays)
     #initial_variables_dict.update(modificators)
         
-    return version, initial_variables_dict, coll_par
+    return version, initial_variables_dict, coll_par, integration_Dict
     
     ## INTEGRATION
     
-def SHIPcal_integration(desginDict,initial_variables_dict):#This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
+def SHIPcal_integration(desginDict,initial_variables_dict, integration_Dict):#This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
+    
+    initial_variables_dict.update(integration_Dict)
+    
     P_op_Mpa=initial_variables_dict['P_op_Mpa'] #The solar field will use the same pressure than the process 
     T_in_C=initial_variables_dict['T_in_C'] #T_in_C inlet temperature to the collector #The inlet temperature towards the solar field is the same than the one of return from the process.
     T_out_C=initial_variables_dict['T_out_C'] #T_out_C outlet temperature from the collector #The outlet temperature towards the process is the same than the delivered from the collector.
