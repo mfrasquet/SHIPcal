@@ -1622,7 +1622,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             reportsVar.update(confReport)
             reportsVar.update(annualProdDict)
             reportsVar.update(modificators)
-            if origin==0 or origin == -3:# or origin == 1:
+            if origin==0 or origin == -3 or origin == 1:
                 reportOutputOffline(reportsVar)
     else:
         template_vars={}
@@ -1634,7 +1634,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
-"""
+
 # Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
@@ -1698,7 +1698,7 @@ n_coll_loop=24
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="PL_E_PM" 
+type_integration="SL_L_P" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -1796,6 +1796,7 @@ else:
                   'connection':'',
                   'tempOUT':235,
                   'tempIN':20,
+                  'last_reg':666
                  }
     
     last_reg=666
@@ -1803,4 +1804,3 @@ else:
     #last_reg=inputsDjango['last_reg']
     
 [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
-"""
