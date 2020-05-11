@@ -300,7 +300,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     if flow_rate_kgs<=m_dot_min_kgs and T_out_K>T_in_K: #El caudal necesario para obtener la temp de salida es inferior al mínimo
         #RECIRCULACION
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
-        Cp_av_kJkgK = IAPWS97(P=P_op_Mpa, T=0.5*(T_out_K+T_in_K)).cp
+        #Cp_av_kJkgK = IAPWS97(P=P_op_Mpa, T=0.5*(T_out_K+T_in_K)).cp
         if sender == 'CIMAV':
             T_out_K,Q_prod_rec,Perd_termicas = IT_temp_CIMAV(fluidInput,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,**coll_par)
         else:
@@ -335,15 +335,15 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
             Q_prod*=mofProd
         else:
             if fluidInput=="water" or fluidInput=="steam":
-                #outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
-                #h_out_kJkg=outlet.h
-                Cp_av_kJkgK = IAPWS97(P=P_op_Mpa, T=0.5*(T_out_K+T_in_K)).cp
+                outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
+                h_out_kJkg=outlet.h
+                #Cp_av_kJkgK = IAPWS97(P=P_op_Mpa, T=0.5*(T_out_K+T_in_K)).cp
                 if bypass_old=="REC" and Q_prod_rec_old>0:
-                    #Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd+Q_prod_rec_old*num_loops*mofProd #In kW
-                    Q_prod=flow_rate_kgs*(Cp_av_kJkgK)*(T_out_K-T_in_K)*num_loops*mofProd+Q_prod_rec_old*num_loops*mofProd
+                    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd+Q_prod_rec_old*num_loops*mofProd #In kW
+                    #Q_prod=flow_rate_kgs*(Cp_av_kJkgK)*(T_out_K-T_in_K)*num_loops*mofProd+Q_prod_rec_old*num_loops*mofProd
                 else:
-                    #Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd #In kW
-                    Q_prod=flow_rate_kgs*(Cp_av_kJkgK)*(T_out_K-T_in_K)*num_loops*mofProd
+                    Q_prod=flow_rate_kgs*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd #In kW
+                    #Q_prod=flow_rate_kgs*(Cp_av_kJkgK)*(T_out_K-T_in_K)*num_loops*mofProd
             
             if fluidInput=="oil":
                 if bypass_old=="REC":
