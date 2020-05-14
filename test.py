@@ -6,7 +6,8 @@ Created on Sun Mar 29 17:27:44 2020
 @author: miguel
 """
 
-from SHIPcal.SHIPcal import SHIPcal
+from SHIPcal import SHIPcal
+#from sliced_SHIPcal import SHIPcal
 
 """
     #--> Integration parameters

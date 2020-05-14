@@ -41,6 +41,12 @@ from Finance_modules.FinanceModels import SP_plant_costFunctions
 from Integration_modules.integrations import offStorageSimple, operationSimple, operationDSG, outputOnlyStorageSimple, outputWithoutStorageSimple, outputStorageSimple, offSimple, outputFlowsHTF, outputFlowsWater, directopearationSimple, operationDSG_Rec, offDSG_Rec, outputDSG_Rec#, offOnlyStorageSimple, operationOnlyStorageSimple
 from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageNonAnnual, financePlot, prodMonths, savingsMonths,SL_S_PDR_Plot,storageNonAnnualSL_S_PDR
 
+def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
+    version, initial_variables_dict, coll_par, integration_Dict = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
+    initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict, integration_Dict)
+    coll_par.update({'auto':'off'})
+    [template_vars,plotVars,reportsVar,version] = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,pk)
+    return(template_vars,plotVars,reportsVar,version)
 
 def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This very first part of the SHIPcal reads the parameters, TMY, and main variables
     
@@ -558,13 +564,15 @@ def SHIPcal_integration(desginDict,initial_variables_dict, integration_Dict):#Th
             in_s=inputState.s
             outputState=IAPWS97(P=P_op_Mpa, T=T_out_K)
             out_s=outputState.s
-            h_out=outputState.h    
-        
+            h_out=outputState.h
+
+        if fluidInput=="water": 
+            initial_variables_dict.update({'h_process_in':h_process_in, 'h_process_out':h_process_out,
+                                           's_process_in':s_process_in,'h_process_in':h_process_in,
+                                           'h_HX_out':h_HX_out,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
         
         initial_variables_dict.update({'HX_eff':HX_eff,'T_in_C':T_in_C,'T_out_HX_C':T_out_HX_C, 'DELTA_HX':DELTA_HX,
-                                       'T_out_C':T_out_C,'h_process_in':h_process_in, 'h_process_out':h_process_out,
-                                       's_process_in':s_process_in,'h_process_in':h_process_in,'T_HX_out_K':T_HX_out_K,
-                                       'h_HX_out':h_HX_out,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,
+                                       'T_out_C':T_out_C,'T_HX_out_K':T_HX_out_K,
                                        'heatFactor':heatFactor,'T_av_process_K':T_av_process_K})
         
         # ----------------------------------------
@@ -714,7 +722,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict, integration_Dict):#Th
             
             energStorageUseful=storage_max_energy-storage_min_energy # Maximum storage capacity in kWh
             energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
-        
+
         elif fluidInput=="oil": # THERMAL OIL STORAGE
             # Properties for MAX point
                  
@@ -755,11 +763,14 @@ def SHIPcal_integration(desginDict,initial_variables_dict, integration_Dict):#Th
         
             energStorageMax=storage_max_energy-storage_ini_energy # Maximum storage capacity in kWh
         
+        if fluidInput=="water":
+            initial_variables_dict.update({'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
+        
         initial_variables_dict.update({'flowrate_design_kgs':flowrate_design_kgs,'T_in_C':T_in_C,'DELTA_ST':DELTA_ST,
-                                 'T_out_C':T_out_C,'T_min_storage':T_min_storage,'T_max_storage':T_max_storage,
-                                 'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'storage_max_energy':storage_max_energy,
-                                 'storage_ini_energy':storage_ini_energy, 'storage_min_energy':storage_min_energy,'energStorageUseful':energStorageUseful,
-                                 'energStorageMax':energStorageMax,'T_ini_storage':T_ini_storage})
+                                       'T_out_C':T_out_C,'T_min_storage':T_min_storage,'T_max_storage':T_max_storage,
+                                       'storage_max_energy':storage_max_energy,'storage_ini_energy':storage_ini_energy, 
+                                       'storage_min_energy':storage_min_energy,'energStorageUseful':energStorageUseful,
+                                       'energStorageMax':energStorageMax,'T_ini_storage':T_ini_storage})
             
     # ----------------------------------------
     # SL_L_PS => Supply level with liquid heat transfer media parallel integration with storage
@@ -832,7 +843,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict, integration_Dict):#Th
         h_out=outputState.h
         
         initial_variables_dict.update({'T_in_C':T_in_C,'T_out_C':T_out_C,
-                                 'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'Demand2':Demand2})
+                                      'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out,'Demand2':Demand2})
             
     # ----------------------------------------
     # SL_S_FWS => Supply level with steam solar heating of boiler feed water including storage
@@ -1204,13 +1215,15 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     
     #Integration dependent
     
-    if type_integration=="SL_L_RF": 
+    if type_integration=="SL_L_RF":
+        if fluidInput=="water": 
+            h_process_out=initial_variables_dict['h_process_out']
+            h_HX_out=initial_variables_dict['h_HX_out']
+        
         T_av_process_K=initial_variables_dict['T_av_process_K']
         heatFactor=initial_variables_dict['heatFactor']
-        h_process_out=initial_variables_dict['h_process_out']
         HX_eff=initial_variables_dict['HX_eff']
         T_HX_out_K=initial_variables_dict['T_HX_out_K']
-        h_HX_out=initial_variables_dict['h_HX_out']
     
     elif type_integration=='SL_L_DRF':
         design_flowrate_kgs = coll_par['mdot_test_permeter']*coll_par['Area_coll']*n_coll_loop
