@@ -2085,9 +2085,9 @@ else:
     #last_reg=inputsDjango['last_reg']
     
 
-version, initial_variables_dict, coll_par = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
+version, initial_variables_dict, coll_par, integration_Dict = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
     
-initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict) #This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
+initial_variables_dict = SHIPcal_integration(desginDict,initial_variables_dict, integration_Dict) #This second section of SHIPcal updates the integration variables depending on the type of integrations. This will be used mainly to iterate over the storage capacity.
 #coll_par.update({'auto':'on'})
 #LCOE = SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initial_variables_dict,coll_par,modificators,last_reg)
 #print(LCOE)
