@@ -444,7 +444,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     
     integration_Dict = {'P_op_Mpa':P_op_bar/10,'T_in_C':T_in_C,'T_out_C':T_out_C,'subcooling':subcooling,
                         'x_design':x_design,'h_process_in':h_process_in,'energStorageMax':energStorageMax,'T_in_flag':T_in_flag,
-                        's_process_in':s_process_in,'h_process_in':h_process_in,'in_s':in_s,'out_s':out_s,'h_in':h_in,'h_out':h_out,
+                        's_process_in':s_process_in,'in_s':in_s,'out_s':out_s,'h_in':h_in,'h_out':h_out,
                         'T_out_HX_C':T_out_HX_C,'porctSensible':porctSensible, 'DELTA_HX':DELTA_HX}
     
     
@@ -568,7 +568,7 @@ def SHIPcal_integration(desginDict,initial_variables_dict, integration_Dict):#Th
 
         if fluidInput=="water": 
             initial_variables_dict.update({'h_process_in':h_process_in, 'h_process_out':h_process_out,
-                                           's_process_in':s_process_in,'h_process_in':h_process_in,
+                                           's_process_in':s_process_in,
                                            'h_HX_out':h_HX_out,'h_in':h_in,'in_s':in_s,'out_s':out_s,'h_out':h_out})
         
         initial_variables_dict.update({'HX_eff':HX_eff,'T_in_C':T_in_C,'T_out_HX_C':T_out_HX_C, 'DELTA_HX':DELTA_HX,

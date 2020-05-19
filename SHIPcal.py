@@ -1622,7 +1622,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             reportsVar.update(confReport)
             reportsVar.update(annualProdDict)
             reportsVar.update(modificators)
-            if origin==0 or origin == -3 or origin == 1:
+            if origin==0 or origin == -3:
                 reportOutputOffline(reportsVar)
     else:
         template_vars={}
