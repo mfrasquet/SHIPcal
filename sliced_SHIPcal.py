@@ -475,6 +475,9 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     initial_variables_dict.update(process_param)
     #initial_variables_dict.update(initial_arrays)
     #initial_variables_dict.update(modificators)
+
+    if inputs:
+        initial_variables_dict.update({'inputs':inputs})
         
     return version, initial_variables_dict, coll_par, integration_Dict
     
@@ -1659,7 +1662,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                         'totalCharged':totalCharged,'totalDischarged':totalDischarged,'totalDefocus':totalDefocus,
                         'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
                         'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
-                        'flowrate_kgs':flowrate_kgs.tolist(), 'flowrate_kgs_average':np.mean(nonzeroflowrate_kgs), 'energStorageMax':energStorageMax,
+                        'flow_rate_kgs':flowrate_kgs.tolist(), 'flowrate_kgs_average':np.mean(nonzeroflowrate_kgs), 'energStorageMax':energStorageMax,
                         'Energy_module_max':Energy_module_max,}
         
     
@@ -1857,6 +1860,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
     
                 
                 reportsVar.update(inputsDjango)
+                reportsVar.update(initial_variables_dict.get('inputs',{}))
                 reportsVar.update(finance)
                 reportsVar.update(confReport)
                 reportsVar.update(annualProdDict)
@@ -1886,6 +1890,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                             'Production_max':Production_max,'Production_lim':Production_lim,
                             'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
                             'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
+                reportsVar.update(initial_variables_dict.get('inputs',{}))
                 template_vars.update(finance)
                 template_vars.update(confReport)
                 template_vars.update(annualProdDict)
