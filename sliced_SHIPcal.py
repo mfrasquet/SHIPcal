@@ -151,6 +151,8 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     m_dot_min_kgs=0.06 #1e-10 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
+    if inputsDjango.get('demandUnit',0)=='666':
+        Boiler_eff=1 #If the demand was introduced as the work fluid litters required to heat up the Boiler efficiency is not taken into account
     subcooling=5 #Deegre of subcooling
     
     #%%
