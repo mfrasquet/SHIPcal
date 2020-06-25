@@ -223,6 +223,14 @@ def SolarData(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_
     #Llamada al archivo de meteo completo
     if sender == 'CIMAV':
         Lat,Huso,Positional_longitude,data,DNI,temp=Meteo_data(file_loc,sender,optic_type)
+    elif sender == 'SHIPcal':
+        from simforms.models import Locations, MeteoData
+        data = MeteoData.objects.filter(location=Locations.objects.get(pk=file_loc)).order_by('hour_year_sim')
+        temp = data.values_list('temp',flat=True)
+        if optic_type=='concentrator' or optic_type=='0':
+            DNI = data.values_list('DNI',flat=True)
+        else:
+            DNI = data.values_list('GHI',flat=True)#DNI actually carries the GHI information
     else:
         (data,DNI,temp)=Meteo_data(file_loc,sender)#Calls another function within this same script that reads the TMY.dat file 
         #They are already np.arrays
@@ -241,12 +249,18 @@ def SolarData(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_
     
     #The file was already readed, and the data was already stored in "data" so it is easier to just pick the needed sections.
     step_sim=np.array(range(0,sim_steps)) #np.zeros (sim_steps)
-    DNI_sim=DNI[hour_year_ini-1:hour_year_fin-1]
-    temp_sim=temp[hour_year_ini-1:hour_year_fin-1]
-    month_sim=data[hour_year_ini-1:hour_year_fin-1,0]
-    day_sim=data[hour_year_ini-1:hour_year_fin-1,1]
-    hour_sim=data[hour_year_ini-1:hour_year_fin-1,2]
-    hour_year_sim=data[hour_year_ini-1:hour_year_fin-1,3]
+    DNI_sim=np.array(DNI[hour_year_ini-1:hour_year_fin-1])
+    temp_sim=np.array(temp[hour_year_ini-1:hour_year_fin-1])
+    if sender=='SHIPcal':
+        month_sim=np.array(data.values_list('month_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
+        day_sim=np.array(data.values_list('day_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
+        hour_sim=np.array(data.values_list('hour_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
+        hour_year_sim=np.array(data.values_list('hour_year_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
+    else:
+        month_sim=data[hour_year_ini-1:hour_year_fin-1,0]
+        day_sim=data[hour_year_ini-1:hour_year_fin-1,1]
+        hour_sim=data[hour_year_ini-1:hour_year_fin-1,2]
+        hour_year_sim=data[hour_year_ini-1:hour_year_fin-1,3]
     
     
     

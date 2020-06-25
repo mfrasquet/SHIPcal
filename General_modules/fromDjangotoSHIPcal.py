@@ -56,7 +56,6 @@ def djangoReport(inputsDjango):
     porctDay=1/activeHours
     for j in range(int(inputsDjango['hourINI'])-1,int(inputsDjango['hourEND'])):
         dayArray[j]=porctDay
- 
     
     monthArray=[inputsDjango['Jan'],inputsDjango['Feb'],inputsDjango['Mar'],inputsDjango['Apr'],inputsDjango['May'],inputsDjango['Jun'],inputsDjango['Jul'],inputsDjango['Aug'],inputsDjango['Sep'],inputsDjango['Oct'],inputsDjango['Nov'],inputsDjango['Dec']]
     weekArray=[inputsDjango['Mond'],inputsDjango['Tues'],inputsDjango['Wend'],inputsDjango['Thur'],inputsDjango['Fri'],inputsDjango['Sat'],inputsDjango['Sun']]

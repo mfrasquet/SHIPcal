@@ -83,11 +83,11 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     #-->  Propetary libs
     if sender=='solatom': #The request comes from Solatom's front-end www.ressspi.com
         global optic_efficiency_N,solatom_param,SOL_plant_costFunctions,reportOutput
-        from Solatom_modules.solatom_param import optic_efficiency_N
-        from Solatom_modules.solatom_param import solatom_param
-        from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
-        from Solatom_modules.templateSolatom import reportOutput
-        from Finance_modules.FinanceModels import Turn_key, ESCO
+        from Solatom_modules.solatom_param import optic_efficiency_N #noqa
+        from Solatom_modules.solatom_param import solatom_param #noqa
+        from Solatom_modules.Solatom_finance import SOL_plant_costFunctions #noqa
+        from Solatom_modules.templateSolatom import reportOutput #noqa
+        from Finance_modules.FinanceModels import Turn_key, ESCO #noqa
     elif sender=='CIMAV': #The request comes from CIMAV front-end
         global djangoReportCIMAV,CIMAV_collectors,IAM_fiteq,IAM_calculator,theta_IAMs_CIMAV,CIMAV_plant_costFunctions,equiv_coll_series_o1
         from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV #noqa
@@ -237,6 +237,13 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        elif sender=='SHIPcal':
+            from simforms.models import Locations
+            file_loc = locationFromFrontEnd
+            localMeteo= Locations.objects.get(pk=locationFromFrontEnd).city
+            Lat = Locations.objects.get(pk=locationFromFrontEnd).lat
+            Huso = 0 #Not used currently, it is assumed to have solar hourly data
+            #meteo_data.order_by('hour_year_sim').values_list('DNI',flat=True)
         else:
             meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
             localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
@@ -1898,7 +1905,21 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 template_vars.update(annualProdDict)
                 template_vars.update(modificators)
                 reportOutputOffline(template_vars)
-                            
+            elif origin == 1:
+                template_vars={} 
+                reportsVar={'version':version,'logo_output':'no_logo','type_integration':type_integration,
+                            'energyStored':energy_stored,"location":localMeteo,'fraction_savings':fraction_savings,
+                            'Area_total':Area_total,'n_coll_loop':n_coll_loop,'energStorageMax':energStorageMax,
+                            'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
+                            'Production_max':Production_max,'Production_lim':Production_lim,
+                            'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
+                            'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
+                reportsVar.update(finance)
+                reportsVar.update(confReport)
+                reportsVar.update(annualProdDict)
+                reportsVar.update(modificators)
+                if origin==0 or origin == 1:
+                    reportOutputOffline(reportsVar)            
             else:
                 template_vars={} 
                 reportsVar={'version':version,'logo_output':'no_logo','type_integration':type_integration,
@@ -1912,7 +1933,7 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
                 reportsVar.update(confReport)
                 reportsVar.update(annualProdDict)
                 reportsVar.update(modificators)
-                if origin==0:# or origin == 1:
+                if origin==0:
                     reportOutputOffline(reportsVar)
         else:
             template_vars={}
@@ -1989,17 +2010,17 @@ n_coll_loop=24
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="PL_E_PM" 
+type_integration="SL_L_P" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'SHIPcal','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
+origin=1 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
