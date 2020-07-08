@@ -20,7 +20,12 @@ import numpy as np
 
 def demandCreator(totalConsumption,dayArray,weekArray,monthArray):
     days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31] #days_in_the_month[month_number]=how many days are in the month number "month_number"
+    renormalization_factor = 0
     
+    if type(totalConsumption) == list:
+        renormalization_factor = 1
+        totalConsumption = totalConsumption[0]
+        
     start_week_day=0 #Asume the first day starts in monday. I could make it variable with the datetime python module but I dont know the conequences in a server
     
     weight_of_hours_in_month=[] #Create the auxiliar list where I'll store the porcentage(weight) of use of every hour for the current month in the loop
@@ -33,9 +38,12 @@ def demandCreator(totalConsumption,dayArray,weekArray,monthArray):
         start_week_day=(day+1)%7 #pulls out which was the last day in the previus month to use it in the next day in the beginning of the next month
         weight_of_hours_in_year += np.multiply(monthArray[month_number],weight_of_hours_in_month).tolist() #Multiplies the hours of use of the month to the porcentage of use of the month in the year, then appends the list to the end of the weight_of_hours_in_year list
         weight_of_hours_in_month=[] #Restarts the weight_of_hours_in_month list to be used again for the next month data
-       
-    renormalization_factor=sum(weight_of_hours_in_year) #calculates the renormalization factor of the list in order to get "1" when summing all the 8760 elements.
-    totalConsumption_normailized=totalConsumption/renormalization_factor #Renormalices the totalConsumption
+    
+    if renormalization_factor != 0:
+        totalConsumption_normailized=totalConsumption/renormalization_factor #Renormalices the totalConsumption
+    else:
+        renormalization_factor=sum(weight_of_hours_in_year) #calculates the renormalization factor of the list in order to get "1" when summing all the 8760 elements.
+        totalConsumption_normailized=totalConsumption/renormalization_factor #Renormalices the totalConsumption
     
     annualHourly=np.multiply(totalConsumption_normailized,weight_of_hours_in_year) #Obtains the energy required for every hour in the year.
         

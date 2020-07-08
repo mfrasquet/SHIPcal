@@ -135,4 +135,5 @@ municipioDB.pk
 municipioDB.pk
 settings.py
 
+.vscode/
 # End of https://www.gitignore.io/api/python

@@ -52,11 +52,10 @@ def djangoReport(inputsDjango):
     
    
     dayArray=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    activeHours=int(inputsDjango['hourEND'])-int(inputsDjango['hourINI'])
+    activeHours=int(inputsDjango['hourEND'])-1-int(inputsDjango['hourINI'])
     porctDay=1/activeHours
     for j in range(int(inputsDjango['hourINI'])-1,int(inputsDjango['hourEND'])):
         dayArray[j]=porctDay
- 
     
     monthArray=[inputsDjango['Jan'],inputsDjango['Feb'],inputsDjango['Mar'],inputsDjango['Apr'],inputsDjango['May'],inputsDjango['Jun'],inputsDjango['Jul'],inputsDjango['Aug'],inputsDjango['Sep'],inputsDjango['Oct'],inputsDjango['Nov'],inputsDjango['Dec']]
     weekArray=[inputsDjango['Mond'],inputsDjango['Tues'],inputsDjango['Wend'],inputsDjango['Thur'],inputsDjango['Fri'],inputsDjango['Sat'],inputsDjango['Sun']]
@@ -91,6 +90,6 @@ def djangoReport(inputsDjango):
             "annualProfile":'',
             'localInput':''}
 
-    return (inputs,annualConsumptionkWh,inputsDjango['last_reg'],P_op_bar,monthArray,weekArray,dayArray)
+    return (inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray)
 
 

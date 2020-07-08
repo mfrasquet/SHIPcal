@@ -11,12 +11,10 @@ from matplotlib.sankey import Sankey
 import numpy as np
 import pandas as pd
 from iapws import IAPWS97
-from General_modules.func_General import bar_MPa,MPa_bar,C_K,K_C,thermalOil,moltenSalt
+from General_modules.func_General import bar_MPa,thermalOil,moltenSalt
 import io
 import base64
 import os
-import PIL
-from PIL import Image
 
 
 def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath,**kwargs):
@@ -87,7 +85,7 @@ def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,
     plt.tight_layout()
        
 
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -233,7 +231,7 @@ def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_
     axes.set_ylim([0,400])
     axes.set_xlim([-3,11])
         
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -370,7 +368,7 @@ def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,o
     axes.set_ylim([0,3000])
     axes.set_xlim([-3,11])
    
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -518,7 +516,7 @@ def rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -571,7 +569,7 @@ def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -620,7 +618,7 @@ def viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         ax1.set_ylabel('Dynamic viscosity*1e3  - Ns/m2')
         ax1.set_yscale('log')
            
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -683,7 +681,7 @@ def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         plt .hlines(y=Kv*1e6,xmin=min(range(len(DvList)), key=lambda i: abs(DvList[i]-Dv*1e3))+4,xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -755,7 +753,10 @@ def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
         ax2 = ax1.twinx()   
         ax2.fill_between( np.arange(167), Demand[0:167], color="grey", alpha=0.2,label="Demanda")
         ax2 .plot(np.arange(167), Demand[0:167],'.-',color = '#362510',label="Demanda")
-        ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'red',label="Desenfoque")
+        if sender =='CIMAV':
+            ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'red',label="Disipación")
+        else:
+            ax2 .plot(np.arange(167), Q_prod[0:167],'.-',color = 'red',label="Desenfoque")
         ax2 .plot(np.arange(167), Q_prod_lim[0:167],'.-',color = 'blue',label="Producción solar")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot(np.arange(167), Q_charg[0:167],'.-',color = '#FFAE00',label="Carga")
@@ -796,7 +797,7 @@ def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
 #    output6.columns=['Q_prod']
 #    output_excel_Prod_wee_Jan=pd.concat([output1,output2,output3,output4,output5,output6], axis=1)
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -814,7 +815,7 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
     if lang=="spa":         
         fig.suptitle('Producción solar primera semana Junio', fontsize=14, fontweight='bold',y=1)
         ax1 = fig.add_subplot(111)
-        
+
         ax1 .plot((np.arange(3624,3624+167,1)), DNI[3624:3791],color='#CA6A16',linestyle='solid',label="Radiación solar")
         ax1.set_xlabel('simulación (hora del año)')
         ax1.set_ylabel('Radiación Solar - W/m2')
@@ -823,7 +824,10 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
         ax2 = ax1.twinx()   
         ax2.fill_between( np.arange(3624,3624+167,1), Demand[3624:3791], color="grey", alpha=0.2,label="Demanda")
         ax2 .plot((np.arange(3624,3624+167,1)), Demand[3624:3791],'.-',color = '#362510',label="Demanda")
-        ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'red',label="Desenfoque")
+        if sender =='CIMAV':
+            ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'red',label="Disipación")
+        else:
+            ax2 .plot((np.arange(3624,3624+167,1)), Q_prod[3624:3791],'.-',color = 'red',label="Desenfoque")
         ax2 .plot((np.arange(3624,3624+167,1)), Q_prod_lim[3624:3791],'.-',color = 'blue',label="Producción solar")
         if type_integration=="SL_L_PS" or type_integration=='SL_S_FWS':
             ax2 .plot((np.arange(3624,3624+167,1)), Q_charg[3624:3791],'.-',color = '#FFAE00',label="Carga")
@@ -866,7 +870,7 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
 #    
 #    output_excel_Prod_week_Jun=pd.concat([output1,output2,output3,output4,output5,output6], axis=1)
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -960,7 +964,10 @@ def storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
 #        ax1 .plot(np.arange(167), Q_useful[0:167],color = 'green',label="Energía útil",linewidth=2)
         
         ax1 .plot(np.arange(167), Demand[0:167],color = '#362510',label="Demanda",linewidth=2.0)
-        plt.bar(np.arange(167), Q_defocus[0:167],color = 'red',label="Desenfoque",bottom=np.array(Q_prod[0:167])-np.array(Q_defocus[0:167]),align='center')
+        if sender =='CIMAV':
+            plt.bar(np.arange(167), Q_defocus[0:167],color = 'red',label="Disipación",bottom=np.array(Q_prod[0:167])-np.array(Q_defocus[0:167]),align='center')
+        else:
+            plt.bar(np.arange(167), Q_defocus[0:167],color = 'red',label="Desenfoque",bottom=np.array(Q_prod[0:167])-np.array(Q_defocus[0:167]),align='center')
            
         plt.bar(np.arange(167), Q_charg[0:167],color = '#FFAE00',label="Carga",bottom=np.array(Q_prod[0:167])-np.array(Q_charg[0:167])-np.array(Q_defocus[0:167]),align='center')
     
@@ -1041,7 +1048,10 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
         #ax1 .plot((np.arange(3624,3624+167,1)), Q_useful[3624:3791],color = 'green',label="Energía útil",linewidth=2)
         
         ax1 .plot((np.arange(3624,3624+167,1)), Demand[3624:3791],color = '#362510',label="Demanda",linewidth=2.0)
-        plt.bar((np.arange(3624,3624+167,1)), Q_defocus[3624:3791],color = 'red',label="Desenfoque",bottom=np.array(Q_prod[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
+        if sender =='CIMAV':
+            plt.bar((np.arange(3624,3624+167,1)), Q_defocus[3624:3791],color = 'red',label="Disipación",bottom=np.array(Q_prod[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
+        else:
+            plt.bar((np.arange(3624,3624+167,1)), Q_defocus[3624:3791],color = 'red',label="Desenfoque",bottom=np.array(Q_prod[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
            
         plt.bar((np.arange(3624,3624+167,1)), Q_charg[3624:3791],color = '#FFAE00',label="Carga",bottom=np.array(Q_prod[3624:3791])-np.array(Q_charg[3624:3791])-np.array(Q_defocus[3624:3791]),align='center')
     
@@ -1105,7 +1115,7 @@ def storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q
     if origin==-1:
         fig.savefig(str(plotPath)+'almacenamiento_Junio.png', format='png', dpi=imageQlty)
 
-def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty,**kwargs):
+def storageNonAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty,**kwargs):
     fig = plt.figure(figsize=(14, 3.5))
     if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
@@ -1116,7 +1126,10 @@ def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,
     ax1 .plot(step_sim, Q_prod_lim,color = 'blue',label="Energía suministrada",linewidth=4)
     ax1 .plot(step_sim, Q_useful,color = 'green',label="Energía útil",linewidth=2)
     ax1 .plot(step_sim, Demand,color = '#362510',label="Demanda")
-    plt.bar(step_sim, Q_defocus,color = 'red',label="Desenfoque",bottom=Q_prod-Q_defocus,align='center')
+    if sender =='CIMAV':
+        plt.bar(step_sim, Q_defocus,color = 'red',label="Disipación",bottom=Q_prod-Q_defocus,align='center')
+    else:
+        plt.bar(step_sim, Q_defocus,color = 'red',label="Desenfoque",bottom=Q_prod-Q_defocus,align='center')
        
     plt.bar(step_sim, Q_charg,color = '#FFAE00',label="Carga",bottom=Q_prod-Q_charg-Q_defocus,align='center')
 
@@ -1147,6 +1160,91 @@ def storageAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,
         return image_base64
     if origin==-1:
         fig.savefig(str(plotPath)+'almacenamiento_Anual.png', format='png', dpi=imageQlty)
+        
+def storageNonAnnualSL_S_PDR(sender,origin,SOC,Q_useful,Q_prod_steam,Q_prod,Q_drum,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty,**kwargs):
+    fig = plt.figure(figsize=(14, 3.5))
+    if origin==-2 or origin == -3:
+        fig.patch.set_alpha(0)
+    fig.suptitle('Almacenamiento', fontsize=14, fontweight='bold',y=1)
+    ax1 = fig.add_subplot(111)  
+
+    plt.bar(step_sim, Q_prod-Q_charg,color = '#1F85DE',label="Producción solar en el campo",align='center')
+    plt.bar(step_sim, Q_prod_steam,color = '#7EE4E9',label="Producción de Vapor",align='center')
+    ax1 .plot(step_sim, Q_prod_lim,color = 'blue',label="Energía suministrada",linewidth=4)
+    ax1 .plot(step_sim, Q_useful,color = 'green',label="Energía útil",linewidth=2)
+    ax1 .plot(step_sim, Demand,color = '#362510',label="Demanda")
+
+    plt.bar(step_sim, Q_drum,color = '#FFAE00',label="Energía al drum",bottom=Q_prod_steam,align='center')
+    plt.bar(step_sim, Q_defocus,color = 'red',label="Desenfoque",bottom=Q_prod_steam+Q_drum,align='center')
+
+    ax1.set_ylabel('Producción & Demanda - kWh')
+    ax1.set_ylim([0,max(np.max(Q_prod_steam+Q_drum+Q_defocus),np.max(Demand))*1.2])
+    ax1.set_xlim([0,steps_sim])
+
+    plt.legend(loc='upper left', borderaxespad=0.)
+
+    ax2 = ax1.twinx()  
+    ax2 .plot(step_sim, SOC,'.r-',label="Carga del almacenamiento")
+    ax2.set_xlabel('simulación (hora del año)')
+    ax2.set_ylabel('Estado de carga almacenamiento %',color = '#CA6A16')
+    ax2.set_ylim([0,101])
+    ax2.set_xlim([0,steps_sim])
+
+    plt.tight_layout()
+
+
+    if origin==-2 or origin == -3:
+        f = io.BytesIO()           # Python 3
+        plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
+        plt.clf()
+        image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
+        f.close()
+        return image_base64
+    if origin==-1:
+        fig.savefig(str(plotPath)+'almacenamiento_Anual.png', format='png', dpi=imageQlty)
+
+def storageNonAnnualSL_S_PDR(sender,origin,SOC,Q_useful,Q_prod_steam,Q_prod,Q_drum,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty,**kwargs):
+    fig = plt.figure(figsize=(14, 3.5))
+    if origin==-2 or origin == -3:
+        fig.patch.set_alpha(0)
+    fig.suptitle('Almacenamiento', fontsize=14, fontweight='bold',y=1)
+    ax1 = fig.add_subplot(111)  
+
+    plt.bar(step_sim, Q_prod-Q_charg,color = '#1F85DE',label="Producción solar en el campo",align='center')
+    plt.bar(step_sim, Q_prod_steam,color = '#7EE4E9',label="Producción de Vapor",align='center')
+    ax1 .plot(step_sim, Q_prod_lim,color = 'blue',label="Energía suministrada",linewidth=4)
+    ax1 .plot(step_sim, Q_useful,color = 'green',label="Energía útil",linewidth=2)
+    ax1 .plot(step_sim, Demand,color = '#362510',label="Demanda")
+    
+    plt.bar(step_sim, Q_drum,color = '#FFAE00',label="Energía al drum",bottom=Q_prod_steam,align='center')
+    plt.bar(step_sim, Q_defocus,color = 'red',label="Desenfoque",bottom=Q_prod_steam+Q_drum,align='center')
+       
+    ax1.set_ylabel('Producción & Demanda - kWh')
+    ax1.set_ylim([0,max(np.max(Q_prod_steam+Q_drum+Q_defocus),np.max(Demand))*1.2])
+    ax1.set_xlim([0,steps_sim])
+
+    plt.legend(loc='upper left', borderaxespad=0.)
+    
+    ax2 = ax1.twinx()  
+    ax2 .plot(step_sim, SOC,'.r-',label="Carga del almacenamiento")
+    ax2.set_xlabel('simulación (hora del año)')
+    ax2.set_ylabel('Estado de carga almacenamiento %',color = '#CA6A16')
+    ax2.set_ylim([0,101])
+    ax2.set_xlim([0,steps_sim])
+   
+    plt.tight_layout()
+    
+    
+    if origin==-2 or origin == -3:
+        f = io.BytesIO()           # Python 3
+        plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
+        plt.clf()
+        image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
+        f.close()
+        return image_base64
+    if origin==-1:
+        fig.savefig(str(plotPath)+'almacenamiento_Anual.png', format='png', dpi=imageQlty)
+
 
 def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
@@ -1194,7 +1292,7 @@ def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_
         
     plt.legend(bbox_to_anchor=(0, 1), loc=2, borderaxespad=0.)
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1356,7 +1454,10 @@ def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlt
         
         ax.set_ylabel('Producción y Demanda en kWh',color = 'black')
         ax.bar(meses_index, output3['Demanda'], width=0.8, color='#362510',label="Demanda")
-        ax.bar(meses_index, output1['Prod.mensual'], width=0.8, color='red',label="Desenfocada")
+        if sender =='CIMAV':
+            ax.bar(meses_index, output1['Prod.mensual'], width=0.8, color='red',label="Disipada")
+        else:
+            ax.bar(meses_index, output1['Prod.mensual'], width=0.8, color='red',label="Desenfocada")
         ax.bar(meses_index, output4['Prod.mensual_lim'], width=0.8, color='blue',label="Producción solar")
         plt.legend(loc=9, bbox_to_anchor=(0.5, -0.05), ncol=3)     
         ax2 = ax.twinx()          
@@ -1382,7 +1483,7 @@ def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlt
         plt.legend(loc='upper right', borderaxespad=0.,frameon=True)        
       
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1578,7 +1679,7 @@ def savingsMonths(sender,origin,Q_prod_lim,Demand,Fuel_price,Boiler_eff,lang,plo
 
       
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1590,3 +1691,46 @@ def savingsMonths(sender,origin,Q_prod_lim,Demand,Fuel_price,Boiler_eff,lang,plo
     if origin==0:
         plt.show()
         return output_excel
+
+
+def SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,SD_max_energy,Q_prod,Q_prod_steam,SD_energy,T_in_K,T_out_K,T_SD_K,plotPath,imageQlty,**kwargs):
+    fig = plt.figure()
+    if origin==-2 or origin == -3:
+        fig.patch.set_alpha(0)
+    fig.suptitle('Direct steam Generation RECIRCULATION', fontsize=14, fontweight='bold')
+    ax1 = fig.add_subplot(111)  
+    ax1 .plot(step_sim, Q_prod,'m:',label="Producción solar")
+    ax1 .plot(step_sim, Q_prod_steam,'g:',label="Producción vapor")    
+    ax1 .plot(step_sim, SD_energy,color='orange',label="Energia en SD")
+    ax1 .axhline(y=SD_min_energy,xmin=0,xmax=steps_sim,c="black",linewidth=0.5,zorder=0)
+    ax1 .axhline(y=SD_max_energy,xmin=0,xmax=steps_sim,c="black",linewidth=0.5,zorder=0)
+    ax1.set_ylim([0,max(SD_max_energy,max(Q_prod_steam))*1.1])
+    ax1.set_xlabel('Simulación (hora del año)')
+    ax1.set_ylabel('Energía - kWh')
+    plt.legend(bbox_to_anchor=(1.15, .5), loc=2, borderaxespad=0.)
+    ax2 = ax1.twinx()          
+    ax2 .plot(step_sim, T_in_K-273,'-',color = '#1F85DE',label="Temp_in Solar")
+    ax2 .plot(step_sim, T_out_K-273,'-',color = 'red',label="Temp_out Solar")
+    ax2 .plot(step_sim, T_SD_K-273,':',color = 'orange',label="Temp_alm")
+    ax2.set_ylabel('Temp - C')
+    ax2.set_ylim([0,(np.max([np.max(T_SD_K),np.max(T_out_K)])-273)*1.2])
+    plt.legend(bbox_to_anchor=(1.15, 1), loc=2, borderaxespad=0.)    
+
+    # output1=pd.DataFrame(flow_rate_kgs)
+    # output1.columns=['Flow_rate']
+    # output2=pd.DataFrame(T_in_K)
+    # output2.columns=['T_in_K']
+    # output3=pd.DataFrame(T_out_K)
+    # output3.columns=['T_out_K']
+    # output_excel_FlowratesTemps=pd.concat([output1,output2,output3], axis=1)
+
+    if origin==-2 or origin == -3:
+        f = io.BytesIO()           # Python 3
+        plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
+        plt.clf()
+        image_base64 = base64.b64encode(f.getvalue()).decode('utf-8').replace('\n', '')
+        f.close()
+        return image_base64
+    if origin==-1:
+        fig.savefig(str(plotPath)+'flowrates.png', format='png', dpi=imageQlty)
+

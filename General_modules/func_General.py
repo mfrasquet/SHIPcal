@@ -54,7 +54,6 @@ def check_overwrite(data,reg,rebaja,num_loops,n_coll_loop,type_integration,almVo
     
 
 def calc_hour_year(mes,dia,hora): #This function calculates what is the correspondign hour of the year for an specific date and time.
-    mes_string=("Ene","Feb","Mar","Apr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec") #Not in use!!! remove
     mes_days=(31,28,31,30,31,30,31,31,30,31,30,31)
     
     num_days=0 #Initializate the variables
@@ -71,9 +70,10 @@ def calc_hour_year(mes,dia,hora): #This function calculates what is the correspo
         raise ValueError('Month should be <=12')
     
     if hora<=24: #Checks that the hour number is less than 24
-        hour_year=(num_days-1)*24+hora #Calculates the current year hour
+        hour_year=(num_days-1)*24+hora #Minus the 24 h of the current day, and adds the hours that have passed in the current day #Calculates the current year hour
     else:
-       raise ValueError('Hour should be <=24') 
+       raise ValueError('Hour should be <=24')
+       #The minimum output hour year is 1
     return hour_year
 
    
@@ -219,6 +219,10 @@ def waterFromGrid_v2(T_in_C_AR_mes):
 def waterFromGrid_v3(file_meteo, sender='CIMAV'):
     if sender=='CIMAV':
         Tamb = np.loadtxt(file_meteo, delimiter="\t", skiprows=4)[:,7]#Reads the temperature of the weather. The TMYs are a bit different.
+    elif sender=='SHIPcal':
+        from simforms.models import Locations, MeteoData
+        meteo_data = MeteoData.objects.filter(location=Locations.objects.get(pk=file_meteo))
+        Tamb = meteo_data.order_by('hour_year_sim').values_list('temp',flat=True)
     else:
         Tamb = np.loadtxt(file_meteo, delimiter="\t")[:,9]#Reads the temperature of the weather
     TambAverage=np.mean(Tamb) #Computes the year average
