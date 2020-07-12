@@ -42,6 +42,148 @@ from Integration_modules.integrations import offStorageSimple, operationSimple, 
 from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageNonAnnual, financePlot, prodMonths, savingsMonths,SL_S_PDR_Plot,storageNonAnnualSL_S_PDR
 
 
+
+
+
+
+
+def demandCreator2(totalConsumption,dayArray,weekArray,monthArray,ten_minArray):
+    days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31] #days_in_the_month[month_number]=how many days are in the month number "month_number"
+    
+    start_week_day=0 #Asume the first day starts in monday. I could make it variable with the datetime python module but I dont know the conequences in a server
+    
+    weight_of_hours_in_month=[] #Create the auxiliar list where I'll store the porcentage(weight) of use of every hour for the current month in the loop
+    weight_of_hours_in_year=[] #Create the auxiliar list where I'll store the porcentage(weight) of use of every hour of one year
+    
+    weight_of_ten_min_in_day=[]
+    weight_of_ten_min_in_month=[]
+    weight_of_ten_min_in_year=[]
+    
+    for month_number in range(12): #For each month (12) in the year
+        for day_of_the_month in range(days_in_the_month[month_number]): #Calculates the porcentage of use every hour for the whole month
+            day=(start_week_day+day_of_the_month)%7 #Calculate wich day it is (Mon=0,Tues=1, ...) using the module 7, so day is which day in the week correspond to each day number in the month
+            for hour in range(len(dayArray)):
+                weight_of_ten_min_in_day += np.multiply(dayArray[hour],ten_minArray).tolist()
+            
+            #weight_of_hours_in_month += np.multiply(weekArray[day],dayArray).tolist() #Builts the array of use of every hour in the month, multiplying the porcentage of use of that specific day to the porcentage of use of each hour and then appends it to the end of the list (".tolist() method used to append as a list and do not sum as an array) as the next day.
+            weight_of_ten_min_in_month += np.multiply(weekArray[day], weight_of_ten_min_in_day).tolist()
+            weight_of_ten_min_in_day=[]
+        start_week_day=(day+1)%7 #pulls out which was the last day in the previus month to use it in the next day in the beginning of the next month
+        weight_of_ten_min_in_year += np.multiply(monthArray[month_number],weight_of_ten_min_in_month).tolist()
+        weight_of_ten_min_in_month=[]
+        # weight_of_hours_in_year += np.multiply(monthArray[month_number],weight_of_hours_in_month).tolist() #Multiplies the hours of use of the month to the porcentage of use of the month in the year, then appends the list to the end of the weight_of_hours_in_year list
+        #weight_of_hours_in_month=[] #Restarts the weight_of_hours_in_month list to be used again for the next month data
+       
+        
+    renormalization_factor=sum( weight_of_ten_min_in_year) #calculates the renormalization factor of the list in order to get "1" when summing all the 8760 elements.
+    totalConsumption_normailized=totalConsumption/renormalization_factor #Renormalices the totalConsumption
+    
+    #annualHourly=np.multiply(totalConsumption_normailized,weight_of_hours_in_year) #Obtains the energy required for every hour in the year.
+    annual_ten_min=np.multiply(totalConsumption_normailized,weight_of_ten_min_in_year)
+    #return (annualHourly)
+    return (annual_ten_min)
+
+
+def calc_ten_min_year(mes,dia,hora,ten_min):  
+    mes_string=("Ene","Feb","Mar","Apr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec") #Not in use!!! remove
+    mes_days=(31,28,31,30,31,30,31,31,30,31,30,31)
+    
+    num_days=0 #Initializate the variables
+    cont_mes=mes-1
+    if mes<=12: #Check that the month input is reliable
+        while (cont_mes >0):
+            cont_mes=cont_mes-1 #Counts backwards from the introduced month to the first month in the year(January)
+        
+            num_days=num_days+mes_days[cont_mes] #Adds all the days in the months previous to the introduced one
+            
+            
+        if dia<=mes_days[mes-1]: #Checks that the introduced dau number is smaller than the number of days in that month
+            num_days=num_days+dia #Adds the quantity of days passed so far in the introduced month
+        else:
+            raise ValueError('Day should be <=days_month')    
+    else:
+        raise ValueError('Month should be <=12')
+    
+   # if hora<=24: #Checks that the hour number is less than 24
+    if hora<=24: #Checks that the hour number is less than 23
+       hour_year=(num_days-1)*24+hora #Calculates the current year hour
+    else:
+       #raise ValueError('Hour should be <=24') 
+        raise ValueError('Hour should be <=24') 
+    if hora==24:
+        ten_min_year=hour_year*6
+    else:
+        if ten_min<=6 and ten_min>=0:
+        
+            ten_min_year=hour_year*6+ten_min
+        else:
+            raise ValueError('Ten_min has to be >=0 and <=6 ')
+        
+    return ten_min_year
+
+
+
+def DemandData2(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim, ten_min_ini_sim, ten_min_fin_sim): #Returns the only the entries of the demand vector (consumtpion for every hour along the year) that corresponds to the hours between the the starting and ending hours of the simulation
+    
+#    Demand = np.loadtxt(file_demand, delimiter=",")
+    Demand=np.array(file_demand)
+    
+    #hour_year_ini=calc_hour_year(mes_ini_sim,dia_ini_sim,hora_ini_sim)
+    #hour_year_fin=calc_hour_year(mes_fin_sim,dia_fin_sim,hora_fin_sim)
+    
+    ten_min_year_ini=calc_ten_min_year(mes_ini_sim,dia_ini_sim,hora_ini_sim, ten_min_ini_sim)
+    ten_min_year_fin=calc_ten_min_year(mes_fin_sim,dia_fin_sim,hora_fin_sim, ten_min_fin_sim)
+    
+    
+    #if hour_year_ini <= hour_year_fin:
+       # sim_steps=hour_year_fin-hour_year_ini
+    if ten_min_year_ini <= ten_min_year_fin:
+        sim_steps=ten_min_year_fin-ten_min_year_ini
+    
+    else:
+        raise ValueError('End time is smaller than start time') 
+
+
+    #Bucle de simulacion
+    Demand_sim=np.zeros (sim_steps)
+    step_sim=np.zeros (sim_steps)
+    
+    
+    step=0
+    for step in range(0,sim_steps):
+        step_sim[step]=step
+       # Demand_sim[step]=Demand[hour_year_ini+step-1]
+        Demand_sim[step]=Demand[ten_min_year_ini+step-1]
+        step+=1
+        
+#    if plot_Demand==1:
+#        fig = plt.figure()
+#        fig.suptitle('Demand', fontsize=14, fontweight='bold')
+#        ax2 = fig.add_subplot(111)         
+#        ax2 .plot(step_sim, Demand_sim,'.-',color = 'b',label="Demand_sim")
+#    
+#        ax2.set_xlabel('simulation')
+#        ax2.set_ylabel('kWh')
+#        plt.legend(bbox_to_anchor=(1.05, 1), loc=1, borderaxespad=0.)
+    
+    return Demand_sim
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
     
 #%%
@@ -388,8 +530,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
         totalConsumption=1875*8760 #[kWh]
-        file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
-        # file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')   
+        if simControl['paso_10min']==1:
+            file_demand=demandCreator2(totalConsumption,dayArray,weekArray,monthArray,ten_minArray)
+        else:
+            file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
+        # file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')      
 
         ## FINANCE
         businessModel="turnkey"
@@ -411,7 +556,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             co2factor=.41/1000 #[TonCo2/kWh]  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
 
     #Demand of energy before the boiler
-    Energy_Before=DemandData(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim) # [kWh]
+    if simControl['paso_10min']==1:
+        Energy_Before=DemandData2(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim, ten_min_ini_sim, ten_min_fin_sim) # [kWh]
+    else:
+        Energy_Before=DemandData(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim) # [kWh]
     Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
     Demand=Boiler_eff*Energy_Before #Demand of energy after the boiler [kWh]
     
@@ -1647,13 +1795,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
-"""
+
 # Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -1746,7 +1894,7 @@ type_integration="SL_L_P"
 almVolumen=10000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'sevilla','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'paso_10min':paso_10min}    
@@ -1755,7 +1903,7 @@ if paso_10min==1:
 
 # ---------------------------------------------------
 
-origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
+origin=0 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -1851,4 +1999,4 @@ else:
     #last_reg=inputsDjango['last_reg']
     
 [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
-"""
+
