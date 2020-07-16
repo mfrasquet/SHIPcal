@@ -375,6 +375,58 @@ def SolarEQ_simple2 (Month,Day,Hour,ten_min,Lat,Huso): #Returns the hour angle (
 
 
 
+def waterFromGrid_v3_10min(file_meteo, sender='CIMAV'):
+    if sender=='CIMAV':
+        Tamb = np.loadtxt(file_meteo, delimiter="\t", skiprows=4)[:,7]#Reads the temperature of the weather. The TMYs are a bit different.
+    elif sender=='SHIPcal':
+        from simforms.models import Locations, MeteoData
+        meteo_data = MeteoData.objects.filter(location=Locations.objects.get(pk=file_meteo))
+        Tamb = meteo_data.order_by('hour_year_sim').values_list('temp',flat=True)
+    else:
+        Tamb = np.loadtxt(file_meteo, delimiter="\t")[:,10]#Reads the temperature of the weather
+    TambAverage=np.mean(Tamb) #Computes the year average
+    TambMax=np.amax(Tamb) #Computes the maximum temperature
+    
+    offset = 3 #A defined offset of 3 °C
+    ratio = 0.22 + 0.0056*(TambAverage - 6.67)
+    lag = 1.67 - 0.56*(TambAverage - 6.67)
+#The offset, lag, and ratio values were obtained by fitting data compiled by Abrams and Shedd [8], the FloridaSolar Energy Center [9], and Sandia National Labs
+    
+    T_in_C_AR=[] #It is easier to work with this array as a list first to print 24 times the mean value of the water temperature for every day
+    
+    for day in range(365):
+        #The ten-minute year array is built by the temperature calculated for the day printed 144 times for each day
+        T_in_C_AR+=[(TambAverage+offset)+ratio*(TambMax/2)*np.sin(np.radians(-90+(day-15-lag)*360/365))]*24*6 #This was taken from TRNSYS documentation.
+    
+    return np.array(T_in_C_AR)
+
+
+
+
+
+def waterFromGrid_trim2(T_in_C_AR,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,ten_min_ini_sim,ten_min_fin_sim):
+    
+    ten_min_year_ini=calc_ten_min_year(mes_ini_sim,dia_ini_sim,hora_ini_sim, ten_min_ini_sim)
+    ten_min_year_fin=calc_ten_min_year(mes_fin_sim,dia_fin_sim,hora_fin_sim, ten_min_fin_sim)
+    
+    if ten_min_year_ini <= ten_min_year_fin: #Checks that the starting time is before than the ending time
+        sim_steps=ten_min_year_fin-ten_min_year_ini #Stablishes the number of steps as.
+    else:
+        raise ValueError('End time is smaller than start time')   
+    
+    T_in_C_AR_trim=np.zeros (sim_steps)
+    
+    step=0
+    for step in range(0,sim_steps):
+        T_in_C_AR_trim[step]=T_in_C_AR[ten_min_year_ini+step-1]
+        step+=1
+    
+    return (T_in_C_AR_trim) 
+
+
+
+
+
 
 
 
@@ -688,7 +740,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## METEO
 #        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        localMeteo="Sevilla10min.dat"
+        localMeteo="Sevillahorario.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -812,22 +864,36 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
             
     """
-
-    SUN_ELV=output[:,5] # Sun elevation [rad]
-    SUN_AZ=output[:,6] # Sun azimuth [rad]
-    DNI=output[:,9] # Direct Normal Irradiation [W/m²]
-    temp=output[:,10]+273 # Ambient temperature [K] 
-    step_sim=output [:,11] #Array containing the simulation steps 
-    steps_sim=len(output) # Number of steps in the simulation
+    if simControl['paso_10min']==1:
+        SUN_ELV=output[:,6] # Sun elevation [rad]
+        SUN_AZ=output[:,7] # Sun azimuth [rad]
+        DNI=output[:,10] # Direct Normal Irradiation [W/m²]
+        temp=output[:,11]+273 # Ambient temperature [K] 
+        step_sim=output [:,12] #Array containing the simulation steps 
+        steps_sim=len(output) # Number of steps in the simulation
+    
+    else:
+        SUN_ELV=output[:,5] # Sun elevation [rad]
+        SUN_AZ=output[:,6] # Sun azimuth [rad]
+        DNI=output[:,9] # Direct Normal Irradiation [W/m²]
+        temp=output[:,10]+273 # Ambient temperature [K] 
+        step_sim=output [:,11] #Array containing the simulation steps 
+        steps_sim=len(output) # Number of steps in the simulation
 
     
     DNI=DNI*mofDNI # DNI modified if needed. This is necessary to take into account 
     meteoDict={'DNI':DNI.tolist(),'localMeteo':localMeteo}
     
     #Temperature of the make-up water
-    T_in_C_AR=waterFromGrid_v3(file_loc,sender)
-    #Trim the T_in_C_AR [8760] to the simulation frame 
-    T_in_C_AR=waterFromGrid_trim(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim)
+    
+    if simControl['paso_10min']==1:
+    
+        T_in_C_AR=waterFromGrid_v3_10min(file_loc,sender)
+        T_in_C_AR=waterFromGrid_trim2(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_ini_sim,ten_min_fin_sim)
+    else:
+        T_in_C_AR=waterFromGrid_v3(file_loc,sender)
+        #Trim the T_in_C_AR [8760] to the simulation frame 
+        T_in_C_AR=waterFromGrid_trim(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim)
 
 
 #%%
@@ -1799,7 +1865,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # ------------------------------------------------------------------------------------
     
     Break_cost=0 # Init variable
-    if finance_study==1 and steps_sim==8759:#This eneters only for yearly simulations with the flag finance_study = 1
+ #   if simControl['paso_10min']==1:
+  #      if finance_study==1 and steps_sim==52560:#This eneters only for yearly simulations with the flag finance_study = 1
+  #  else:
+    if finance_study==1 and steps_sim==8759 or steps_sim==52560:#This eneters only for yearly simulations with the flag finance_study = 1
 
     # BLOCK 3.1 - PLANT INVESTMENT <><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
@@ -1903,7 +1972,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # Plot functions
     
     # Plots for annual simulations
-    if steps_sim==8759:
+    if steps_sim==8759 or steps_sim==52560:
         if plots[0]==1: #(0) Sankey plot
             image_base64,sankeyDict=SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
         if plots[0]==0: #(0) Sankey plot -> no plotting
@@ -1925,7 +1994,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
     
     # Plots for non-annual simulatios (With annual simuations you cannot see anything)
-    if steps_sim!=8759:
+    if steps_sim!=8759 or steps_sim!=52560:
         if plots[5]==1: #(5) Theta angle Plot
             thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
         if plots[6]==1: #(6) IAM angles Plot
@@ -1971,7 +2040,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # ------------------------------------------------------------------------------------
     
     # Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
-    if steps_sim==8759: #The report is only available when annual simulation is performed
+    if steps_sim==8759 or steps_sim==52560: #The report is only available when annual simulation is performed
         if origin==-2:
             fileName="results"+str(pk)
             reportsVar={'logo_output':'no_logo','date':inputs['date'],'type_integration':type_integration,
@@ -2023,7 +2092,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -2045,19 +2114,19 @@ plots=[0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to 
 
 
 finance_study=1
-paso_10min=1 # YES=1 NO=0
+paso_10min=0 # YES=1 NO=0
 
 
 
 
-month_ini_sim=12
-day_ini_sim=30
-hour_ini_sim=0
+month_ini_sim=6
+day_ini_sim=5
+hour_ini_sim=12
 ten_min_ini_sim=0 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 
-month_fin_sim=12
-day_fin_sim=30
-hour_fin_sim=24
+month_fin_sim=6
+day_fin_sim=5
+hour_fin_sim=20
 ten_min_fin_sim=0 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 
 
