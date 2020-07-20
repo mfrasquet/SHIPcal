@@ -539,7 +539,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #--> Integration parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.06 # Minimum flowrate before re-circulation [kg/s]
+    m_dot_min_kgs=0.8 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     subcooling=5 #Deegre of subcooling
@@ -740,7 +740,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## METEO
 #        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        localMeteo="Sevillahorario.dat"
+        localMeteo="Sevilla10min.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -765,7 +765,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=235 #HIGH - Process temperature [ºC]
+        T_process_in=300 #HIGH - Process temperature [ºC]
         T_process_out=20 #LOW - Temperature at the return of the process [ºC]
         P_op_bar=30 #[bar] 
         
@@ -782,7 +782,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=1875*8760 #[kWh]
+        totalConsumption=6000*8760 #[kWh]
         if simControl['paso_10min']==1:
             file_demand=demandCreator2(totalConsumption,dayArray,weekArray,monthArray,ten_minArray)
         else:
@@ -1646,7 +1646,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 IAM_long[i]=0
                 IAM_t[i]=0
                 IAM[i]=IAM_long[i]*IAM_t[i]
-        
+                
         
         if DNI[i]>lim_inf_DNI and SUN_ELV[i]<0: #Error in the meteo file
             mismatchDNI+=DNI[i]
@@ -2114,20 +2114,20 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to 
 
 
 finance_study=1
-paso_10min=0 # YES=1 NO=0
+paso_10min=1 # YES=1 NO=0
 
 
 
 
-month_ini_sim=6
+month_ini_sim=12
 day_ini_sim=5
-hour_ini_sim=12
-ten_min_ini_sim=0 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+hour_ini_sim=10
+ten_min_ini_sim=5 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 
-month_fin_sim=6
-day_fin_sim=5
+month_fin_sim=12
+day_fin_sim=8
 hour_fin_sim=20
-ten_min_fin_sim=0 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+ten_min_fin_sim=3 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 
 
 
