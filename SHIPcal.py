@@ -2119,13 +2119,13 @@ paso_10min=1 # YES=1 NO=0
 
 
 
-month_ini_sim=12
+month_ini_sim=6
 day_ini_sim=5
-hour_ini_sim=10
+hour_ini_sim=0
 ten_min_ini_sim=5 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 
-month_fin_sim=12
-day_fin_sim=8
+month_fin_sim=6
+day_fin_sim=6
 hour_fin_sim=20
 ten_min_fin_sim=3 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 
