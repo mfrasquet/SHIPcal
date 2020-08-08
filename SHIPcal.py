@@ -47,44 +47,69 @@ from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotS
 
 
 
-def demandCreator2(totalConsumption,dayArray,weekArray,monthArray,ten_minArray):
+def demandCreator2(totalConsumption,dayArray,weekArray,monthArray,step_minArray,itercontrol):
     days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31] #days_in_the_month[month_number]=how many days are in the month number "month_number"
     
     start_week_day=0 #Asume the first day starts in monday. I could make it variable with the datetime python module but I dont know the conequences in a server
     
-    weight_of_hours_in_month=[] #Create the auxiliar list where I'll store the porcentage(weight) of use of every hour for the current month in the loop
-    weight_of_hours_in_year=[] #Create the auxiliar list where I'll store the porcentage(weight) of use of every hour of one year
+    if itercontrol=='paso_10min':
     
-    weight_of_ten_min_in_day=[]
-    weight_of_ten_min_in_month=[]
-    weight_of_ten_min_in_year=[]
-    
-    for month_number in range(12): #For each month (12) in the year
-        for day_of_the_month in range(days_in_the_month[month_number]): #Calculates the porcentage of use every hour for the whole month
-            day=(start_week_day+day_of_the_month)%7 #Calculate wich day it is (Mon=0,Tues=1, ...) using the module 7, so day is which day in the week correspond to each day number in the month
-            for hour in range(len(dayArray)):
-                weight_of_ten_min_in_day += np.multiply(dayArray[hour],ten_minArray).tolist()
-            
-            #weight_of_hours_in_month += np.multiply(weekArray[day],dayArray).tolist() #Builts the array of use of every hour in the month, multiplying the porcentage of use of that specific day to the porcentage of use of each hour and then appends it to the end of the list (".tolist() method used to append as a list and do not sum as an array) as the next day.
-            weight_of_ten_min_in_month += np.multiply(weekArray[day], weight_of_ten_min_in_day).tolist()
-            weight_of_ten_min_in_day=[]
-        start_week_day=(day+1)%7 #pulls out which was the last day in the previus month to use it in the next day in the beginning of the next month
-        weight_of_ten_min_in_year += np.multiply(monthArray[month_number],weight_of_ten_min_in_month).tolist()
+        weight_of_ten_min_in_day=[]
         weight_of_ten_min_in_month=[]
-        # weight_of_hours_in_year += np.multiply(monthArray[month_number],weight_of_hours_in_month).tolist() #Multiplies the hours of use of the month to the porcentage of use of the month in the year, then appends the list to the end of the weight_of_hours_in_year list
-        #weight_of_hours_in_month=[] #Restarts the weight_of_hours_in_month list to be used again for the next month data
+        weight_of_ten_min_in_year=[]
+        
+        for month_number in range(12): #For each month (12) in the year
+            for day_of_the_month in range(days_in_the_month[month_number]): #Calculates the porcentage of use every hour for the whole month
+                day=(start_week_day+day_of_the_month)%7 #Calculate wich day it is (Mon=0,Tues=1, ...) using the module 7, so day is which day in the week correspond to each day number in the month
+                for hour in range(len(dayArray)):
+                    weight_of_ten_min_in_day += np.multiply(dayArray[hour],step_minArray).tolist()
+            
+            
+                weight_of_ten_min_in_month += np.multiply(weekArray[day], weight_of_ten_min_in_day).tolist()
+                weight_of_ten_min_in_day=[]
+            start_week_day=(day+1)%7 #pulls out which was the last day in the previus month to use it in the next day in the beginning of the next month
+            weight_of_ten_min_in_year += np.multiply(monthArray[month_number],weight_of_ten_min_in_month).tolist()
+            weight_of_ten_min_in_month=[]
+        
        
         
-    renormalization_factor=sum( weight_of_ten_min_in_year) #calculates the renormalization factor of the list in order to get "1" when summing all the 8760 elements.
-    totalConsumption_normailized=totalConsumption/renormalization_factor #Renormalices the totalConsumption
+        renormalization_factor=sum( weight_of_ten_min_in_year) #calculates the renormalization factor of the list in order to get "1" when summing all the 8760 elements.
+        totalConsumption_normailized=totalConsumption/renormalization_factor #Renormalices the totalConsumption
     
-    #annualHourly=np.multiply(totalConsumption_normailized,weight_of_hours_in_year) #Obtains the energy required for every hour in the year.
-    annual_ten_min=np.multiply(totalConsumption_normailized,weight_of_ten_min_in_year)
-    #return (annualHourly)
-    return (annual_ten_min)
+    
+        annual=np.multiply(totalConsumption_normailized,weight_of_ten_min_in_year)
+    
+    elif itercontrol=='paso_15min':
+        
+        weight_of_fifteen_min_in_day=[]
+        weight_of_fifteen_min_in_month=[]
+        weight_of_fifteen_min_in_year=[]
+       
+        for month_number in range(12): #For each month (12) in the year
+            for day_of_the_month in range(days_in_the_month[month_number]): #Calculates the porcentage of use every hour for the whole month
+                day=(start_week_day+day_of_the_month)%7 #Calculate wich day it is (Mon=0,Tues=1, ...) using the module 7, so day is which day in the week correspond to each day number in the month
+                for hour in range(len(dayArray)):
+                    weight_of_fifteen_min_in_day += np.multiply(dayArray[hour],step_minArray).tolist()
+            
+            
+                weight_of_fifteen_min_in_month += np.multiply(weekArray[day], weight_of_fifteen_min_in_day).tolist()
+                weight_of_fifteen_min_in_day=[]
+            start_week_day=(day+1)%7 #pulls out which was the last day in the previus month to use it in the next day in the beginning of the next month
+            weight_of_fifteen_min_in_year += np.multiply(monthArray[month_number],weight_of_fifteen_min_in_month).tolist()
+            weight_of_fifteen_min_in_month=[]
+       
+       
+        
+        renormalization_factor=sum( weight_of_fifteen_min_in_year) #calculates the renormalization factor of the list in order to get "1" when summing all the 8760 elements.
+        totalConsumption_normailized=totalConsumption/renormalization_factor #Renormalices the totalConsumption
+    
+    
+        annual=np.multiply(totalConsumption_normailized,weight_of_fifteen_min_in_year)
+   
+    return (annual)
 
 
-def calc_ten_min_year(mes,dia,hora,ten_min):  
+def calc_min_year(mes,dia,hora,minute,itercontrol):
     mes_string=("Ene","Feb","Mar","Apr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dec") #Not in use!!! remove
     mes_days=(31,28,31,30,31,30,31,31,30,31,30,31)
     
@@ -104,41 +129,46 @@ def calc_ten_min_year(mes,dia,hora,ten_min):
     else:
         raise ValueError('Month should be <=12')
     
-   # if hora<=24: #Checks that the hour number is less than 24
+  
     if hora<=24: #Checks that the hour number is less than 24
        hour_year=(num_days-1)*24+hora #Calculates the current year hour
     else:
-       #raise ValueError('Hour should be <=24') 
+       
         raise ValueError('Hour should be <=24') 
+   
+    if itercontrol=='paso_10min':
     
-    
-    if ten_min<=5 and ten_min>=0:
+        if minute<=5 and minute>=0:
         
-        ten_min_year=hour_year*6+ten_min+1
-    else:
-        raise ValueError('Ten_min has to be >=0 and <=5 ')
+            min_year=hour_year*6+minute+1
+        else:
+             raise ValueError('Ten_min has to be 0, 1, 2, 3, 4 or 5')
+    elif itercontrol=='paso_15min':
         
-    return ten_min_year
+        if  minute<=3 and minute>=0:
+            
+            min_year=hour_year*4+minute+1
+        
+        else :
+            raise ValueError('Fifteen_min has to be 0, 1, 2 or 3')
+    return min_year
         
     
 
 
-def DemandData2(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim, ten_min_ini_sim, ten_min_fin_sim): #Returns the only the entries of the demand vector (consumtpion for every hour along the year) that corresponds to the hours between the the starting and ending hours of the simulation
+def DemandData2(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim, min_ini_sim, min_fin_sim, itercontrol):
     
 #    Demand = np.loadtxt(file_demand, delimiter=",")
     Demand=np.array(file_demand)
     
-    #hour_year_ini=calc_hour_year(mes_ini_sim,dia_ini_sim,hora_ini_sim)
-    #hour_year_fin=calc_hour_year(mes_fin_sim,dia_fin_sim,hora_fin_sim)
-    
-    ten_min_year_ini=calc_ten_min_year(mes_ini_sim,dia_ini_sim,hora_ini_sim, ten_min_ini_sim)
-    ten_min_year_fin=calc_ten_min_year(mes_fin_sim,dia_fin_sim,hora_fin_sim, ten_min_fin_sim)
+
+    min_year_ini=calc_min_year(mes_ini_sim,dia_ini_sim,hora_ini_sim, min_ini_sim, itercontrol)
+    min_year_fin=calc_min_year(mes_fin_sim,dia_fin_sim,hora_fin_sim, min_fin_sim, itercontrol)
     
     
-    #if hour_year_ini <= hour_year_fin:
-       # sim_steps=hour_year_fin-hour_year_ini
-    if ten_min_year_ini <= ten_min_year_fin:
-        sim_steps=ten_min_year_fin-ten_min_year_ini
+  
+    if min_year_ini <= min_year_fin:
+        sim_steps=min_year_fin-min_year_ini
     
     else:
         raise ValueError('End time is smaller than start time') 
@@ -152,8 +182,8 @@ def DemandData2(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia
     step=0
     for step in range(0,sim_steps):
         step_sim[step]=step
-       # Demand_sim[step]=Demand[hour_year_ini+step-1]
-        Demand_sim[step]=Demand[ten_min_year_ini+step-1]
+       
+        Demand_sim[step]=Demand[min_year_ini+step-1]
         step+=1
         
 #    if plot_Demand==1:
@@ -173,16 +203,16 @@ def DemandData2(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia
 
 
 
-def SolarData2(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,ten_min_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,ten_min_fin_sim,sender='notCIMAV',Lat=0,Huso=0, optic_type='0'): #This function returns an "output" array with the month, day of the month, hour of the day, hour of the year hour angle,SUN_ELVevation, suN_AZimuth,DECLINATION, SUN_ZENITHAL, DNI,temp_sim,step_sim for every hour between the starting and ending hours in the year.  It also returns the starting and ending hour in the year.
+def SolarData2(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,min_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,min_fin_sim, itercontrol, sender='notCIMAV',Lat=0,Huso=0, optic_type='0'): #This function returns an "output" array with the month, day of the month, hour of the day, hour of the year hour angle,SUN_ELVevation, suN_AZimuth,DECLINATION, SUN_ZENITHAL, DNI,temp_sim,step_sim for every hour between the starting and ending hours in the year.  It also returns the starting and ending hour in the year.
 
 
     
-    ten_min_year_ini=calc_ten_min_year(mes_ini_sim,dia_ini_sim,hora_ini_sim, ten_min_ini_sim)
-    ten_min_year_fin=calc_ten_min_year(mes_fin_sim,dia_fin_sim,hora_fin_sim, ten_min_fin_sim)
+    min_year_ini=calc_min_year(mes_ini_sim,dia_ini_sim,hora_ini_sim, min_ini_sim, itercontrol)
+    min_year_fin=calc_min_year(mes_fin_sim,dia_fin_sim,hora_fin_sim, min_fin_sim, itercontrol)
     
     
-    if ten_min_year_ini <= ten_min_year_fin: #Checks that the starting time is before than the ending time
-        sim_steps=ten_min_year_fin-ten_min_year_ini #Stablishes the number of steps as the hours between the starting and ending hours
+    if min_year_ini <= min_year_fin: #Checks that the starting time is before than the ending time
+        sim_steps=min_year_fin-min_year_ini #Stablishes the number of steps as the hours between the starting and ending hours
     else:
         raise ValueError('End time is smaller than start time') 
     
@@ -216,25 +246,25 @@ def SolarData2(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,ten_min_ini_sim,mes
     
     #The file was already readed, and the data was already stored in "data" so it is easier to just pick the needed sections.
     step_sim=np.array(range(0,sim_steps)) #np.zeros (sim_steps)
-    DNI_sim=np.array(DNI[ten_min_year_ini-1:ten_min_year_fin-1])
-    temp_sim=np.array(temp[ten_min_year_ini-1:ten_min_year_fin-1])
+    DNI_sim=np.array(DNI[min_year_ini-1: min_year_fin-1])
+    temp_sim=np.array(temp[min_year_ini-1: min_year_fin-1])
     if sender=='SHIPcal':
         month_sim=np.array(data.values_list('month_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
         day_sim=np.array(data.values_list('day_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
         hour_sim=np.array(data.values_list('hour_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
         hour_year_sim=np.array(data.values_list('hour_year_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
     else:
-        month_sim=data[ten_min_year_ini-1:ten_min_year_fin-1,0]
-        day_sim=data[ten_min_year_ini-1:ten_min_year_fin-1,1]
-        hour_sim=data[ten_min_year_ini-1:ten_min_year_fin-1,2]
-        ten_min_sim=data[ten_min_year_ini-1:ten_min_year_fin-1,3]
-        ten_min_year_sim=data[ten_min_year_ini-1:ten_min_year_fin-1,4]
+        month_sim=data[min_year_ini-1:min_year_fin-1,0]
+        day_sim=data[min_year_ini-1:min_year_fin-1,1]
+        hour_sim=data[min_year_ini-1:min_year_fin-1,2]
+        min_sim=data[min_year_ini-1:min_year_fin-1,3]
+        min_year_sim=data[min_year_ini-1:min_year_fin-1,4]
     
     
     step=0
     for step in range(0,sim_steps):
         #Posicion solar
-        W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN=SolarEQ_simple2 (month_sim[step],day_sim[step] ,hour_sim[step], ten_min_sim[step], Lat,Huso) #calls another function in within this script that calculates the solar positional angles for the specfied hour of the day and month
+        W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN=SolarEQ_simple2 (month_sim[step],day_sim[step] ,hour_sim[step], min_sim[step], Lat,Huso) #calls another function in within this script that calculates the solar positional angles for the specfied hour of the day and month
         W_sim[step]=W
         SUN_ELV_sim[step]=SUN_ELV   #rad
         SUN_AZ_sim[step]=SUN_AZ     #rad
@@ -244,15 +274,15 @@ def SolarData2(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,ten_min_ini_sim,mes
         
         step+=1
     
-    output=np.column_stack((month_sim,day_sim,hour_sim,ten_min_sim,ten_min_year_sim,W_sim,SUN_ELV_sim,SUN_AZ_sim,DECL_sim,SUN_ZEN_sim,DNI_sim,temp_sim,step_sim)) #Arranges the calculated data in a massive array with the previusly calculated vector as columns
+    output=np.column_stack((month_sim,day_sim,hour_sim,min_sim,min_year_sim,W_sim,SUN_ELV_sim,SUN_AZ_sim,DECL_sim,SUN_ZEN_sim,DNI_sim,temp_sim,step_sim)) #Arranges the calculated data in a massive array with the previusly calculated vector as columns
     
     """
     Output key:
     output[0]->month of year
     output[1]->day of month
     output[2]->hour of day
-    output[3]->ten minutes portions of hour
-    output[4]->ten minutes portions of the year
+    output[3]-> minutes portions of hour
+    output[4]-> minutes portions of the year
     output[5]->W - rad
     output[6]->SUN_ELV - rad
     output[7]->SUN AZ - rad
@@ -284,12 +314,13 @@ def SolarData2(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,ten_min_ini_sim,mes
     if sender == 'CIMAV':
         return Lat,Huso,Positional_longitude,output
     else:
-        return[output,ten_min_year_ini,ten_min_year_fin] 
+        return[output,min_year_ini,min_year_fin] 
 
 
 
-def Meteo_data2 (file_meteo,sender='notCIMAV', optic_type='0'): #This function exports the TMY file to 'data', the DNI and temperature array of values for  each hour in the year from the file_meteo path to file
+def Meteo_data2 (file_meteo,sender='notCIMAV', optic_type='0'): #This function exports the TMY file to 'data', the DNI and temperature array of values for  each step in the year from the file_meteo path to file
     #Only if the optional argument sender is received and is == 'CIMAV'
+     #Only diference with Meteo_Data is data´s rows for DNI and temp are 9 and 10 instead 8 and 9.
     
     if sender == 'CIMAV':
         data = np.loadtxt(file_meteo, delimiter="\t", skiprows=4) #Will read this format, since the first 4 rows has the place, location and headings data
@@ -320,7 +351,7 @@ def Meteo_data2 (file_meteo,sender='notCIMAV', optic_type='0'): #This function e
 
 
 
-def SolarEQ_simple2 (Month,Day,Hour,ten_min,Lat,Huso): #Returns the hour angle (W) [rad], sun elevation angle[rad], azimuth angle[rad], declination [rad] and zenithal angle [rad] of the sun for each the specified hour, latitude[°], anf time zone given in the inputs.
+def SolarEQ_simple2 (Month,Day,Hour,minute,Lat,Huso): #Returns the hour angle (W) [rad], sun elevation angle[rad], azimuth angle[rad], declination [rad] and zenithal angle [rad] of the sun for each the specified hour, latitude[°], anf time zone given in the inputs.
 
     gr=np.pi/180; #Just to convert RAD-DEG 
     
@@ -337,13 +368,17 @@ def SolarEQ_simple2 (Month,Day,Hour,ten_min,Lat,Huso): #Returns the hour angle (
     DECL=(0.006918-0.399912*np.cos(DJ)+ 0.070257*np.sin(DJ)-0.006758*np.cos(2*DJ)+0.000907*np.sin(2*DJ)-0.002697*np.cos(3*DJ)+0.00148*np.sin(3*DJ));
     DECL_deg=DECL/gr;
     
+    
     #Hour
+    
+    
     if Hour==0:
-        W_deg=-1*(Hour+(ten_min/60)-12)*15;
+        W_deg=-1*(Hour+(minute/60)-12)*15;
         W=W_deg*gr;
     else:
-        W_deg=(Hour+(ten_min/60)-12)*15;
+        W_deg=(Hour+(minute/60)-12)*15;
         W=W_deg*gr;
+   
     
     #Sun elevation
     XLat=Lat*gr;
@@ -375,7 +410,7 @@ def SolarEQ_simple2 (Month,Day,Hour,ten_min,Lat,Huso): #Returns the hour angle (
 
 
 
-def waterFromGrid_v3_10min(file_meteo, sender='CIMAV'):
+def waterFromGrid_v3_min(file_meteo, itercontrol, sender='CIMAV'):
     if sender=='CIMAV':
         Tamb = np.loadtxt(file_meteo, delimiter="\t", skiprows=4)[:,7]#Reads the temperature of the weather. The TMYs are a bit different.
     elif sender=='SHIPcal':
@@ -394,23 +429,27 @@ def waterFromGrid_v3_10min(file_meteo, sender='CIMAV'):
     
     T_in_C_AR=[] #It is easier to work with this array as a list first to print 24 times the mean value of the water temperature for every day
     
-    for day in range(365):
-        #The ten-minute year array is built by the temperature calculated for the day printed 144 times for each day
-        T_in_C_AR+=[(TambAverage+offset)+ratio*(TambMax/2)*np.sin(np.radians(-90+(day-15-lag)*360/365))]*24*6 #This was taken from TRNSYS documentation.
-    
+    if itercontrol=='paso_10min':
+        for day in range(365):
+            #The ten-minute year array is built by the temperature calculated for the day printed 144 times for each day
+            T_in_C_AR+=[(TambAverage+offset)+ratio*(TambMax/2)*np.sin(np.radians(-90+(day-15-lag)*360/365))]*24*6 #This was taken from TRNSYS documentation.
+    elif itercontrol=='paso_15min':
+        for day in range(365):
+            #The fifteen-minute year array is built by the temperature calculated for the day printed 96 times for each day
+            T_in_C_AR+=[(TambAverage+offset)+ratio*(TambMax/2)*np.sin(np.radians(-90+(day-15-lag)*360/365))]*24*4
     return np.array(T_in_C_AR)
 
 
 
 
 
-def waterFromGrid_trim2(T_in_C_AR,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,ten_min_ini_sim,ten_min_fin_sim):
+def waterFromGrid_trim2(T_in_C_AR,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,min_ini_sim,min_fin_sim):
     
-    ten_min_year_ini=calc_ten_min_year(mes_ini_sim,dia_ini_sim,hora_ini_sim, ten_min_ini_sim)
-    ten_min_year_fin=calc_ten_min_year(mes_fin_sim,dia_fin_sim,hora_fin_sim, ten_min_fin_sim)
+    min_year_ini=calc_min_year(mes_ini_sim,dia_ini_sim,hora_ini_sim, min_ini_sim,itercontrol)
+    min_year_fin=calc_min_year(mes_fin_sim,dia_fin_sim,hora_fin_sim, min_fin_sim, itercontrol)
     
-    if ten_min_year_ini <= ten_min_year_fin: #Checks that the starting time is before than the ending time
-        sim_steps=ten_min_year_fin-ten_min_year_ini #Stablishes the number of steps as.
+    if min_year_ini <= min_year_fin: #Checks that the starting time is before than the ending time
+        sim_steps=min_year_fin-min_year_ini #Stablishes the number of steps as.
     else:
         raise ValueError('End time is smaller than start time')   
     
@@ -418,7 +457,7 @@ def waterFromGrid_trim2(T_in_C_AR,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_s
     
     step=0
     for step in range(0,sim_steps):
-        T_in_C_AR_trim[step]=T_in_C_AR[ten_min_year_ini+step-1]
+        T_in_C_AR_trim[step]=T_in_C_AR[min_year_ini+step-1]
         step+=1
     
     return (T_in_C_AR_trim) 
@@ -492,7 +531,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     day_fin_sim=simControl['dia_fin_sim']   # Day in which the simulation ends
     hour_fin_sim=simControl['hora_fin_sim'] # Hour in which the simulation ends
     
-    if simControl['paso_10min']==1:
+    if simControl['itercontrol']=='paso_10min':
         # Initial step of the simulation
         month_ini_sim=simControl['mes_ini_sim']   # Month in which the simulation starts 
         day_ini_sim=simControl['dia_ini_sim']   # Day in which the simulation starts 
@@ -503,7 +542,25 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         month_fin_sim=simControl['mes_fin_sim']   # Month in which the simulation ends
         day_fin_sim=simControl['dia_fin_sim']   # Day in which the simulation ends
         hour_fin_sim=simControl['hora_fin_sim'] # Hour in which the simulation ends                   
-        ten_min_fin_sim=simControl['ten_min_fin_sim'] #Step of 10 minutes in which the simulations starts
+        ten_min_fin_sim=simControl['ten_min_fin_sim'] #Step of 10 minutes in which the simulations ends
+    elif simControl['itercontrol']=='paso_15min':
+        # Initial step of the simulation
+        month_ini_sim=simControl['mes_ini_sim']   # Month in which the simulation starts 
+        day_ini_sim=simControl['dia_ini_sim']   # Day in which the simulation starts 
+        hour_ini_sim=simControl['hora_ini_sim'] # Hour in which the simulation starts
+        fifteen_min_ini_sim=simControl['fifteen_min_ini_sim'] #Step of 15 minutes in which the simulations starts
+    
+        # Final step of the simulation
+        month_fin_sim=simControl['mes_fin_sim']   # Month in which the simulation ends
+        day_fin_sim=simControl['dia_fin_sim']   # Day in which the simulation ends
+        hour_fin_sim=simControl['hora_fin_sim'] # Hour in which the simulation ends                   
+        fifteen_min_fin_sim=simControl['fifteen_min_fin_sim'] #Step of 15 minutes in which the simulations ends
+                                       
+                                       
+                                       
+                                       
+                                       
+        
     #%%
     # BLOCK 1.2 - PARAMETERS <><><><><><><><><><><><><><><><><><><><><><><><><><><>
     
@@ -747,11 +804,17 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         else:
-            if simControl['paso_10min']==1:
+            if simControl['itercontrol']=='paso_10min':
                 meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB3.csv", sep=',')  
                 file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
                 Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
                 Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+            elif simControl['itercontrol']=='paso_15min':
+                meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB3.csv", sep=',')  
+                file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
+                Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+                Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+                
             else:
                 meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB3.csv", sep=',')  
                 file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
@@ -778,13 +841,16 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## ENERGY DEMAND
 #        dayArray=[0,0,0,0,0,0,0,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,0,0,0,0,0,0] #12 hours day profile
         ten_minArray=[1/6,1/6,1/6,1/6,1/6,1/6]
+        fifteen_minArray=[1/4,1/4,1/4,1/4]
         dayArray=[1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24,1/24] #24 hours day profile
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
         totalConsumption=6000*8760 #[kWh]
-        if simControl['paso_10min']==1:
-            file_demand=demandCreator2(totalConsumption,dayArray,weekArray,monthArray,ten_minArray)
+        if simControl['itercontrol']=='paso_10min':
+            file_demand=demandCreator2(totalConsumption,dayArray,weekArray,monthArray,ten_minArray,simControl['itercontrol'])
+        elif simControl['itercontrol']=='paso_15min':
+            file_demand=demandCreator2(totalConsumption,dayArray,weekArray,monthArray,fifteen_minArray,simControl['itercontrol'])
         else:
             file_demand=demandCreator(totalConsumption,dayArray,weekArray,monthArray)
         # file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_offline/demand_files/demand_con.csv", sep=',')      
@@ -809,8 +875,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             co2factor=.41/1000 #[TonCo2/kWh]  #https://www.engineeringtoolbox.com/co2-emission-fuels-d_1085.html
 
     #Demand of energy before the boiler
-    if simControl['paso_10min']==1:
-        Energy_Before=DemandData2(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim, ten_min_ini_sim, ten_min_fin_sim) # [kWh]
+    if simControl['itercontrol']=='paso_10min':
+        Energy_Before=DemandData2(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim, ten_min_ini_sim, ten_min_fin_sim, simControl['itercontrol']) # [kWh]
+    
+    elif simControl['itercontrol']=='paso_15min':
+        Energy_Before=DemandData2(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim, fifteen_min_ini_sim, fifteen_min_fin_sim, simControl['itercontrol']) # [kWh]
+        
     else:
         Energy_Before=DemandData(file_demand,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim) # [kWh]
     Energy_Before_annual=sum(Energy_Before) #This should be exactly the same as annualConsumptionkWh for annual simulations
@@ -824,8 +894,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     
     # --> Meteo variables
-    if simControl['paso_10min']==1:
-       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,ten_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_fin_sim,sender,Lat,Huso)
+    if simControl['itercontrol']=='paso_10min':
+       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,ten_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_fin_sim, simControl['itercontrol'],sender,Lat,Huso)
+    elif simControl['itercontrol']=='paso_15min':
+       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,fifteen_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,fifteen_min_fin_sim, simControl['itercontrol'],sender,Lat,Huso)
     else:
         output,i_initial,i_final=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso)
     
@@ -864,7 +936,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
             
     """
-    if simControl['paso_10min']==1:
+    if simControl['itercontrol']=='paso_10min' or simControl['itercontrol']=='paso_15min':
         SUN_ELV=output[:,6] # Sun elevation [rad]
         SUN_AZ=output[:,7] # Sun azimuth [rad]
         DNI=output[:,10] # Direct Normal Irradiation [W/m²]
@@ -886,10 +958,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     #Temperature of the make-up water
     
-    if simControl['paso_10min']==1:
+    if simControl['itercontrol']=='paso_10min' :
     
-        T_in_C_AR=waterFromGrid_v3_10min(file_loc,sender)
+        T_in_C_AR=waterFromGrid_v3_min(file_loc,itercontrol,sender)
         T_in_C_AR=waterFromGrid_trim2(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_ini_sim,ten_min_fin_sim)
+    elif simControl['itercontrol']=='paso_15min':
+        T_in_C_AR=waterFromGrid_v3_min(file_loc,itercontrol,sender)
+        T_in_C_AR=waterFromGrid_trim2(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,fifteen_min_ini_sim,fifteen_min_fin_sim)
     else:
         T_in_C_AR=waterFromGrid_v3(file_loc,sender)
         #Trim the T_in_C_AR [8760] to the simulation frame 
@@ -2114,21 +2189,26 @@ plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to 
 
 
 finance_study=1
-paso_10min=1 # YES=1 NO=0
+
+#iteration´s variable of control
+
+#paso_10min
+#paso_15min
+itercontrol ='paso_10min'
 
 
 
-
-month_ini_sim=6
-day_ini_sim=5
-hour_ini_sim=0
+month_ini_sim=1
+day_ini_sim=1
+hour_ini_sim=10
 ten_min_ini_sim=5 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+fifteen_min_ini_sim=0 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45}
 
-month_fin_sim=6
-day_fin_sim=6
-hour_fin_sim=20
+month_fin_sim=1
+day_fin_sim=1
+hour_fin_sim=14
 ten_min_fin_sim=3 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
-
+fifteen_min_fin_sim=3 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45 min}
 
 
 
@@ -2170,10 +2250,11 @@ almVolumen=10000 #litros
 confReport={'lang':'spa','sender':'sevilla','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
-simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'paso_10min':paso_10min}    
-if paso_10min==1:
-    simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'paso_10min':paso_10min, 'ten_min_ini_sim':ten_min_ini_sim, 'ten_min_fin_sim':ten_min_fin_sim}
-
+simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol}    
+if itercontrol =='paso_10min':
+    simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,'ten_min_ini_sim':ten_min_ini_sim, 'ten_min_fin_sim':ten_min_fin_sim}
+elif itercontrol =='paso_15min':
+    simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,'fifteen_min_ini_sim':fifteen_min_ini_sim, 'fifteen_min_fin_sim':fifteen_min_fin_sim}
 # ---------------------------------------------------
 
 origin=0 #0 if new record; -2 if it comes from www.ressspi.com
