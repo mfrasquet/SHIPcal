@@ -203,7 +203,7 @@ def DemandData2(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia
 
 
 
-def SolarData2(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,min_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,min_fin_sim, itercontrol, sender='notCIMAV',Lat=0,Huso=0, optic_type='0'): #This function returns an "output" array with the month, day of the month, hour of the day, hour of the year hour angle,SUN_ELVevation, suN_AZimuth,DECLINATION, SUN_ZENITHAL, DNI,temp_sim,step_sim for every hour between the starting and ending hours in the year.  It also returns the starting and ending hour in the year.
+def SolarData2(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,min_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,min_fin_sim, itercontrol,huso,to_solartime ,long,sender='notCIMAV',Lat=0,Huso=0, optic_type='0'): #This function returns an "output" array with the month, day of the month, hour of the day, hour of the year hour angle,SUN_ELVevation, suN_AZimuth,DECLINATION, SUN_ZENITHAL, DNI,temp_sim,step_sim for every hour between the starting and ending hours in the year.  It also returns the starting and ending hour in the year.
 
 
     
@@ -264,7 +264,7 @@ def SolarData2(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,min_ini_sim,mes_fin
     step=0
     for step in range(0,sim_steps):
         #Posicion solar
-        W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN=SolarEQ_simple2 (month_sim[step],day_sim[step] ,hour_sim[step], min_sim[step], Lat,Huso) #calls another function in within this script that calculates the solar positional angles for the specfied hour of the day and month
+        W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN=SolarEQ_simple2 (month_sim[step],day_sim[step] ,hour_sim[step], min_sim[step],huso,to_solartime,long,Lat,Huso) #calls another function in within this script that calculates the solar positional angles for the specfied hour of the day and month
         W_sim[step]=W
         SUN_ELV_sim[step]=SUN_ELV   #rad
         SUN_AZ_sim[step]=SUN_AZ     #rad
@@ -351,7 +351,7 @@ def Meteo_data2 (file_meteo,sender='notCIMAV', optic_type='0'): #This function e
 
 
 
-def SolarEQ_simple2 (Month,Day,Hour,minute,Lat,Huso): #Returns the hour angle (W) [rad], sun elevation angle[rad], azimuth angle[rad], declination [rad] and zenithal angle [rad] of the sun for each the specified hour, latitude[°], anf time zone given in the inputs.
+def SolarEQ_simple2 (Month,Day,Hour,minute,huso,to_solartime,long,Lat,Huso): #Returns the hour angle (W) [rad], sun elevation angle[rad], azimuth angle[rad], declination [rad] and zenithal angle [rad] of the sun for each the specified hour, latitude[°], anf time zone given in the inputs.
 
     gr=np.pi/180; #Just to convert RAD-DEG 
     
@@ -371,13 +371,28 @@ def SolarEQ_simple2 (Month,Day,Hour,minute,Lat,Huso): #Returns the hour angle (W
     
     #Hour
     
+    if to_solartime=='on': #Calculates solar time.
+         
+        num_days=calc_day_year(int(Month),int(Day))
+        B=(360/365)*(num_days-81)
+        LSTM=15*huso
+        EOT=9.87*np.sin(2*B)-7.53*np.cos(B)-1.5*np.sin(B)
+        tc=4*(long-LSTM)+EOT
+        Hour=tc/60+Hour
     
-    if Hour==0:
-        W_deg=-1*(Hour+(minute/60)-12)*15;
-        W=W_deg*gr;
+        if Hour==0:
+            W_deg=-1*(Hour+((minute+3.5)/60)-12)*15;
+            W=W_deg*gr;
+        else:
+            W_deg=(Hour+((minute+3.5)/60)-12)*15;
+            W=W_deg*gr;
     else:
-        W_deg=(Hour+(minute/60)-12)*15;
-        W=W_deg*gr;
+        if Hour==0:
+            W_deg=-1*(Hour+(minute/60)-12)*15;
+            W=W_deg*gr;
+        else:
+            W_deg=(Hour+(minute/60)-12)*15;
+            W=W_deg*gr;
    
     
     #Sun elevation
@@ -406,7 +421,27 @@ def SolarEQ_simple2 (Month,Day,Hour,minute,Lat,Huso): #Returns the hour angle (W
        
     return [W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN]
 
-
+def calc_day_year(mes,dia):
+    
+    mes_days=(31,28,31,30,31,30,31,31,30,31,30,31)
+    
+    num_days=0 #Initializate the variables
+    cont_mes=mes-1
+    if mes<=12: #Check that the month input is reliable
+        while (cont_mes >0):
+            cont_mes=cont_mes-1 #Counts backwards from the introduced month to the first month in the year(January)
+        
+            num_days=num_days+mes_days[cont_mes] #Adds all the days in the months previous to the introduced one
+            
+            
+        if dia<=mes_days[mes-1]: #Checks that the introduced dau number is smaller than the number of days in that month
+            num_days=num_days+dia #Adds the quantity of days passed so far in the introduced month
+        else:
+            raise ValueError('Day should be <=days_month')    
+    else:
+        raise ValueError('Month should be <=12')
+        
+    return (num_days)
 
 
 
@@ -596,7 +631,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #--> Integration parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.8 # Minimum flowrate before re-circulation [kg/s]
+    m_dot_min_kgs=0.9 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     subcooling=5 #Deegre of subcooling
@@ -804,16 +839,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         else:
-            if simControl['itercontrol']=='paso_10min':
+            if simControl['itercontrol']=='paso_10min' or simControl['itercontrol']=='paso_15min':
                 meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB3.csv", sep=',')  
                 file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
                 Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
                 Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
-            elif simControl['itercontrol']=='paso_15min':
-                meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB3.csv", sep=',')  
-                file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
-                Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-                Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+                long=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Long'].iloc[0]
+            
                 
             else:
                 meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB3.csv", sep=',')  
@@ -895,9 +927,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     # --> Meteo variables
     if simControl['itercontrol']=='paso_10min':
-       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,ten_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_fin_sim, simControl['itercontrol'],sender,Lat,Huso)
+       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,ten_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_fin_sim, simControl['itercontrol'],huso,simControl['to_solartime'],long,sender,Lat,Huso)
     elif simControl['itercontrol']=='paso_15min':
-       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,fifteen_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,fifteen_min_fin_sim, simControl['itercontrol'],sender,Lat,Huso)
+       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,fifteen_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,fifteen_min_fin_sim, simControl['itercontrol'],huso,simControl['to_solartime'],long,sender,Lat,Huso)
     else:
         output,i_initial,i_final=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso)
     
@@ -2196,16 +2228,18 @@ finance_study=1
 #paso_15min
 itercontrol ='paso_10min'
 
+#In case the TMY does not have solar time.
+to_solartime='on'
+huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
-
-month_ini_sim=1
-day_ini_sim=1
+month_ini_sim=6
+day_ini_sim=2
 hour_ini_sim=10
 ten_min_ini_sim=5 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_ini_sim=0 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45}
 
-month_fin_sim=1
-day_fin_sim=1
+month_fin_sim=6
+day_fin_sim=2
 hour_fin_sim=14
 ten_min_fin_sim=3 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_fin_sim=3 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45 min}
@@ -2250,11 +2284,11 @@ almVolumen=10000 #litros
 confReport={'lang':'spa','sender':'sevilla','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
-simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol}    
+simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,}    
 if itercontrol =='paso_10min':
-    simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,'ten_min_ini_sim':ten_min_ini_sim, 'ten_min_fin_sim':ten_min_fin_sim}
+    simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,'ten_min_ini_sim':ten_min_ini_sim, 'ten_min_fin_sim':ten_min_fin_sim,'to_solartime':to_solartime, 'huso':huso}
 elif itercontrol =='paso_15min':
-    simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,'fifteen_min_ini_sim':fifteen_min_ini_sim, 'fifteen_min_fin_sim':fifteen_min_fin_sim}
+    simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,'fifteen_min_ini_sim':fifteen_min_ini_sim, 'fifteen_min_fin_sim':fifteen_min_fin_sim,'to_solartime':to_solartime, 'huso':huso}
 # ---------------------------------------------------
 
 origin=0 #0 if new record; -2 if it comes from www.ressspi.com
