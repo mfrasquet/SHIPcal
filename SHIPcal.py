@@ -832,7 +832,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## METEO
 #        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        localMeteo="Sevilla.dat"
+        localMeteo="Sevilla10min.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -1975,7 +1975,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
  #   if simControl['paso_10min']==1:
   #      if finance_study==1 and steps_sim==52560:#This eneters only for yearly simulations with the flag finance_study = 1
   #  else:
-    if finance_study==1 and steps_sim==8759 or steps_sim==52560:#This eneters only for yearly simulations with the flag finance_study = 1
+    if finance_study==1 and steps_sim==8759 or steps_sim==52560 or steps_sim==35040:#This eneters only for yearly simulations with the flag finance_study = 1
 
     # BLOCK 3.1 - PLANT INVESTMENT <><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
@@ -2079,7 +2079,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     # Plot functions
     
     # Plots for annual simulations
-    if steps_sim==8759 or steps_sim==52560:
+    if steps_sim==8759 or steps_sim==52560 or steps_sim==35040:
         if plots[0]==1: #(0) Sankey plot
             image_base64,sankeyDict=SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
         if plots[0]==0: #(0) Sankey plot -> no plotting
@@ -2101,7 +2101,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 
     
     # Plots for non-annual simulatios (With annual simuations you cannot see anything)
-    if steps_sim!=8759 or steps_sim!=52560:
+    if steps_sim!=8759 or steps_sim!=52560 or steps_sim!=35040:
         if plots[5]==1: #(5) Theta angle Plot
             thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
         if plots[6]==1: #(6) IAM angles Plot
@@ -2226,10 +2226,10 @@ finance_study=1
 
 #paso_10min
 #paso_15min
-itercontrol ='-paso_10min' 
+itercontrol ='paso_10min' 
 
 #In case the TMY does not have solar time. Equations implemented in SolarEQ_simple2
-to_solartime='-on' # on
+to_solartime='on' # on
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
 month_ini_sim=6
@@ -2277,7 +2277,7 @@ n_coll_loop=24
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_L_S_PH" 
+type_integration="SL_S_FWS" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
