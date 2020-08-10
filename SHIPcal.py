@@ -631,7 +631,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #--> Integration parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.9 # Minimum flowrate before re-circulation [kg/s]
+    m_dot_min_kgs=0.4 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     subcooling=5 #Deegre of subcooling
@@ -878,7 +878,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=6000*8760 #[kWh]
+        totalConsumption=8000*8760 #[kWh]
         if simControl['itercontrol']=='paso_10min':
             file_demand=demandCreator2(totalConsumption,dayArray,weekArray,monthArray,ten_minArray,simControl['itercontrol'])
         elif simControl['itercontrol']=='paso_15min':
@@ -2200,7 +2200,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[0,0,0,0,0,0,0,1,1,1,0,0,1,1,0,0,1,1] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -2230,19 +2230,19 @@ finance_study=1
 itercontrol ='paso_10min' 
 
 #In case the TMY does not have solar time. Equations implemented in SolarEQ_simple2
-to_solartime='on' # on
+to_solartime='on' # value must be on to use.
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
-month_ini_sim=1
-day_ini_sim=1
-hour_ini_sim=0
-ten_min_ini_sim=0 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+month_ini_sim=6
+day_ini_sim=2
+hour_ini_sim=15
+ten_min_ini_sim=2 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_ini_sim=0 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45}
 
-month_fin_sim=12
-day_fin_sim=31
-hour_fin_sim=24
-ten_min_fin_sim=0 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+month_fin_sim=6
+day_fin_sim=2
+hour_fin_sim=19
+ten_min_fin_sim=2 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_fin_sim=3 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45 min}
 
 
