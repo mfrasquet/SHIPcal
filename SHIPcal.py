@@ -832,7 +832,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## METEO
 #        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        localMeteo="Sevilla10min.dat"
+        localMeteo="Sevilla.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -848,7 +848,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             
                 
             else:
-                meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB3.csv", sep=',')  
+                meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
                 file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
                 Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
                 Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
@@ -2226,10 +2226,10 @@ finance_study=1
 
 #paso_10min
 #paso_15min
-itercontrol ='paso_10min'
+itercontrol ='-paso_10min' 
 
 #In case the TMY does not have solar time. Equations implemented in SolarEQ_simple2
-to_solartime='on'
+to_solartime='-on' # on
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
 month_ini_sim=6
@@ -2277,7 +2277,7 @@ n_coll_loop=24
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_L_P" 
+type_integration="SL_L_S_PH" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
