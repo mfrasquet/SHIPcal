@@ -186,15 +186,7 @@ def DemandData2(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia
         Demand_sim[step]=Demand[min_year_ini+step-1]
         step+=1
         
-#    if plot_Demand==1:
-#        fig = plt.figure()
-#        fig.suptitle('Demand', fontsize=14, fontweight='bold')
-#        ax2 = fig.add_subplot(111)         
-#        ax2 .plot(step_sim, Demand_sim,'.-',color = 'b',label="Demand_sim")
-#    
-#        ax2.set_xlabel('simulation')
-#        ax2.set_ylabel('kWh')
-#        plt.legend(bbox_to_anchor=(1.05, 1), loc=1, borderaxespad=0.)
+
     
     return Demand_sim
 
@@ -293,23 +285,7 @@ def SolarData2(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,min_ini_sim,mes_fin
     output[12]->step_sim
     """
         
-#    if plot_Optics==1:    
-#        fig = plt.figure(1)
-#        fig.suptitle('Optics', fontsize=14, fontweight='bold')
-#        ax1 = fig.add_subplot(111)  
-#        ax1 .plot(step_sim, SUN_AZ_sim,'.b-',label="SUN_AZ")
-#        ax1 .plot(step_sim, W_sim,'.g-',label="W")
-#        ax1 .axhline(y=0,xmin=0,xmax=sim_steps,c="blue",linewidth=0.5,zorder=0)
-#        ax1.set_xlabel('simulation')
-#        ax1.set_ylabel('radians')
-#        ax1 .plot(step_sim, SUN_ELV_sim,'.r-',label="SUN_ELV")
-#        plt.legend(bbox_to_anchor=(1.15, 1), loc=2, borderaxespad=0.)
-#        
-#        
-#        ax2 = ax1.twinx()          
-#        ax2 .plot(step_sim, DNI_sim,'.-',color = '#39B8E3',label="DNI")
-#        ax2.set_ylabel('DNI')
-#        plt.legend(bbox_to_anchor=(1.15, .5), loc=2, borderaxespad=0.)
+
     
     if sender == 'CIMAV':
         return Lat,Huso,Positional_longitude,output
@@ -378,13 +354,13 @@ def SolarEQ_simple2 (Month,Day,Hour,minute,huso,to_solartime,long,Lat,Huso): #Re
         LSTM=15*huso
         EOT=9.87*np.sin(2*B)-7.53*np.cos(B)-1.5*np.sin(B)
         tc=4*(long-LSTM)+EOT
-        Hour=tc/60+Hour
+        Hour=tc/60+Hour+((minute)/60)+ 3.5/60
     
         if Hour==0:
-            W_deg=-1*(Hour+((minute+3.5)/60)-12)*15;
+            W_deg=-1*(Hour-12)*15;
             W=W_deg*gr;
         else:
-            W_deg=(Hour+((minute+3.5)/60)-12)*15;
+            W_deg=(Hour-12)*15;
             W=W_deg*gr;
     else:
         if Hour==0:
@@ -948,15 +924,15 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     output[10]->temp -C
     output[11]->step_sim
     
-    In case the iterations are 10 minutes portions:
+    In case the iterations are minutes´s portions:
     
         
     Output key:
     output[0]->month of year
     output[1]->day of month
     output[2]->hour of day
-    output[3]->ten minutes portions of hour
-    output[4]->ten minutes portions of the year
+    output[3]-> minutes portions of hour
+    output[4]-> minutes portions of the year
     output[5]->W - rad
     output[6]->SUN_ELV - rad
     output[7]->SUN AZ - rad
