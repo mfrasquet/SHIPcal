@@ -2228,7 +2228,7 @@ finance_study=1
 #paso_15min
 itercontrol ='paso_10min'
 
-#In case the TMY does not have solar time.
+#In case the TMY does not have solar time. Equations implemented in SolarEQ_simple2
 to_solartime='on'
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
