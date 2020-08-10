@@ -2095,13 +2095,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         if plots[4]==1: #(4) Plot Prod months
             output_excel=prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
             output_excel=output_excel
-        if plots[15]==1: #(14) Plot Month savings
+        if plots[15]==1: #(15) Plot Month savings
             output_excel2=savingsMonths(sender,origin,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
             output_excel2=output_excel2
 
     
     # Plots for non-annual simulatios (With annual simuations you cannot see anything)
-    if steps_sim!=8759 or steps_sim!=52560 or steps_sim!=35040:
+    
+    if steps_sim!=8759 and steps_sim!=52560 and steps_sim!=35040:
         if plots[5]==1: #(5) Theta angle Plot
             thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
         if plots[6]==1: #(6) IAM angles Plot
@@ -2147,7 +2148,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # ------------------------------------------------------------------------------------
     
     # Create Report with results (www.ressspi.com uses a customized TEMPLATE called in the function "reportOutput"
-    if steps_sim==8759 or steps_sim==52560: #The report is only available when annual simulation is performed
+    if steps_sim==8759 or steps_sim==52560 or steps_sim==35040: #The report is only available when annual simulation is performed
         if origin==-2:
             fileName="results"+str(pk)
             reportsVar={'logo_output':'no_logo','date':inputs['date'],'type_integration':type_integration,
@@ -2199,7 +2200,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -2232,16 +2233,16 @@ itercontrol ='paso_10min'
 to_solartime='on' # on
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
-month_ini_sim=6
-day_ini_sim=2
-hour_ini_sim=10
-ten_min_ini_sim=5 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+month_ini_sim=1
+day_ini_sim=1
+hour_ini_sim=0
+ten_min_ini_sim=0 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_ini_sim=0 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45}
 
-month_fin_sim=6
-day_fin_sim=2
-hour_fin_sim=14
-ten_min_fin_sim=3 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+month_fin_sim=12
+day_fin_sim=31
+hour_fin_sim=24
+ten_min_fin_sim=0 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_fin_sim=3 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45 min}
 
 
