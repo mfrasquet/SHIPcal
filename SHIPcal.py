@@ -475,7 +475,7 @@ def waterFromGrid_trim2(T_in_C_AR,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_s
 
 
 
-
+#PLOTS MODIFICATIONS--->only x label but I cannot modify functions files so i have to copy all the functions here.
 
 
 
@@ -2176,7 +2176,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,0,0,1,1,1,0,0,1,1,0,0,1,1] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -2210,13 +2210,13 @@ to_solartime='on' # value must be on to use.
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
 month_ini_sim=6
-day_ini_sim=2
+day_ini_sim=3
 hour_ini_sim=15
 ten_min_ini_sim=2 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_ini_sim=0 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45}
 
 month_fin_sim=6
-day_fin_sim=2
+day_fin_sim=3
 hour_fin_sim=19
 ten_min_fin_sim=2 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_fin_sim=3 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45 min}
