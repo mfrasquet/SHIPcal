@@ -40,7 +40,7 @@ from Solar_modules.EQSolares import IAM_calc
 from Finance_modules.FinanceModels import SP_plant_costFunctions
 from Integration_modules.integrations import offStorageSimple, operationSimple, operationDSG, outputOnlyStorageSimple, outputWithoutStorageSimple, outputStorageSimple, offSimple,outputFlowsHTF,outputFlowsWater,operationDSG_Rec,offDSG_Rec,outputDSG_Rec # offOnlyStorageSimple, operationOnlyStorageSimple,
 from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageNonAnnual, financePlot, prodMonths, savingsMonths,SL_S_PDR_Plot,storageNonAnnualSL_S_PDR
-
+from Plot_modules.plottingSHIPcal_2 import demandVsRadiation2,thetaAnglesPlot2,IAMAnglesPlot2,flowRatesPlot2,prodWinterPlot2,prodSummerPlot2,productionSolar2,storageWinter2,storageSummer2,storageNonAnnual2,storageNonAnnualSL_S_PDR2,savingsMonths2,SL_S_PDR_Plot2,prodMonths2
 
 
 
@@ -607,13 +607,13 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     #--> Integration parameters
     
     lim_inf_DNI=200 # Minimum temperature to start production [W/m²]
-    m_dot_min_kgs=0.4 # Minimum flowrate before re-circulation [kg/s]
+    m_dot_min_kgs=0.08 # Minimum flowrate before re-circulation [kg/s]
     coef_flow_rec=1 # Multiplier for flowrate when recirculating [-]
     Boiler_eff=0.8 # Boiler efficiency to take into account the excess of fuel consumed [-]
     subcooling=5 #Deegre of subcooling
     
         ## SL_L_RF
-    heatFactor=0.9 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
+    heatFactor=0.7 # Percentage of temperature variation (T_out - T_in) provided by the heat exchanger (for design) 
     HX_eff=0.9 # Simplification for HX efficiency
     DELTA_ST=30 # Temperature delta over the design process temp for the storage
     
@@ -835,10 +835,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
-        fluidInput="steam" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=300 #HIGH - Process temperature [ºC]
+        fluidInput="water" #"water" "steam" "oil" "moltenSalt"
+        T_process_in=150 #HIGH - Process temperature [ºC]
         T_process_out=20 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=30 #[bar] 
+        P_op_bar=15 #[bar] 
         
         # Not implemented yet
         """
@@ -854,7 +854,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=8000*8760 #[kWh]
+        totalConsumption=5000*8760 #[kWh]
         if simControl['itercontrol']=='paso_10min':
             file_demand=demandCreator2(totalConsumption,dayArray,weekArray,monthArray,ten_minArray,simControl['itercontrol'])
         elif simControl['itercontrol']=='paso_15min':
@@ -2053,47 +2053,80 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
               'Break_cost':Break_cost,'sender':sender,'origin':origin}
     
     # Plot functions
-    
-    # Plots for annual simulations
-    if steps_sim==8759 or steps_sim==52560 or steps_sim==35040:
-        if plots[0]==1: #(0) Sankey plot
-            image_base64,sankeyDict=SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
-        if plots[0]==0: #(0) Sankey plot -> no plotting
-            sankeyDict={'Production':0,'raw_potential':0,'Thermal_loss':0,'Utilization':0}
-        if plots[1]==1: #(1) Production week Winter & Summer
-            prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)   
-            prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)  
-        if plots[2]==1 and finance_study==1: #(2) Plot Finance
-            financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty)
-        if plots[3]==1: #(3)Plot of Storage first week winter & summer 
-            storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
-            storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
-        if plots[4]==1: #(4) Plot Prod months
-            output_excel=prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
-            output_excel=output_excel
-        if plots[15]==1: #(15) Plot Month savings
-            output_excel2=savingsMonths(sender,origin,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
-            output_excel2=output_excel2
 
+    # Plots for annual simulations
+    if  steps_sim==8759:
+            if plots[0]==1: #(0) Sankey plot
+                image_base64,sankeyDict=SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
+            if plots[0]==0: #(0) Sankey plot -> no plotting
+                sankeyDict={'Production':0,'raw_potential':0,'Thermal_loss':0,'Utilization':0}
+            if plots[1]==1: #(1) Production week Winter & Summer
+                prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)   
+                prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)  
+            if plots[2]==1 and finance_study==1: #(2) Plot Finance
+                financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty)
+            if plots[3]==1: #(3)Plot of Storage first week winter & summer 
+               storageWinter(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
+               storageSummer(sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
+            if plots[4]==1: #(4) Plot Prod months
+               output_excel=prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
+               output_excel=output_excel
+            if plots[15]==1: #(15) Plot Month savings
+               output_excel2=savingsMonths(sender,origin,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
+               output_excel2=output_excel2
+    elif steps_sim==52560 or steps_sim==35040:
+            if plots[0]==1: #(0) Sankey plot
+                image_base64,sankeyDict=SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath)
+            if plots[0]==0: #(0) Sankey plot -> no plotting
+                sankeyDict={'Production':0,'raw_potential':0,'Thermal_loss':0,'Utilization':0}
+            if plots[1]==1: #(1) Production week Winter & Summer
+                prodWinterPlot2(simControl['itercontrol'],sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)   
+                prodSummerPlot2(simControl['itercontrol'],sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,Q_charg,Q_discharg,DNI,plotPath,imageQlty)  
+            if plots[2]==1 and finance_study==1: #(2) Plot Finance
+                financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty)
+            if plots[3]==1: #(3)Plot of Storage first week winter & summer 
+               storageWinter2(simControl['itercontrol'],sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
+               storageSummer2(simControl['itercontrol'],sender,origin,lang,Q_prod,Q_charg,Q_prod_lim,Q_useful,Demand,Q_defocus,Q_discharg,type_integration,T_alm_K,SOC,plotPath,imageQlty)    
+            if plots[4]==1: #(4) Plot Prod months
+               output_excel=prodMonths2(simControl['itercontrol'],sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlty)
+               output_excel=output_excel
+            if plots[15]==1: #(15) Plot Month savings
+               output_excel2=savingsMonths2(simControl['itercontrol'],sender,origin,Q_prod_lim,Energy_Before,Fuel_price,Boiler_eff,lang,plotPath,imageQlty)
+               output_excel2=output_excel2
     
     # Plots for non-annual simulatios (With annual simuations you cannot see anything)
     
     if steps_sim!=8759 and steps_sim!=52560 and steps_sim!=35040:
-        if plots[5]==1: #(5) Theta angle Plot
-            thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
-        if plots[6]==1: #(6) IAM angles Plot
-            IAMAnglesPlot(sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty) 
-        if plots[7]==1: #(7) Plot Overview (Demand vs Solar Radiation) 
-            demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty)
-        if plots[8]==1: #(8) Plot flowrates  & Temp & Prod
-            flowRatesPlot(sender,origin,step_sim,steps_sim,flowrate_kgs,flowrate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
-        if plots[9]==1: #(9)Plot Storage non-annual simulation  
-            storageNonAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
-        if plots[16]==1 and type_integration=='SL_S_PD': #(16)Plot for SL_S_PD
-            SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,SD_max_energy,Q_prod,Q_prod_steam,SD_energy,T_in_K,T_out_K,T_SD_K,plotPath,imageQlty)
-        if plots[17]==1 and type_integration=='SL_S_PD': #(17)Plot for SL_S_PD 
-            storageNonAnnualSL_S_PDR(sender,origin,SOC,Q_useful,Q_prod_steam,Q_prod,Q_drum,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
-
+        if simControl['itercontrol']=='paso_10min'or simControl['itercontrol']=='paso_15min':
+            if plots[5]==1: #(5) Theta angle Plot
+                thetaAnglesPlot2(simControl['itercontrol'],sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
+            if plots[6]==1: #(6) IAM angles Plot
+                IAMAnglesPlot2(simControl['itercontrol'],sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty) 
+            if plots[7]==1: #(7) Plot Overview (Demand vs Solar Radiation) 
+                demandVsRadiation2(simControl['itercontrol'],sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty)
+            if plots[8]==1: #(8) Plot flowrates  & Temp & Prod
+                flowRatesPlot2(simControl['itercontrol'],sender,origin,step_sim,steps_sim,flowrate_kgs,flowrate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
+            if plots[9]==1: #(9)Plot Storage non-annual simulation  
+                storageNonAnnual2(simControl['itercontrol'],sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
+            if plots[16]==1 and type_integration=='SL_S_PD': #(16)Plot for SL_S_PD
+                SL_S_PDR_Plot2(simControl['itercontrol'],sender,origin,step_sim,steps_sim,SD_min_energy,SD_max_energy,Q_prod,Q_prod_steam,SD_energy,T_in_K,T_out_K,T_SD_K,plotPath,imageQlty)
+            if plots[17]==1 and type_integration=='SL_S_PD': #(17)Plot for SL_S_PD 
+                storageNonAnnualSL_S_PDR2(simControl['itercontrol'],sender,origin,SOC,Q_useful,Q_prod_steam,Q_prod,Q_drum,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
+        else:
+            if plots[5]==1: #(5) Theta angle Plot
+                thetaAnglesPlot(sender,origin,step_sim,steps_sim,theta_i_deg,theta_transv_deg,plotPath,imageQlty)
+            if plots[6]==1: #(6) IAM angles Plot
+                IAMAnglesPlot(sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPath,imageQlty) 
+            if plots[7]==1: #(7) Plot Overview (Demand vs Solar Radiation) 
+                demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty)
+            if plots[8]==1: #(8) Plot flowrates  & Temp & Prod
+                flowRatesPlot(sender,origin,step_sim,steps_sim,flowrate_kgs,flowrate_rec,num_loops,flowDemand,flowToHx,flowToMix,m_dot_min_kgs,T_in_K,T_toProcess_C,T_out_K,T_alm_K,plotPath,imageQlty)
+            if plots[9]==1: #(9)Plot Storage non-annual simulation  
+                storageNonAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
+            if plots[16]==1 and type_integration=='SL_S_PD': #(16)Plot for SL_S_PD
+                SL_S_PDR_Plot(sender,origin,step_sim,steps_sim,SD_min_energy,SD_max_energy,Q_prod,Q_prod_steam,SD_energy,T_in_K,T_out_K,T_SD_K,plotPath,imageQlty)
+            if plots[17]==1 and type_integration=='SL_S_PD': #(17)Plot for SL_S_PD 
+                storageNonAnnualSL_S_PDR(sender,origin,SOC,Q_useful,Q_prod_steam,Q_prod,Q_drum,Q_charg,Q_prod_lim,step_sim,Demand,Q_defocus,Q_discharg,steps_sim,plotPath,imageQlty)
     # Property plots
     if fluidInput=="water" or fluidInput=="steam": #WATER or STEAM
         if plots[10]==1: #(10) Mollier Plot for s-t for Water
@@ -2115,8 +2148,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     # Other plots
     if plots[14]==1: #(14) Plot Production
-        productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty)
-       
+        if simControl['itercontrol']=='paso_10min'or simControl['itercontrol']=='paso_15min':
+            productionSolar2(simControl['itercontrol'],sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty)
+        else:
+           productionSolar(sender,origin,lang,step_sim,DNI,m_dot_min_kgs,steps_sim,Demand,Q_prod,Q_prod_lim,Q_charg,Q_discharg,type_integration,plotPath,imageQlty)
     
 #%%
 # ------------------------------------------------------------------------------------
@@ -2176,7 +2211,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,1,1] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -2203,22 +2238,21 @@ finance_study=1
 
 #paso_10min
 #paso_15min
-itercontrol ='paso_10min' 
-
+itercontrol ='paso_10min'
 #In case the TMY does not have solar time. Equations implemented in SolarEQ_simple2
 to_solartime='on' # value must be on to use.
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
-month_ini_sim=6
-day_ini_sim=3
-hour_ini_sim=15
-ten_min_ini_sim=2 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+month_ini_sim=1
+day_ini_sim=1
+hour_ini_sim=0 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
+ten_min_ini_sim=0 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_ini_sim=0 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45}
 
-month_fin_sim=6
-day_fin_sim=3
-hour_fin_sim=19
-ten_min_fin_sim=2 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+month_fin_sim=12
+day_fin_sim=31
+hour_fin_sim=24 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
+ten_min_fin_sim=0 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_fin_sim=3 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45 min}
 
 
@@ -2254,7 +2288,7 @@ n_coll_loop=24
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_S_FWS" 
+type_integration="SL_L_P" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
