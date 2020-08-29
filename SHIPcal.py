@@ -191,6 +191,196 @@ def DemandData2(file_demand,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia
     return Demand_sim
 
 
+def calc_hour_year(mes,dia,hora): #This function calculates what is the correspondign hour of the year for an specific date and time.
+    mes_days=(31,28,31,30,31,30,31,31,30,31,30,31)
+    
+    num_days=0 #Initializate the variables
+    cont_mes=mes-1
+    if mes<=12: #Check that the month input is reliable
+        while (cont_mes >0):
+            cont_mes=cont_mes-1 #Counts backwards from the introduced month to the first month in the year(January)
+            num_days=num_days+mes_days[cont_mes] #Adds all the days in the months previous to the introduced one
+        if dia<=mes_days[mes-1]: #Checks that the introduced dau number is smaller than the number of days in that month
+            num_days=num_days+dia #Adds the quantity of days passed so far in the introduced month
+        else:
+            raise ValueError('Day should be <=days_month')    
+    else:
+        raise ValueError('Month should be <=12')
+    
+    if hora<=24: #Checks that the hour number is less than 24
+        hour_year=(num_days-1)*24+hora #Minus the 24 h of the current day, and adds the hours that have passed in the current day #Calculates the current year hour
+    else:
+       raise ValueError('Hour should be <=24')
+       #The minimum output hour year is 1
+    return hour_year
+
+
+def SolarData3(to_solartime,huso,file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,sender='notCIMAV',Lat=0,Huso=0, optic_type='0'): #This function returns an "output" array with the month, day of the month, hour of the day, hour of the year hour angle,SUN_ELVevation, suN_AZimuth,DECLINATION, SUN_ZENITHAL, DNI,temp_sim,step_sim for every hour between the starting and ending hours in the year.  It also returns the starting and ending hour in the year.
+
+    hour_year_ini=calc_hour_year(mes_ini_sim,dia_ini_sim,hora_ini_sim)#Calls a function within this same script yo calculate the corresponding hout in the year for the day/month/hour of start and end
+    hour_year_fin=calc_hour_year(mes_fin_sim,dia_fin_sim,hora_fin_sim)
+    
+    if hour_year_ini <= hour_year_fin: #Checks that the starting hour is before than the enfing hour
+        sim_steps=hour_year_fin-hour_year_ini #Stablishes the number of steps as the hours between the starting and ending hours
+    else:
+        raise ValueError('End time is smaller than start time') 
+    
+    
+    #Llamada al archivo de meteo completo
+    if sender == 'CIMAV':
+        Lat,Huso,Positional_longitude,data,DNI,temp=Meteo_data(file_loc,sender,optic_type)
+    elif sender == 'SHIPcal':
+        from simforms.models import Locations, MeteoData
+        data = MeteoData.objects.filter(location=Locations.objects.get(pk=file_loc)).order_by('hour_year_sim')
+        temp = data.values_list('temp',flat=True)
+        if optic_type=='concentrator' or optic_type=='0':
+            DNI = data.values_list('DNI',flat=True)
+        else:
+            DNI = data.values_list('GHI',flat=True)#DNI actually carries the GHI information
+    else:
+        (data,DNI,temp)=Meteo_data(file_loc,sender)#Calls another function within this same script that reads the TMY.dat file 
+        #They are already np.arrays
+        #data=np.array(data) #Array where every row is an hour and the columns are month,day in the month, hour of the month, hour of the year, ..., DNI, Temp
+        #DNI=np.array(DNI) #Vector with DNI values for every hour in the year
+        #temp=np.array(temp) #Vector with the temperature for every hour in the year
+    
+    #Bucle de simulacion
+    #Starts the vectors of sim_steps length to store data in them
+    
+    W_sim=np.zeros (sim_steps)
+    SUN_ELV_sim=np.zeros (sim_steps)
+    SUN_AZ_sim=np.zeros (sim_steps)
+    DECL_sim=np.zeros (sim_steps)
+    SUN_ZEN_sim=np.zeros (sim_steps)
+    
+    #The file was already readed, and the data was already stored in "data" so it is easier to just pick the needed sections.
+    step_sim=np.array(range(0,sim_steps)) #np.zeros (sim_steps)
+    DNI_sim=np.array(DNI[hour_year_ini-1:hour_year_fin-1])
+    temp_sim=np.array(temp[hour_year_ini-1:hour_year_fin-1])
+    if sender=='SHIPcal':
+        month_sim=np.array(data.values_list('month_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
+        day_sim=np.array(data.values_list('day_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
+        hour_sim=np.array(data.values_list('hour_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
+        hour_year_sim=np.array(data.values_list('hour_year_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
+    else:
+        month_sim=data[hour_year_ini-1:hour_year_fin-1,0]
+        day_sim=data[hour_year_ini-1:hour_year_fin-1,1]
+        hour_sim=data[hour_year_ini-1:hour_year_fin-1,2]
+        hour_year_sim=data[hour_year_ini-1:hour_year_fin-1,3]
+    
+    
+    
+    step=0
+    for step in range(0,sim_steps):
+        #Posicion solar
+        W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN=SolarEQ_simple (month_sim[step],day_sim[step] ,hour_sim[step],Lat,Huso) #calls another function in within this script that calculates the solar positional angles for the specfied hour of the day and month
+        W_sim[step]=W
+        SUN_ELV_sim[step]=SUN_ELV   #rad
+        SUN_AZ_sim[step]=SUN_AZ     #rad
+        DECL_sim[step]=DECL         #rad
+        SUN_ZEN_sim[step]=SUN_ZEN   #rad
+     
+        
+        step+=1
+    
+    output=np.column_stack((month_sim,day_sim,hour_sim,hour_year_sim,W_sim,SUN_ELV_sim,SUN_AZ_sim,DECL_sim,SUN_ZEN_sim,DNI_sim,temp_sim,step_sim)) #Arranges the calculated data in a massive array with the previusly calculated vector as columns
+    
+    """
+    Output key:
+    output[0]->month of year
+    output[1]->day of month
+    output[2]->hour of day
+    output[3]->hour of year
+    output[4]->W - rad
+    output[5]->SUN_ELV - rad
+    output[6]->SUN AZ - rad
+    output[7]->DECL - rad
+    output[8]->SUN ZEN - rad
+    output[9]->DNI  - W/m2
+    output[10]->temp -C
+    output[11]->step_sim
+    """
+        
+#    if plot_Optics==1:    
+#        fig = plt.figure(1)
+#        fig.suptitle('Optics', fontsize=14, fontweight='bold')
+#        ax1 = fig.add_subplot(111)  
+#        ax1 .plot(step_sim, SUN_AZ_sim,'.b-',label="SUN_AZ")
+#        ax1 .plot(step_sim, W_sim,'.g-',label="W")
+#        ax1 .axhline(y=0,xmin=0,xmax=sim_steps,c="blue",linewidth=0.5,zorder=0)
+#        ax1.set_xlabel('simulation')
+#        ax1.set_ylabel('radians')
+#        ax1 .plot(step_sim, SUN_ELV_sim,'.r-',label="SUN_ELV")
+#        plt.legend(bbox_to_anchor=(1.15, 1), loc=2, borderaxespad=0.)
+#        
+#        
+#        ax2 = ax1.twinx()          
+#        ax2 .plot(step_sim, DNI_sim,'.-',color = '#39B8E3',label="DNI")
+#        ax2.set_ylabel('DNI')
+#        plt.legend(bbox_to_anchor=(1.15, .5), loc=2, borderaxespad=0.)
+    
+    if sender == 'CIMAV':
+        return Lat,Huso,Positional_longitude,output
+    else:
+        return[output,hour_year_ini,hour_year_fin]
+
+
+def SolarEQ_simple3 (to_solartime,long,huso,Month,Day,Hour,Lat,Huso): #Returns the hour angle (W) [rad], sun elevation angle[rad], azimuth angle[rad], declination [rad] and zenithal angle [rad] of the sun for each the specified hour, latitude[°], anf time zone given in the inputs.
+
+    gr=np.pi/180; #Just to convert RAD-DEG 
+    
+    #Read the Juilan day file and save it in a matrix
+    "JUL_DAY=np.loadtxt(os.path.dirname(os.path.dirname(__file__))+'/Solar_modules/Julian_day_prueba.txt',delimiter='\t');"
+    JUL_DAY=np.loadtxt(os.path.dirname(__file__)+'/Solar_modules/Julian_day_prueba.txt',delimiter='\t');
+  
+    
+    #Calculates the Julian Day
+    Jul_day=JUL_DAY[int(Day-1),int(Month-1)];
+    
+    #Declination
+    
+    DJ=2*np.pi/365*(Jul_day-1); #Julian day in rad
+    DECL=(0.006918-0.399912*np.cos(DJ)+ 0.070257*np.sin(DJ)-0.006758*np.cos(2*DJ)+0.000907*np.sin(2*DJ)-0.002697*np.cos(3*DJ)+0.00148*np.sin(3*DJ));
+    DECL_deg=DECL/gr;
+    
+    if to_solartime=='on': #Calculates solar time.
+         
+        num_days=calc_day_year(int(Month),int(Day))
+        B=(360/365)*(num_days-81)
+        LSTM=15*huso
+        EOT=9.87*np.sin(2*B)-7.53*np.cos(B)-1.5*np.sin(B)
+        tc=4*(long-LSTM)+EOT
+        Hour=tc/60+Hour+ 3.5/60
+    
+    #Hour
+    W_deg=(Hour-12)*15;
+    W=W_deg*gr;
+    
+    #Sun elevation
+    XLat=Lat*gr;
+    sin_Elv=np.sin(DECL)*np.sin(XLat)+np.cos(DECL)*np.cos(XLat)*np.cos(W);
+    SUN_ELV=np.arcsin(sin_Elv);
+    SUN_ELV_deg=SUN_ELV/gr;
+    
+    SUN_ZEN=(np.pi/2)-SUN_ELV;
+    #Sun azimuth
+    SUN_AZ=np.arcsin(np.cos(DECL)*np.sin(W)/np.cos(SUN_ELV));
+    
+    verif=(np.tan(DECL)/np.tan(XLat));
+    if np.cos(W)>=verif:
+        SUN_AZ=SUN_AZ;  
+    else:
+            if SUN_AZ >0:
+                SUN_AZ=((np.pi/2)+((np.pi/2)-abs(SUN_AZ)));
+            else:
+                SUN_AZ=-((np.pi/2)+((np.pi/2)-abs(SUN_AZ)));
+    
+    
+    
+#    SUN_AZ_deg=SUN_AZ/gr;
+#    a=[W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN]
+       
+    return [W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN]
 
 
 
@@ -808,7 +998,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## METEO
 #        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        localMeteo="Sevilla10min.dat"
+        localMeteo="Sevillahorario.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -824,10 +1014,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             
                 
             else:
-                meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+                meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB3.csv", sep=',')  
                 file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
                 Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
                 Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+                long=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Long'].iloc[0]
         
         ## INTEGRATION
         type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
@@ -906,6 +1097,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,ten_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_fin_sim, simControl['itercontrol'],huso,simControl['to_solartime'],long,sender,Lat,Huso)
     elif simControl['itercontrol']=='paso_15min':
        output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,fifteen_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,fifteen_min_fin_sim, simControl['itercontrol'],huso,simControl['to_solartime'],long,sender,Lat,Huso)
+    elif localMeteo=="Sevillahorario.dat":
+       output,i_initial,i_final=SolarData3(simControl['to_solartime'],long,huso,file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso) 
     else:
         output,i_initial,i_final=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso)
     
@@ -1916,25 +2109,46 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     #%%
     # BLOCK 2.2 - ANUAL INTEGRATION <><><><><><><><><><><><><><><><><><><><><><><><><><><>
-        
+    if simControl['itercontrol']=='paso_10min' or simControl['itercontrol']=='paso_15min':  
+        if simControl['itercontrol']=='paso_10min':
+            factor=6
+        else:
+            factor=4
+        Production_max=sum(Q_prod)/factor #Produccion total en kWh. Asumiendo que se consume todo lo producido
+        Production_lim=sum(Q_prod_lim)/factor #Produccion limitada total en kWh
+        Demand_anual=sum(Demand)/factor #Demanda energética anual
+        solar_fraction_max=100*Production_max/Demand_anual #Fracción solar maxima
     
-    Production_max=sum(Q_prod) #Produccion total en kWh. Asumiendo que se consume todo lo producido
-    Production_lim=sum(Q_prod_lim) #Produccion limitada total en kWh
-    Demand_anual=sum(Demand) #Demanda energética anual
-    solar_fraction_max=100*Production_max/Demand_anual #Fracción solar maxima
+    
+        tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
+        totalDischarged=(sum(Q_discharg))/factor
+#       totalCharged=(sum(Q_charg))
+        Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
+        improvStorage=(100*(sum(Q_prod_lim)/factor)/((sum(Q_prod_lim)/factor)-totalDischarged))-100 #Assuming discharged = Charged
+        solar_fraction_lim=100*(sum(Q_prod_lim)/factor)/Demand_anual 
+#       Energy_module_max=Production_max/num_modulos_tot
+#        operation_hours=np.nonzero(Q_prod)
+        DNI_anual_irradiation=sum(DNI)/(1000*factor) #kWh/year
+#       Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
+        Perd_term_anual=sum(Perd_termicas)/(1000*factor) #kWh/year
+    else:
+        Production_max=sum(Q_prod) #Produccion total en kWh. Asumiendo que se consume todo lo producido
+        Production_lim=sum(Q_prod_lim) #Produccion limitada total en kWh
+        Demand_anual=sum(Demand) #Demanda energética anual
+        solar_fraction_max=100*Production_max/Demand_anual #Fracción solar maxima
     
     
-    tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
-    totalDischarged=(sum(Q_discharg))
-#    totalCharged=(sum(Q_charg))
-    Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
-    improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
-    solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
-#    Energy_module_max=Production_max/num_modulos_tot
-#    operation_hours=np.nonzero(Q_prod)
-    DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
-#    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
-    Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
+        tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
+        totalDischarged=(sum(Q_discharg))
+#        totalCharged=(sum(Q_charg))
+        Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
+        improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
+        solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
+#       Energy_module_max=Production_max/num_modulos_tot
+#       operation_hours=np.nonzero(Q_prod)
+        DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
+#        Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
+        Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
     
     annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
                     'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
@@ -2238,14 +2452,14 @@ finance_study=1
 
 #paso_10min
 #paso_15min
-itercontrol ='paso_10min'
+itercontrol ='-paso_10min'
 #In case the TMY does not have solar time. Equations implemented in SolarEQ_simple2
 to_solartime='on' # value must be on to use.
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
 month_ini_sim=1
 day_ini_sim=1
-hour_ini_sim=0 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
+hour_ini_sim=1 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
 ten_min_ini_sim=0 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_ini_sim=0 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45}
 
@@ -2288,14 +2502,14 @@ n_coll_loop=24
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_L_P" 
+type_integration="SL_L_RF" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
 confReport={'lang':'spa','sender':'sevilla','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
-simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,}    
+simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,'to_solartime':to_solartime,'huso':huso}    
 if itercontrol =='paso_10min':
     simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,'ten_min_ini_sim':ten_min_ini_sim, 'ten_min_fin_sim':ten_min_fin_sim,'to_solartime':to_solartime, 'huso':huso}
 elif itercontrol =='paso_15min':
