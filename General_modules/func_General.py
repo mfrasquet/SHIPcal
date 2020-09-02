@@ -275,11 +275,15 @@ def moltenSalt(T): #Function to derive the properties of molten Salts from Solar
     #Density kg/m3
     rho=-0.636*T+2090
     #Specific Heat kJ/kgK
-    Cp=0.000172*T+1.44
+    Cp=max(1.6,0.000172*T+1.44)
     #Thermal conductivity W/mK
     k=1.89e-4*T+.441
     #Dinamic viscosity #kg/m*s
-    Dv=0.0231*math.exp(-6.17e-3*T)
+    try:
+        Dv=0.0231*math.exp(-6.17e-3*T)
+    except:
+        Dv=0.001 #To avoid errors when iteration process explores high boundaries
+
 
     return(rho,Cp,k,Dv)
  
