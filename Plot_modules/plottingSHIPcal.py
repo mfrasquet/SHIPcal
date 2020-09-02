@@ -1244,6 +1244,7 @@ def storageNonAnnualSL_S_PDR(sender,origin,SOC,Q_useful,Q_prod_steam,Q_prod,Q_dr
         return image_base64
     if origin==-1:
         fig.savefig(str(plotPath)+'almacenamiento_Anual.png', format='png', dpi=imageQlty)
+    
 
 
 def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_sim,AmortYear,Selling_price,plotPath,imageQlty,**kwargs):
