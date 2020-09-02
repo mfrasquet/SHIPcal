@@ -871,7 +871,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## METEO
 #        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        localMeteo="Sevillahorario.dat"
+        localMeteo="Sevilla10min.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -918,7 +918,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
        
         weekArray=[0.143,0.143,0.143,0.143,0.143,0.143,0.143] #No weekends
         monthArray=[1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12] #Whole year     
-        totalConsumption=5000/6*8760 #[kWh]
+        totalConsumption=900*8760 #[kWh]
         if simControl['itercontrol']=='paso_10min':
             file_demand=demandCreator2(totalConsumption,dayArray,weekArray,monthArray,ten_minArray,simControl['itercontrol'])
         elif simControl['itercontrol']=='paso_15min':
@@ -2341,14 +2341,14 @@ finance_study=1
 
 #paso_10min
 #paso_15min
-itercontrol ='-paso_10min'
+itercontrol ='paso_10min'
 #In case the TMY does not have solar time. Equations implemented in SolarEQ_simple2
 to_solartime='on' # value must be on to use.
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
 month_ini_sim=1
 day_ini_sim=1
-hour_ini_sim=1 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
+hour_ini_sim=0 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
 ten_min_ini_sim=0 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_ini_sim=0 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45}
 
@@ -2391,7 +2391,7 @@ n_coll_loop=24
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_S_PD_OT" 
+type_integration="SL_S_PD" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
