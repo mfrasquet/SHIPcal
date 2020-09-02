@@ -1404,6 +1404,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 #    operation_hours=np.nonzero(Q_prod)
     DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
 #    Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
+    Perd_termicas=np.where(np.isnan(Perd_termicas), 0, Perd_termicas) #Avoid nan values
     Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
     
     annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
