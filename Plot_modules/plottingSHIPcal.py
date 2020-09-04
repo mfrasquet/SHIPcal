@@ -603,7 +603,7 @@ def viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         ax1.set_xlabel('Temperatura ºC')
         ax1.set_ylabel('Viscosidad dinámica*1e3  - Ns/m2')
         ax1.set_yscale('log')
-        plt.xticks(list(np.arange(len(DvList)))[1::8], T_step[1::8]) 
+        plt.xticks(list(np.arange(len(T_step)))[1::8], T_step[1::8]) 
      
     if lang=="eng":
         fig.suptitle('Molten Salt Viscosity', fontsize=14, fontweight='bold')
@@ -659,7 +659,7 @@ def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         ax2 .plot(np.arange(len(KvList)), KvList,'.b-',label="Viscosidad cinemática")
         ax2.set_ylabel('Viscosidad cinemática*1e6 - m2/s', color="blue")
         ax2.set_yscale('log')
-        plt.xticks(list(np.arange(len(KvList)))[1::8], T_step[1::8])  
+        plt.xticks(list(np.arange(len(T_step)))[1::8], T_step[1::8])  
         plt .hlines(y=Kv*1e6,xmin=min(range(len(DvList)), key=lambda i: abs(DvList[i]-Dv*1e3))+4,xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
     if lang=="eng":
         fig.suptitle('Thermal Oil Viscosity', fontsize=14, fontweight='bold')
@@ -677,7 +677,7 @@ def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         ax2 .plot(np.arange(len(KvList)), KvList,'.b-',label="Kinematic viscosity")
         ax2.set_ylabel('Kinematic viscosity*1e6 - m2/s', color="blue")
         ax2.set_yscale('log')
-        plt.xticks(list(np.arange(len(KvList)))[1::8], T_step[1::8])  
+        plt.xticks(list(np.arange(len(T_step)))[1::8], T_step[1::8])  
         plt .hlines(y=Kv*1e6,xmin=min(range(len(DvList)), key=lambda i: abs(DvList[i]-Dv*1e3))+4,xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
