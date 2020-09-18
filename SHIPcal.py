@@ -2346,16 +2346,16 @@ itercontrol ='paso_10min'
 to_solartime='on' # value must be on to use.
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
-month_ini_sim=1
+month_ini_sim=5
 day_ini_sim=1
-hour_ini_sim=0 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
+hour_ini_sim=24 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
 ten_min_ini_sim=0 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_ini_sim=0 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45}
 
-month_fin_sim=12
-day_fin_sim=31
-hour_fin_sim=24 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
-ten_min_fin_sim=0 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+month_fin_sim=5
+day_fin_sim=2
+hour_fin_sim=16 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
+ten_min_fin_sim=2 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_fin_sim=3 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45 min}
 
 
@@ -2391,7 +2391,7 @@ n_coll_loop=24
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_S_PD" 
+type_integration="SL_L_P" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -2405,7 +2405,7 @@ elif itercontrol =='paso_15min':
     simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,'fifteen_min_ini_sim':fifteen_min_ini_sim, 'fifteen_min_fin_sim':fifteen_min_fin_sim,'to_solartime':to_solartime, 'huso':huso}
 # ---------------------------------------------------
 
-origin=0 #0 if new record; -2 if it comes from www.ressspi.com
+origin=1 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
