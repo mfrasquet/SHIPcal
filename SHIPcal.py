@@ -831,7 +831,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     elif origin==1: #Simulation called from external front-end. Available from 1 to inf+
         
         #Retrieve front-end inputs 
-        [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
+        if simControl['itercontrol']=='paso_10min' or simControl['itercontrol']=='paso_15min':
+            [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport2(inputsDjango,simControl['itercontrol'])
+        else:
+            [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
         
         ## METEO (free available meteo sets)
         locationFromFrontEnd=inputs['location']
@@ -854,7 +857,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         P_op_bar=P_op_bar #[bar]
             
             #>> ENERGY DEMAND
-        file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        ten_minArray=[1/6,1/6,1/6,1/6,1/6,1/6]
+        fifteen_minArray=[1/4,1/4,1/4,1/4]
+        if simControl['itercontrol']=='paso_10min':
+            file_demand=demandCreator2(annualConsumptionkWh,dayArray,weekArray,monthArray,ten_minArray,simControl['itercontrol'])
+        elif simControl['itercontrol']=='paso_15min':
+            file_demand=demandCreator2(annualConsumptionkWh,dayArray,weekArray,monthArray,fifteen_minArray,simControl['itercontrol'])
+        else:
+            file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
        
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
