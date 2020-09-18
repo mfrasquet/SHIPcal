@@ -44,7 +44,7 @@ from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotS
 from Plot_modules.plottingSHIPcal_2 import demandVsRadiation2,thetaAnglesPlot2,IAMAnglesPlot2,flowRatesPlot2,prodWinterPlot2,prodSummerPlot2,productionSolar2,storageWinter2,storageSummer2,storageNonAnnual2,storageNonAnnualSL_S_PDR2,savingsMonths2,SL_S_PDR_Plot2,prodMonths2
 from Solar_modules.EQSolares2 import SolarData3
 from Integration_modules.integrations2 import operationSimple2, operationDSG2, operationDSG_Rec2
-
+from General_modules.djangotoSHIPCal2 import djangoReport2
 
 
 
