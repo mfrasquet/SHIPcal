@@ -304,10 +304,11 @@ def SolarData2(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,min_ini_sim,mes_fin
     DNI_sim=np.array(DNI[min_year_ini-1: min_year_fin-1])
     temp_sim=np.array(temp[min_year_ini-1: min_year_fin-1])
     if sender=='SHIPcal':
-        month_sim=np.array(data.values_list('month_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
-        day_sim=np.array(data.values_list('day_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
-        hour_sim=np.array(data.values_list('hour_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
-        hour_year_sim=np.array(data.values_list('hour_year_sim',flat=True)[hour_year_ini-1:hour_year_fin-1])
+        month_sim=np.array(data.values_list('month_sim',flat=True)[min_year_ini-1:min_year_fin-1])
+        day_sim=np.array(data.values_list('day_sim',flat=True)[min_year_ini-1:min_year_fin-1])
+        hour_sim=np.array(data.values_list('hour_sim',flat=True)[min_year_ini-1:min_year_fin-1])
+        min_sim=np.array(data.values_list('min_sim',flat=True)[min_year_ini-1:min_year_fin-1])
+        min_year_sim=np.array(data.values_list('hour_year_sim',flat=True)[min_year_ini-1:min_year_fin-1])
     else:
         month_sim=data[min_year_ini-1:min_year_fin-1,0]
         day_sim=data[min_year_ini-1:min_year_fin-1,1]
@@ -835,15 +836,29 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport2(inputsDjango,simControl['itercontrol'])
         else:
             [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango)
-        
         ## METEO (free available meteo sets)
         locationFromFrontEnd=inputs['location']
         
-        meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
-        file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
-        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
+            meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
+            file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        elif sender=='SHIPcal':
+            from simforms.models import Locations
+            file_loc = locationFromFrontEnd
+            localMeteo= Locations.objects.get(pk=locationFromFrontEnd).city
+            Lat = Locations.objects.get(pk=locationFromFrontEnd).lat
+            Huso = 0 #Not used currently, it is assumed to have solar hourly data
+            #meteo_data.order_by('hour_year_sim').values_list('DNI',flat=True)
+            long = Locations.objects.get(pk=locationFromFrontEnd).lon
+        else:
+            meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+            localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
+            file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+            long=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Long'].iloc[0]
         
         ## INTEGRATION
         type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
