@@ -103,4 +103,4 @@ def djangoReport2(inputsDjango,itercontrol):
             "annualProfile":'',
             'localInput':''}
 
-    return (inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray,step_minArray )
+    return (inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray )
