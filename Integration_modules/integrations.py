@@ -12,8 +12,8 @@ version: 1.0
 
 from iapws import IAPWS97
 import numpy as np
-from Solar_modules.iteration_process import flow_calc, flow_calcHTF
-from Solar_modules.iteration_process import IT_temp
+from Solar_modules.iteration_process import flow_calc, flow_calcHTF, flow_calc_gen
+from Solar_modules.iteration_process import IT_temp, analytic_otemp
 from General_modules.func_General import thermalOil,moltenSalt
 from General_modules.func_General import bar_MPa,MPa_bar,K_C
 from Collector_modules.receivers import Rec_loss
@@ -175,9 +175,7 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
     
     if sender == 'CIMAV':
 
-        from CIMAV.CIMAV_modules.iteration_process import IT_temp as IT_temp_CIMAV
-
-        T_out_K,Q_prod,Perd_termicas=IT_temp_CIMAV(fluidInput,T_max_storage,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,**coll_par)
+        T_out_K,Q_prod,Perd_termicas=analytic_otemp(fluidInput,T_max_storage,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_kgs,**coll_par)
         
         if fluidInput =="water" and T_out_K>=T_max_storage:
             Q_prod =flow_rate_kgs*(IAPWS97(P=P_op_Mpa, T=T_max_storage).u - IAPWS97(P=P_op_Mpa, T=T_in_K_old).u)
@@ -225,9 +223,8 @@ def operationOnlyStorageSimple(fluidInput,T_max_storage,T_in_K_old,P_op_Mpa,temp
 
 def directopearationSimple(fluidInput,T_out_C,T_in_C,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,num_loops,theta_i_rad,bypass,T_in_flag,T_in_C_AR,design_flow_rate,mofProd,sender,coll_par):
     if sender == 'CIMAV':
-        from CIMAV.CIMAV_modules.iteration_process import IT_temp as IT_temp_CIMAV
         T_in_K = coll_par['T_in_K']
-        T_out_K,Q_prod,Perd_termicas = IT_temp_CIMAV(fluidInput,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,design_flow_rate,**coll_par)
+        T_out_K,Q_prod,Perd_termicas = analytic_otemp(fluidInput,T_in_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,design_flow_rate,**coll_par)
         
     else:
         if T_in_flag == 1 and fluidInput=='water':
@@ -267,10 +264,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
     
     if sender == 'CIMAV':
 
-        from CIMAV.CIMAV_modules.iteration_process import flow_calc_CIMAV
-        from CIMAV.CIMAV_modules.iteration_process import IT_temp as IT_temp_CIMAV
-
-        flow_rate_kgs,Q_prod_ploop,Perd_termicas = flow_calc_CIMAV(fluidInput,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,**coll_par) #Works for moltensalts,water,thermaloil
+        flow_rate_kgs,Q_prod_ploop,Perd_termicas = flow_calc_gen(fluidInput,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,**coll_par) #Works for moltensalts,water,thermaloil
         Q_prod = Q_prod_ploop*num_loops #[kW]
         T_in_K = coll_par['T_in_K']
 
@@ -302,7 +296,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         flow_rate_rec=coef_flow_rec*m_dot_min_kgs
         #Cp_av_kJkgK = IAPWS97(P=P_op_Mpa, T=0.5*(T_out_K+T_in_K)).cp
         if sender == 'CIMAV':
-            T_out_K,Q_prod_rec,Perd_termicas = IT_temp_CIMAV(fluidInput,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,**coll_par)
+            T_out_K,Q_prod_rec,Perd_termicas = analytic_otemp(fluidInput,T_out_K,P_op_Mpa,temp,DNI,IAM,Area,n_coll_loop,flow_rate_rec,**coll_par)
         else:
             T_out_K,Perd_termicas = IT_temp(fluidInput,T_in_K,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate_rec,**coll_par)    #Here the T_out_K is the desired outlet temperature, it is used to calculate an average CP and the coll parameters
         
