@@ -125,8 +125,129 @@ def theta_IAMs_v2(SUN_AZ,SUN_ELV,LONG_INCL,HEAD,ROLL):
 
 
    return[elevacion_local_trans,elevacion_local_long]
+
+
+def theta_IAMs_v3(SUN_AZ,SUN_ELV,LONG_INCL,HEAD,ROLL): #SUN_AZ [rad],SUN_ELV[rad],LONG_INCL[°],HEAD[°],ROLL[°] because those were the input units in the original version
+    """
+    Teniendo la proyeccion de area en el plano longitudinal y en el plano transversal del colector podemos usar
+    producto punto con las proyecciones del vector de radiacion solar en estos mismos planos para concer el angulo
+    entre las proyecciones de area y radiacion para cada plano
+    """
+    A, longitudinal_axe=area_orientated(LONG_INCL,HEAD,ROLL) #As if it were aligned exactly with the south, or as if head = 0
+    HEAD= np.radians(HEAD)
+    transversal_axe=np.cross(A,longitudinal_axe) #Area perpendicular to the surface, transveral and longitudinal axe are the perpendicular axes on the collector surface they may or may not coincide with the X and Y axes
     
+    SUN_AZ_RELATIVA=SUN_AZ-HEAD #Now head != 0 is taken into account asuming tgat SUN_AZ is measured from the south and positive towards the east
+    
+    #Transforms the sun position into the rectangular canonical base
+    sunX=np.cos(SUN_ELV)*np.cos(SUN_AZ_RELATIVA) #X is the north-south axe with relative to the collector
+    sunY=np.cos(SUN_ELV)*np.sin(SUN_AZ_RELATIVA) #Y is the east-west axe with relative to the collector
+    sunZ=np.sin(SUN_ELV)
+    
+    sun=np.array([sunX, sunY, sunZ]) #Create the radiance vector. Not normalized
+    
+    """
+    The transversal and longitudinal axes could be different to the X and Y directions but the angles on the transversal and longitudinal
+    planes are desired. So it is matter to find the proyection of the radiation vector on the A-transversal_axe and A-longitudinal_axe planes and then 
+    with help of the dot product find the angles between the proyeccions and the A vector.
+    """
+    
+    #To find the proyections in the A-transversal_axe plane it is necessary to substract the component in the longitudinal_axe to the sun vector as follows
+    
+    sun_transversal = sun - np.dot(sun,longitudinal_axe)*longitudinal_axe
+    
+    #The angle between the proyection and the A vector is calculated with the definition A.B=|A|*|B|*cos(angle between A and B)
+    elevacion_local_trans = np.arccos(round(np.dot(A,sun_transversal)/(np.linalg.norm(sun_transversal)*np.linalg.norm(A)),9))
+    
+    #To find the proyections in the A-longitudinal_axe plane it is necessary to substract the component in the transversal_axe to the sun vector as follows
+
+    sun_longitudinal = sun - np.dot(sun,transversal_axe)*transversal_axe
+    
+    elevacion_local_long = np.arccos(round(np.dot(A,sun_longitudinal)/(np.linalg.norm(sun_longitudinal)*np.linalg.norm(A)),9))
+    
+    return[elevacion_local_trans,elevacion_local_long]
+    #return[elevacion_local_long,elevacion_local_trans] #This order coincide with the original function in ressspi, it is just because in previuous versions the long/trans planes were defined in the other way around
+
+def area_orientated(beta,head,roll): #angles [rad]
+    """
+    ___________________
+    |         |        |
+    |         |        |
+    |         |        |
+    |         |        |
+    |         |        |  plano          N
+    |---------|--------|>Transversal   O   E Y+
+    |         |        |                 S
+    |         |        |                 X+
+    |         |        |
+    |         |        |
+    |_________|________|
+
+              v 
+            plano
+         Longitudinal
+    
+    Los ejes longitudinal y transversal se encuentran en los planos con los mismos nombres, así el eje transversal es el eje este-oeste
+    
+    Asumiendo que el eje transversal es Y' y el eje longitudinal es X' en el plano del colector, cuando el angulo head= 0 coinciden como X'=X(S para x>0)  y Y'=Y(O para y<0)
+    y Z saliendo de la panatalla sin embargo los ejes primados se modifican conforme se rota el colector
+    """
+    
+    Zaxis=np.array([0,0,1]) #Initial normalized vector pointing directly upwards out of the horizon plane. Will do as the azimuthal rotation angle and initial area vector.
+    Yaxis=np.array([0,1,0]) #Coincides with the transversal axe at the beginning of the rotations
+    #beta,head,roll=np.radians([beta,head,roll])
+    
+    """
+    The rotations in R3 do not comute then in this script is asumed that first is rotated on 
+    the transversal axe in the center of the collector wich is the same axe as the Y', Y, and east-west axe,
+    since at the beginning the z axe is symmetric, and the collectors are usually rotated  first in this axe
+    """
+    
+    A=np.matmul(rotation_matrix(Yaxis,beta),Zaxis)
+    
+    """
+    Now the collector will be rotated on its new longitudinal axe (X') as is usually done by the collectors tracking systems
+    This new longitudinal axe is is different from the X and the south-north axe.
+    
+    Because the A vector perpendicular to the area and the (0,1,0) vector interseccts in the same center of the collector 
+    and form a plane wich is perpendicular to vector X' I'm looking for this X' vector with a cross product
+    """
+    
+    longitudinal_axe=np.cross(Yaxis,A)
+    
+    """
+    The next rotation will be around the longitudinal_axe, this vector is already normalized since Yaxis was normalized 
+    and A inherits the normalization from Z axis and the fact that the rotations do not change the vector norms. Then this new tranversal_axe
+    can be used as the unitary vector describing the rotation axe for the rotation_matrix function
+    """
+    A=np.matmul(rotation_matrix(longitudinal_axe,roll),A)
+    
+    """
+    #Finally the collector is rotated on the Z axis and the area vector A would be transformed again as
+    
+    A=np.matmul(rotation_matrix(Zaxis,head),A)
+    
+    but it is easier to use a relative azimut than calculate this rotation to get the IAM's
+    #Now A is the oriented area vector in the canonical base wich is proportional to the collectors area [m^2]
+    """
+    return A, longitudinal_axe
+    
+def rotation_matrix(u,angle): #angle in radians, vector u normalized
+    ux,uy,uz = [*u]
+    cang=round(np.cos(angle),9)#Store the value of the cos and sin of the angle given in radians in a variable
+    sang=round(np.sin(angle),9)
+    #Calculates the rotation matrix from the Rodrigues formula for R3, rounds the values to 9 digits after the decimal point
+    R=np.array([[cang+(1-cang)*ux**2, ux*uy*(1-cang)-uz*sang, ux*uz*(1-cang)+uy*sang],
+                [uy*ux*(1-cang)+uz*sang, cang+(1-cang)*uy**2, uy*uz*(1-cang)-ux*sang],
+                [uz*ux*(1-cang)-uy*sang, uz*uy*(1-cang)+ux*sang, cang+(1-cang)*uz**2]])
+    
+    return R
+
 def IAM_calc(ang_target,IAM_type,file_loc):
+    """
+    This IAM is calculated with a table of many known IAM for specific angles 
+    and computes a linear interpolation between two known angles for unknown angles.
+    """
     ang_target=abs(ang_target)
     IAM_raw = np.loadtxt(file_loc, delimiter=",")
     
@@ -162,6 +283,56 @@ def IAM_calc(ang_target,IAM_type,file_loc):
             
             IAM=IAMdata1+incre_IAM_target
     return [IAM]
+
+def IAM_fiteq(angs_rad, IAMs):
+    """
+    This function fits the IAM known values at some angles to the equation:
+    IAM = 1 - b (1/cos(ang)-1) ^ n
+    and returns the parameters b and n. The formula used can be found in Solar Engineering of Thermal Processes: Duffie, John A, Beckman, William.
+    
+    This function will be the equation:
+    
+    IAM = 1 - b (1/cos(ang)-1) ^ n
+    
+    wich can be rearranged to a lineal equation as
+    
+    ln(1-IAM) = ln(b) + n * ln (1/cos(ang)-1)
+    
+    y = ln(b) + n *x 
+    
+    then I calculate y and x first
+    """
+    angs_rad=np.array(angs_rad)#Goes back to arrays after I already pop the items where IAM = 1
+    IAMs=np.array(IAMs)
+    
+    x = np.log((1/np.cos(angs_rad))-1)
+    y = np.log(1 - IAMs) #Corresponds to the y(IAM transversal/longitudinal) reade froom the file
+    
+    #Fit the existent values of x and y to the equation
+    [n,lnb]=np.polyfit(x,y,1)
+    
+    #calculate b from ln(b)
+    b=np.e**lnb
+    
+    #return the parameters
+    return b,n
+    
+def IAM_calc_weq(b,n,ang_rad):
+    """
+    This function calculates the IAM through two parameters of a general formula. This is a continous function
+    everywhere except in (pi/2)+n*pi. This indeterminancy is handled by directly setting 0 to values near this point.
+    The formula used can be found in Solar Engineering of Thermal Processes: Duffie, John A, Beckman, William.
+    """
+
+    if abs(ang_rad-np.pi/2)<=1e-8: #This handles the indeterminancy of 1/0 when cos(pi/2) in this case
+        IAM=0 #IAM is directly 0
+    else: #Otherwise it calculates the IAM normally
+        IAM = 1 - b*((1/np.cos(ang_rad))-1)**n
+    if IAM<0: #but as the angle gets closer to pi/2 the IAM might result negative since 1/cos(ang) becoms greater than one. 
+              #This happens very near pi/2, usually 86° so it is assumed that it is direct zero
+        IAM=0 
+    
+    return IAM
 
 def Meteo_data (file_meteo,sender='notCIMAV', optic_type='0'): #This function exports the TMY file to 'data', the DNI and temperature array of values for  each hour in the year from the file_meteo path to file
     #Only if the optional argument sender is received and is == 'CIMAV'

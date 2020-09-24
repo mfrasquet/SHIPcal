@@ -925,9 +925,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput="water" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=150 #HIGH - Process temperature [ºC]
-        T_process_out=20 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=15 #[bar] 
+        T_process_in=140 #HIGH - Process temperature [ºC]
+        T_process_out=80 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=16 #[bar] 
         
         # Not implemented yet
         """
@@ -1091,6 +1091,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     T_process_out_C=0 #Not used
     s_process_in=0 #Not used
     h_process_in=0 #Not used
+    SD_min_energy=0 #For plotting
+    SD_max_energy=0 #For plotting
     in_s=0
     out_s=0
     h_in=0
@@ -2062,6 +2064,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     else:
         DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
 #   Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
+    Perd_termicas=np.where(np.isnan(Perd_termicas), 0, Perd_termicas) #Avoid nan values
     Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
     
     annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
@@ -2178,7 +2181,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
               'T_in_C':T_in_C,'T_in_C_AR':T_in_C_AR.tolist(),'T_out_C':T_out_C,
               'outProcess_s':s_process_in,'T_out_process_C':T_process_in_C,'P_op_bar':P_op_bar,
               'x_design':x_design,'h_in':h_in,'h_out':h_out,'hProcess_out':h_process_in,'outProcess_h':h_process_in,
-              'Break_cost':Break_cost,'sender':sender,'origin':origin}
+              'Break_cost':Break_cost,'sender':sender,'origin':origin,
+              'Q_prod_steam':Q_prod_steam.tolist(),'Q_drum':Q_drum.tolist(),'SD_min_energy':SD_min_energy,
+              'SD_max_energy':SD_max_energy,'SD_energy':SD_energy.tolist()}
     
     # Plot functions
 
@@ -2333,7 +2338,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
-
+'''
 # Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
@@ -2397,8 +2402,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=5
-n_coll_loop=24
+num_loops=4
+n_coll_loop=8
 
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -2416,7 +2421,7 @@ n_coll_loop=24
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_L_P" 
+type_integration="SL_S_PD" 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -2469,61 +2474,61 @@ elif origin==-3:
     
 else:
     #To perform simulations from command line using inputs like if they were from django
-    inputsDjango={'pressureUnit':'bar',
-                  'pressure':30,
-                  'demand':1875*8760,
-                  'demandUnit':'kWh',
-                  'hourEND':24,
-                  'hourINI':1,
-                  'Jan':1/12,
-                  'Feb':1/12,
-                  'Mar':1/12,
-                  'Apr':1/12,
-                  'May':1/12,
-                  'Jun':1/12,
-                  'Jul':1/12,
-                  'Aug':1/12,
-                  'Sep':1/12,
-                  'Oct':1/12,
-                  'Nov':1/12,
-                  'Dec':1/12,
-                  'Mond':0.143,
-                  'Tues':0.143,
-                  'Wend':0.143,
-                  'Thur':0.143,
-                  'Fri':0.143,
-                  'Sat':0.143,
-                  'Sun':0.143,
-                  'date':'2020-05-08',
-                  'name':'jaarpa',
-                  'industry':'comparison_test',
-                  'email':'jaarpa97@gmail.com',
-                  'sectorIndustry':'developing',
-                  'fuel':'Gasoil-B',
-                  'fuelPrice':0.05,
-                  'co2TonPrice':0,
-                  'co2factor':1,
-                  'fuelUnit':'kWh',
-                  'businessModel':'turnkey',
-                  'location':'Bakersfield',
-                  'location_aux':'',
-                  'surface':None,
-                  'terrain':'',
-                  'orientation':'NS',
-                  'inclination':'flat',
-                  'shadows':'free',
-                  'distance':None,
-                  'process':'',
-                  'fluid':'steam',
-                  'connection':'',
-                  'tempOUT':235,
-                  'tempIN':20,
-                  'last_reg':666
-                 }
+    # inputsDjango={'pressureUnit':'bar',
+    #               'pressure':30,
+    #               'demand':1875*8760,
+    #               'demandUnit':'kWh',
+    #               'hourEND':24,
+    #               'hourINI':1,
+    #               'Jan':1/12,
+    #               'Feb':1/12,
+    #               'Mar':1/12,
+    #               'Apr':1/12,
+    #               'May':1/12,
+    #               'Jun':1/12,
+    #               'Jul':1/12,
+    #               'Aug':1/12,
+    #               'Sep':1/12,
+    #               'Oct':1/12,
+    #               'Nov':1/12,
+    #               'Dec':1/12,
+    #               'Mond':0.143,
+    #               'Tues':0.143,
+    #               'Wend':0.143,
+    #               'Thur':0.143,
+    #               'Fri':0.143,
+    #               'Sat':0.143,
+    #               'Sun':0.143,
+    #               'date':'2020-05-08',
+    #               'name':'jaarpa',
+    #               'industry':'comparison_test',
+    #               'email':'jaarpa97@gmail.com',
+    #               'sectorIndustry':'developing',
+    #               'fuel':'Gasoil-B',
+    #               'fuelPrice':0.05,
+    #               'co2TonPrice':0,
+    #               'co2factor':1,
+    #               'fuelUnit':'kWh',
+    #               'businessModel':'turnkey',
+    #               'location':'Bakersfield',
+    #               'location_aux':'',
+    #               'surface':None,
+    #               'terrain':'',
+    #               'orientation':'NS',
+    #               'inclination':'flat',
+    #               'shadows':'free',
+    #               'distance':None,
+    #               'process':'',
+    #               'fluid':'steam',
+    #               'connection':'',
+    #               'tempOUT':235,
+    #               'tempIN':20,
+    #               'last_reg':666
+    #              }
     
     last_reg=666
-    #inputsDjango= {'date': '2020-03-29', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'SOLPINTER', 'sectorIndustry': 'Dummy', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'MexicoDF', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'steam', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 20.0, 'tempOUT': 130.0, 'connection': '', 'process': '', 'demand': 2000.0, 'demandUnit': 'MWh', 'hourINI': 4, 'hourEND': 21, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.091, 'Feb': 0.091, 'Mar': 0.091, 'Apr': 0.091, 'May': 0.091, 'Jun': 0.091, 'Jul': 0.091, 'Aug': 0.0, 'Sep': 0.091, 'Oct': 0.091, 'Nov': 0.091, 'Dec': 0.091, 'last_reg': 709}
+    inputsDjango= {'date': '2020-07-06', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'seminario', 'sectorIndustry': 'Agro_Livestock', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Albuquerque', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'steam', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 135.0, 'connection': '', 'process': '', 'demand': 7884.0, 'demandUnit': 'MWh', 'hourINI': 1, 'hourEND': 24, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 772}
     #last_reg=inputsDjango['last_reg']
     
 [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
-
+'''

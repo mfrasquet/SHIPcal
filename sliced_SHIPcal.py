@@ -41,7 +41,7 @@ from Finance_modules.FinanceModels import SP_plant_costFunctions
 from Integration_modules.integrations import offStorageSimple, operationSimple, operationDSG, outputOnlyStorageSimple, outputWithoutStorageSimple, outputStorageSimple, offSimple, outputFlowsHTF, outputFlowsWater, directopearationSimple, operationDSG_Rec, offDSG_Rec, outputDSG_Rec#, offOnlyStorageSimple, operationOnlyStorageSimple
 from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageNonAnnual, financePlot, prodMonths, savingsMonths,SL_S_PDR_Plot,storageNonAnnualSL_S_PDR
 
-[Turn_key, ESCO,optic_efficiency_N,solatom_param,SOL_plant_costFunctions,reportOutput, djangoReportCIMAV,CIMAV_collectors,IAM_fiteq,IAM_calculator,theta_IAMs_CIMAV,CIMAV_plant_costFunctions,equiv_coll_series_o1]=[None, None,None,None,None,None,None,None,None,None,None,None,None]
+[Turn_key, ESCO,optic_efficiency_N,solatom_param,SOL_plant_costFunctions,reportOutput, djangoReportCIMAV,CIMAV_collectors,IAM_fiteq,IAM_calc_weq,theta_IAMs_v3,CIMAV_plant_costFunctions,equiv_coll_series_o1]=[None, None,None,None,None,None,None,None,None,None,None,None,None]
 
 def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
     version, initial_variables_dict, coll_par, integration_Dict = SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl)
@@ -89,13 +89,13 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
         from Solatom_modules.templateSolatom import reportOutput #noqa
         from Finance_modules.FinanceModels import Turn_key, ESCO #noqa
     elif sender=='CIMAV': #The request comes from CIMAV front-end
-        global djangoReportCIMAV,CIMAV_collectors,IAM_fiteq,IAM_calculator,theta_IAMs_CIMAV,CIMAV_plant_costFunctions,equiv_coll_series_o1
+        global djangoReportCIMAV,CIMAV_collectors,IAM_fiteq,IAM_calc_weq,theta_IAMs_v3,CIMAV_plant_costFunctions,equiv_coll_series_o1
         from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV #noqa
         #Imports a CIMAV's module to return the parameters of collectors supported by CIMAV
-        from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors,IAM_fiteq,IAM_calculator #noqa
-        from CIMAV.CIMAV_modules.incidence_angle import theta_IAMs_v2 as theta_IAMs_CIMAV #noqa
+        from CIMAV.CIMAV_modules.CIMAV_collectors import CIMAV_collectors #noqa
         from CIMAV.CIMAV_modules.CIMAV_financeModels import Turn_key,ESCO,CIMAV_plant_costFunctions #noqa
-        from CIMAV.CIMAV_modules.iteration_process import equiv_coll_series_o1 #noqa
+        from Solar_modules.iteration_process import equiv_coll_series_o1
+        from Solar_modules.EQSolares import theta_IAMs_v3, IAM_fiteq,IAM_calc_weq
     else:
         from Finance_modules.FinanceModels import Turn_key, ESCO
     
@@ -180,9 +180,10 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
     
     elif sender=='CIMAV': #Use one of the collectors supported by CIMAV
         type_coll=inputsDjango['collector_type']#The collector datasheet will have this name
-        Area_coll,rho_optic_0,eta1,eta2,mdot_test,Long,weight,coll_optic=CIMAV_collectors(type_coll)
-        blong,nlong = IAM_fiteq(type_coll,1)
-        btrans,ntrans = IAM_fiteq(type_coll,2)
+        Area_coll,rho_optic_0,eta1,eta2,mdot_test,Long,weight,coll_optic, lon_angs_rad, lonIAMs, tran_lon_angs_rad, tranIAMs = CIMAV_collectors(type_coll)
+        
+        blong,nlong = IAM_fiteq(lon_angs_rad,lonIAMs)
+        btrans,ntrans = IAM_fiteq(tran_lon_angs_rad, tranIAMs)
         REC_type = 1 #Dead variable to avoid crashes with the previous code
         
         m_dot_min_kgs = mdot_test*Area_coll
@@ -1366,14 +1367,14 @@ def SHIPcal_auto(origin,inputsDjango,plots,imageQlty,confReport,desginDict,initi
         elif sender=='CIMAV': #Using CIMAV's IAMs 
             if SUN_ELV[i]>0 and SUN_ELV[i]<180: #If the sun is above the horizon
                 #Calculates the tranversal and longitudinal incidenc angle. This is to say the angle betwwn the proyection  longitudinal/transversal and the area vector from the collector
-                theta_transv_deg[i],theta_i_deg[i] = theta_IAMs_CIMAV(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
+                theta_transv_deg[i],theta_i_deg[i] = theta_IAMs_v3(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad,roll)
                 
                 if coll_par['coll_optic'] == 'concentrator': #If it is a concentrator type collector it will have a default hourly tracking moving the area vector from east yo west, with 0 at midday, -90° at the sunrise.
                     theta_transv_deg[i] = 0
                 
                 #Dado el angulo de incidencia longitudina/transversal se calcula el IAM correspondiente con los parametros correspondientes
-                IAM_long[i] = IAM_calculator(blong,nlong,theta_i_deg[i])
-                IAM_t[i] = IAM_calculator(btrans,ntrans,theta_transv_deg[i])
+                IAM_long[i] = IAM_calc_weq(blong,nlong,theta_i_deg[i])
+                IAM_t[i] = IAM_calc_weq(btrans,ntrans,theta_transv_deg[i])
             else:
                 IAM_long[i],IAM_t[i]=0,0
             
