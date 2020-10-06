@@ -1993,8 +1993,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=5
-n_coll_loop=24
+num_loops=290
+n_coll_loop=10
 
 #SL_L_P -> Supply level liquid parallel integration without storage
 #SL_L_PS -> Supply level liquid parallel integration with storage
@@ -2012,50 +2012,55 @@ n_coll_loop=24
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
 type_integration="SL_L_P" 
-almVolumen=10000 #litros
+almVolumen=4300000 #litros
 
 # --------------------------------------------------
-confReport={'lang':'spa','sender':'SHIPcal','cabecera':'Resultados de la <br> simulación','mapama':0}
+confReport={'lang':'spa','sender':'CIMAV','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
 simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
-origin=1 #0 if new record; -2 if it comes from www.ressspi.com
+origin=-3 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
     inputsDjango={}
     last_reg=666
 elif origin==-3:
-    inputsDjango= 	{'T_in_flag': 1,
-                     'businessModel': 'turnkey',
-                     'co2TonPrice': 0.0,
-                     'co2factor': 0.0,
-                     'collector_type': 'BOSCH SKW2.txt',
-                     'date': 'hoy',
-                     'demand': 6000.0,
-                     'demandUnit': '666',
-                     'email': 'ja.arpa97@gmail.com',
-                     'every_day': True,
-                     'every_month': True,
-                     'fluid': 'water',
-                     'fuel': 'gas_licuado_petroleo',
-                     'fuelPrice': 1.089539826506024,
-                     'fuelUnit': 1.0,
-                     'hourEND': 17,
-                     'hourINI': 9,
-                     'industry': 'Secado de Chiles',
-                     'location': 'Zacatecas.dat',
-                     'name': '',
-                     'pais': 'México',
-                     'pressure': 1.0,
-                     'pressureUnit': '1',
-                     'semana': ['0', '1', '2', '3', '4', '5', '6'],
-                     'surface': 150.0,
-                     'tempIN': 23.0,
-                     'tempOUT': 50.0,
-                     'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
+    inputsDjango = {'T_in_flag': 1,
+                    'almVolumen': 4300000,
+                    'businessModel': 'turnkey',
+                    'co2TonPrice': 0.0,
+                    'co2factor': 0.0,
+                    'collector_type': 'POWER THROUGH 250 INVENTIVE POWER.txt',
+                    'date': '2020-05-08',
+                    'demand': 94171.0,
+                    'demandUnit': '666',
+                    'email': 'ja.arpa97@gmail.com',
+                    'every_day': True,
+                    'every_month': True,
+                    'fluid': 'water',
+                    'fuel': 'gas_licuado_petroleo',
+                    'fuelPrice': 1.3791643373493976,
+                    'fuelUnit': 1.0,
+                    'hourEND': 24,
+                    'hourINI': 0,
+                    'industry': 'MineraGaby',
+                    'location': 'Rosario.dat',
+                    'n_coll_loop': 10,
+                    'name': '',
+                    'num_loops': 290.0,
+                    'pais': 'Argentina',
+                    'pressure': 1.0,
+                    'pressureUnit': '1',
+                    'rable_coll_type': 'POWER THROUGH 250 INVENTIVE POWER',
+                    'semana': ['0', '1', '2', '3', '4', '5', '6'],
+                    'surface': 40000.0,
+                    'tempIN': 52.86,
+                    'tempOUT': 82.6,
+                    'type_integration': 'SL_L_S',
+                    'year': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']}
     last_reg=666
     
 else:

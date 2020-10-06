@@ -9,47 +9,47 @@ import os
 
 def SolarEQ_simple (Month,Day,Hour,Lat,Huso): #Returns the hour angle (W) [rad], sun elevation angle[rad], azimuth angle[rad], declination [rad] and zenithal angle [rad] of the sun for each the specified hour, latitude[°], anf time zone given in the inputs.
 
-    gr=np.pi/180; #Just to convert RAD-DEG 
+    gr=np.pi/180 #Just to convert RAD-DEG 
     
     #Read the Juilan day file and save it in a matrix
-    JUL_DAY=np.loadtxt(os.path.dirname(os.path.dirname(__file__))+'/Solar_modules/Julian_day_prueba.txt',delimiter='\t');
+    JUL_DAY=np.loadtxt(os.path.dirname(os.path.dirname(__file__))+'/Solar_modules/Julian_day_prueba.txt',delimiter='\t')
   
     
     #Calculates the Julian Day
-    Jul_day=JUL_DAY[int(Day-1),int(Month-1)];
+    Jul_day=JUL_DAY[int(Day-1),int(Month-1)]
     
     #Declination
     
-    DJ=2*np.pi/365*(Jul_day-1); #Julian day in rad
-    DECL=(0.006918-0.399912*np.cos(DJ)+ 0.070257*np.sin(DJ)-0.006758*np.cos(2*DJ)+0.000907*np.sin(2*DJ)-0.002697*np.cos(3*DJ)+0.00148*np.sin(3*DJ));
-    DECL_deg=DECL/gr;
+    DJ=2*np.pi/365*(Jul_day-1) #Julian day in rad
+    DECL=(0.006918-0.399912*np.cos(DJ)+ 0.070257*np.sin(DJ)-0.006758*np.cos(2*DJ)+0.000907*np.sin(2*DJ)-0.002697*np.cos(3*DJ)+0.00148*np.sin(3*DJ))
+    DECL_deg=DECL/gr
     
     #Hour
-    W_deg=(Hour-12)*15;
-    W=W_deg*gr;
+    W_deg=(Hour-12)*15
+    W=W_deg*gr
     
     #Sun elevation
-    XLat=Lat*gr;
-    sin_Elv=np.sin(DECL)*np.sin(XLat)+np.cos(DECL)*np.cos(XLat)*np.cos(W);
-    SUN_ELV=np.arcsin(sin_Elv);
-    SUN_ELV_deg=SUN_ELV/gr;
+    XLat=Lat*gr
+    sin_Elv=np.sin(DECL)*np.sin(XLat)+np.cos(DECL)*np.cos(XLat)*np.cos(W)
+    SUN_ELV=np.arcsin(sin_Elv)
+    SUN_ELV_deg=SUN_ELV/gr
     
-    SUN_ZEN=(np.pi/2)-SUN_ELV;
+    SUN_ZEN=(np.pi/2)-SUN_ELV
     #Sun azimuth
-    SUN_AZ=np.arcsin(np.cos(DECL)*np.sin(W)/np.cos(SUN_ELV));
+    SUN_AZ=np.arcsin(np.cos(DECL)*np.sin(W)/np.cos(SUN_ELV))
     
-    verif=(np.tan(DECL)/np.tan(XLat));
+    verif=(np.tan(DECL)/np.tan(XLat))
     if np.cos(W)>=verif:
-        SUN_AZ=SUN_AZ;  
+        SUN_AZ=SUN_AZ  
     else:
             if SUN_AZ >0:
-                SUN_AZ=((np.pi/2)+((np.pi/2)-abs(SUN_AZ)));
+                SUN_AZ=((np.pi/2)+((np.pi/2)-abs(SUN_AZ)))
             else:
-                SUN_AZ=-((np.pi/2)+((np.pi/2)-abs(SUN_AZ)));
+                SUN_AZ=-((np.pi/2)+((np.pi/2)-abs(SUN_AZ)))
     
     
     
-#    SUN_AZ_deg=SUN_AZ/gr;
+#    SUN_AZ_deg=SUN_AZ/gr
 #    a=[W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN]
        
     return [W,SUN_ELV,SUN_AZ,DECL,SUN_ZEN]
