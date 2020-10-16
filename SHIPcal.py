@@ -47,6 +47,8 @@ from Integration_modules.integrations2 import operationSimple2, operationDSG2, o
 from General_modules.djangotoSHIPCal2 import djangoReport2
 
 
+#PLOTS MODIFICATIONS--->only x label but I cannot modify functions files so i have to copy all the functions.
+#operationSimple2, operationDSG2, operationDSG_Rec2-->the only modification is to divide by 6 or 4 the Q_prod, Perd_termicas, Q_prod_rec
 
 
 def demandCreator2(totalConsumption,dayArray,weekArray,monthArray,step_minArray,itercontrol):
@@ -518,7 +520,7 @@ def waterFromGrid_v3_min(file_meteo, itercontrol, sender='CIMAV'):
 
 
 
-def waterFromGrid_trim2(T_in_C_AR,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,min_ini_sim,min_fin_sim):
+def waterFromGrid_trim2(T_in_C_AR,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_sim,hora_fin_sim,min_ini_sim,min_fin_sim,itercontrol):
     
     min_year_ini=calc_min_year(mes_ini_sim,dia_ini_sim,hora_ini_sim, min_ini_sim,itercontrol)
     min_year_fin=calc_min_year(mes_fin_sim,dia_fin_sim,hora_fin_sim, min_fin_sim, itercontrol)
@@ -539,7 +541,7 @@ def waterFromGrid_trim2(T_in_C_AR,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_s
 
 
 
-#PLOTS MODIFICATIONS--->only x label but I cannot modify functions files so i have to copy all the functions here.
+
 
 
 
@@ -859,7 +861,6 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
             Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
             long=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Long'].iloc[0]
-        
         ## INTEGRATION
         type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
         almVolumen=desginDict['almVolumen'] # Storage capacity [litres]
@@ -896,7 +897,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         
         ## METEO
 #        localMeteo="Fargo_SAM.dat" #Be sure this location is included in SHIPcal DB
-        localMeteo="Sevilla10min.dat"
+        localMeteo="Sevillahorario.dat"
         if sender=='solatom': #Use Solatom propietary meteo DB. This is only necessary to be able to use solatom data from terminal
             meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') 
             file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo       
@@ -925,9 +926,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## INDUSTRIAL APPLICATION
             #>> PROCESS
         fluidInput="water" #"water" "steam" "oil" "moltenSalt"
-        T_process_in=140 #HIGH - Process temperature [ºC]
-        T_process_out=80 #LOW - Temperature at the return of the process [ºC]
-        P_op_bar=16 #[bar] 
+        T_process_in=150 #HIGH - Process temperature [ºC]
+        T_process_out=20 #LOW - Temperature at the return of the process [ºC]
+        P_op_bar=15 #[bar] 
         
         # Not implemented yet
         """
@@ -992,11 +993,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     # --> Meteo variables
     if simControl['itercontrol']=='paso_10min':
-       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,ten_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_fin_sim, simControl['itercontrol'],huso,simControl['to_solartime'],long,sender,Lat,Huso)
+       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,ten_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_fin_sim, simControl['itercontrol'],simControl['huso'],simControl['to_solartime'],long,sender,Lat,Huso)
     elif simControl['itercontrol']=='paso_15min':
-       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,fifteen_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,fifteen_min_fin_sim, simControl['itercontrol'],huso,simControl['to_solartime'],long,sender,Lat,Huso)
-    elif localMeteo=="Sevillahorario.dat":
-       output,i_initial,i_final=SolarData3(simControl['to_solartime'],long,huso,file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso) 
+       output,i_initial,i_final=SolarData2(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,fifteen_min_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,fifteen_min_fin_sim, simControl['itercontrol'],simControl['huso'],simControl['to_solartime'],long,sender,Lat,Huso)
+    elif simControl['to_solartime'] == 'on' and (simControl['itercontrol']!='paso_10min' or simControl['itercontrol'] !='paso_15min'):
+       output,i_initial,i_final=SolarData3(simControl['to_solartime'],long,simControl['huso'],file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso) 
     else:
         output,i_initial,i_final=SolarData(file_loc,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,sender,Lat,Huso)
     
@@ -1059,11 +1060,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     if simControl['itercontrol']=='paso_10min' :
     
-        T_in_C_AR=waterFromGrid_v3_min(file_loc,itercontrol,sender)
-        T_in_C_AR=waterFromGrid_trim2(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_ini_sim,ten_min_fin_sim)
+        T_in_C_AR=waterFromGrid_v3_min(file_loc,simControl['itercontrol'],sender)
+        T_in_C_AR=waterFromGrid_trim2(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,ten_min_ini_sim,ten_min_fin_sim,simControl['itercontrol'])
     elif simControl['itercontrol']=='paso_15min':
-        T_in_C_AR=waterFromGrid_v3_min(file_loc,itercontrol,sender)
-        T_in_C_AR=waterFromGrid_trim2(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,fifteen_min_ini_sim,fifteen_min_fin_sim)
+        T_in_C_AR=waterFromGrid_v3_min(file_loc,simControl['itercontrol'],sender)
+        T_in_C_AR=waterFromGrid_trim2(T_in_C_AR,month_ini_sim,day_ini_sim,hour_ini_sim,month_fin_sim,day_fin_sim,hour_fin_sim,fifteen_min_ini_sim,fifteen_min_fin_sim,simControl['itercontrol'])
     else:
         T_in_C_AR=waterFromGrid_v3(file_loc,sender)
         #Trim the T_in_C_AR [8760] to the simulation frame 
@@ -1091,8 +1092,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     T_process_out_C=0 #Not used
     s_process_in=0 #Not used
     h_process_in=0 #Not used
-    SD_min_energy=0 #For plotting
-    SD_max_energy=0 #For plotting
+    SD_min_energy=0
+    SD_max_energy=0
     in_s=0
     out_s=0
     h_in=0
@@ -1977,6 +1978,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 # [Q_prod_lim[i],Q_defocus[i],Q_useful[i]]=outputWithoutStorageSimple(Q_prod[i],Demand[i])
                 [Q_prod_lim[i],Q_prod[i],Q_discharg[i],Q_charg[i],energy_stored,SOC[i],Q_defocus[i],Q_useful[i]]=outputStorageSimple(Q_prod[i],energy_stored,Demand[i],energStorageMax)     
             
+      
         
         
         else: # Status: OFF -> There's not enough DNI to put the solar plant in production     
@@ -2051,7 +2053,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     
     tonCo2Saved=Production_lim*co2factor #Tons of Co2 saved
     totalDischarged=(sum(Q_discharg))
-#   totalCharged=(sum(Q_charg))
+    totalCharged=(sum(Q_charg))
+    totalDefocus = sum(Q_defocus)
     Utilitation_ratio=100*((sum(Q_prod_lim))/(sum(Q_prod)))
     improvStorage=(100*sum(Q_prod_lim)/(sum(Q_prod_lim)-totalDischarged))-100 #Assuming discharged = Charged
     solar_fraction_lim=100*(sum(Q_prod_lim))/Demand_anual 
@@ -2064,13 +2067,20 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     else:
         DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
 #   Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
-    Perd_termicas=np.where(np.isnan(Perd_termicas), 0, Perd_termicas) #Avoid nan values
+    Perd_termicas=np.where(np.isnan(Perd_termicas), 0, Perd_termicas)
     Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
-    
+    nonzeroflowrate_kgs = [flowrate_kgs[i] for i in np.nonzero(flowrate_kgs)[0]]
+    Energy_module_max=Production_max/num_modulos_tot
+    # annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
+    #                 'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
+    #                 'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
+    #                 'flow_rate_kgs':flowrate_kgs.tolist(),'totalCharged':totalCharged}
     annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
-                    'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
-                    'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
-                    'flow_rate_kgs':flowrate_kgs.tolist()}
+                        'totalCharged':totalCharged,'totalDischarged':totalDischarged,'totalDefocus':totalDefocus,
+                        'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
+                        'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
+                        'flow_rate_kgs':flowrate_kgs.tolist(), 'flowrate_kgs_average':np.mean(nonzeroflowrate_kgs), 'energStorageMax':energStorageMax,
+                        'Energy_module_max':Energy_module_max,}
     
 
 #%%
@@ -2150,12 +2160,16 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             Energy_savingsList.append(round(Net_anual_savings[i]))
             OMList.append(OM_cost[i])
             fuelPrizeArrayList.append(fuelPrizeArray[i])
-               
+        
+        anual_energy_cost = fuelPrizeArray*Energy_Before_annual
+        Energy_savings_mean = np.mean(Net_anual_savings)
+        fraction_savings = np.mean(Net_anual_savings/anual_energy_cost)*100
+        
         finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
                  'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
                  'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
                  'co2TonPrice':co2TonPrice,'fuelIncremento':fuelCostRaise,'IPC':CPI,'Selling_price':Selling_price,
-                 'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE}
+                 'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE, 'anual_energy_cost':anual_energy_cost.tolist(), 'Energy_savings_mean':Energy_savings_mean}
     
     else:
         n_years_sim=0 #No finance simulation
@@ -2181,9 +2195,12 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
               'T_in_C':T_in_C,'T_in_C_AR':T_in_C_AR.tolist(),'T_out_C':T_out_C,
               'outProcess_s':s_process_in,'T_out_process_C':T_process_in_C,'P_op_bar':P_op_bar,
               'x_design':x_design,'h_in':h_in,'h_out':h_out,'hProcess_out':h_process_in,'outProcess_h':h_process_in,
-              'Break_cost':Break_cost,'sender':sender,'origin':origin,
-              'Q_prod_steam':Q_prod_steam.tolist(),'Q_drum':Q_drum.tolist(),'SD_min_energy':SD_min_energy,
-              'SD_max_energy':SD_max_energy,'SD_energy':SD_energy.tolist()}
+              'Break_cost':Break_cost,'sender':sender,'origin':origin, 'Energy_Before_annual':Energy_Before_annual,
+              'Q_prod_steam':Q_prod_steam.tolist(), 'Q_drum': Q_drum.tolist(), 'SD_min_energy':SD_min_energy,
+              'SD_max_energy':SD_max_energy, 'SD_energy': SD_energy.tolist(), 'itercontrol':simControl['itercontrol'],
+              'flowrate_kgs':flowrate_kgs,'flowrate_rec':flowrate_rec,'step_sim':step_sim, 'Q_prod_rec':Q_prod_rec,
+              'flowDemand':flowDemand,'flowToHx':flowToHx,'flowToMix':flowToMix,'T_in_K':T_in_K,'T_toProcess_C':T_toProcess_C,'T_out_K':T_out_K,}
+    
     
     # Plot functions
 
@@ -2277,7 +2294,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         if plots[13]==1:
             viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty) #(13) Plot thermal oil properties Viscosities vs Temp        
 
-
+    
     
     # Other plots
     if plots[14]==1: #(14) Plot Production
@@ -2314,21 +2331,40 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             template_vars=reportOutput(origin,reportsVar,-1,"",pk,version,os.path.dirname(os.path.dirname(__file__))+'/ressspi',os.path.dirname(os.path.dirname(__file__)),Energy_Before_annual,sankeyDict)
         
         else:
-            template_vars={} 
-            reportsVar={'version':version,'logo_output':'no_logo','version':version,'type_integration':type_integration,
+            if origin!=1:
+                template_vars={} 
+                reportsVar={'version':version,'logo_output':'no_logo','version':version,'type_integration':type_integration,
                         'energyStored':energy_stored,"location":localMeteo,
-                        'Area_total':Area_total,'n_coll_loop':n_coll_loop,
+                        'Area_total':Area_total,'n_coll_loop':n_coll_loop, 
                         'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
                         'Production_max':Production_max,'Production_lim':Production_lim,
                         'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
                         'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
-            reportsVar.update(finance)
-            reportsVar.update(confReport)
-            reportsVar.update(annualProdDict)
-            reportsVar.update(modificators)
-            if origin==0 or origin == -3:
+                reportsVar.update(finance)
+                reportsVar.update(confReport)
+                reportsVar.update(annualProdDict)
+                reportsVar.update(modificators)
+                if origin==0 or origin == -3:
+                    reportOutputOffline(reportsVar)
+            else:
+                template_vars={} 
+                reportsVar={'version':version,'logo_output':'no_logo','version':version,'type_integration':type_integration,
+                        'energyStored':energy_stored,"location":localMeteo, 'fraction_savings':fraction_savings,
+                        'Area_total':Area_total,'n_coll_loop':n_coll_loop, 'energStorageMax':energStorageMax,
+                        'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
+                        'Production_max':Production_max,'Production_lim':Production_lim,
+                        'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
+                        'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation,
+                        'AmortYear':AmortYear,'finance_study':finance_study, 'CO2':CO2, 'co2Savings':co2Savings, 'TIRscript':TIRscript,
+                        'TIRscript10':TIRscript10,'Amortscript':Amortscript,'co2TonPrice':co2TonPrice
+                        }
+                reportsVar.update(finance)
+                reportsVar.update(confReport)
+                reportsVar.update(annualProdDict)
+                reportsVar.update(modificators)
                 reportOutputOffline(reportsVar)
     else:
+        
         template_vars={}
         reportsVar={}
         
@@ -2338,13 +2374,15 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
 # ----------------------------------- END SHIPcal -------------------------
 # -------------------------------------------------------------------------
 #%% 
+
 '''
+
 # Variables needed for calling SHIPcal from terminal
     
 #Plot Control ---------------------------------------
 imageQlty=200
 
-plots=[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
+plots=[0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0] # Put 1 in the elements you want to plot. Example [1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0] will plot only plots #0, #8 and #9
 #(0) A- Sankey plot
 #(1) A- Production week Winter & Summer
 #(2) A- Plot Finance
@@ -2371,21 +2409,21 @@ finance_study=1
 
 #paso_10min
 #paso_15min
-itercontrol ='paso_10min'
+itercontrol ='-paso_10min'
 #In case the TMY does not have solar time. Equations implemented in SolarEQ_simple2
 to_solartime='on' # value must be on to use.
 huso=0 #UTC. This value correspond to the time zone of the hour in the TMY.
 
-month_ini_sim=5
+month_ini_sim=6
 day_ini_sim=1
-hour_ini_sim=24 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
+hour_ini_sim=0 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
 ten_min_ini_sim=0 # 0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_ini_sim=0 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45}
 
-month_fin_sim=5
+month_fin_sim=6
 day_fin_sim=2
-hour_fin_sim=16 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
-ten_min_fin_sim=2 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
+hour_fin_sim=12 #--->For ten minutes or fifteen minutes simulations, day starts at 0 hours and ends at 24 hours
+ten_min_fin_sim=0 #0 to 5--->{0=0 min; 1=10 min; 2=20 min; 3=30 min; 4=40 min; 5= 50 min}
 fifteen_min_fin_sim=3 # 0 to 3--->{0=0 min; 1=15 min; 2=30 min; 3=45 min}
 
 
@@ -2402,8 +2440,8 @@ mofDNI=1  #Corrección a fichero Meteonorm
 mofProd=1 #Factor de seguridad a la producción de los módulos
 
 # -------------------- SIZE OF THE PLANT ---------
-num_loops=4
-n_coll_loop=8
+num_loops=5
+n_coll_loop=24
 
 
 #SL_L_P -> Supply level liquid parallel integration without storage
@@ -2421,7 +2459,7 @@ n_coll_loop=8
 #SL_S_PD ->
 #SL_S_PDS -> #For CIMAV only works for a large number of plane collectors +20
 
-type_integration="SL_S_PD" 
+type_integration='SL_L_P' 
 almVolumen=10000 #litros
 
 # --------------------------------------------------
@@ -2435,7 +2473,7 @@ elif itercontrol =='paso_15min':
     simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim, 'itercontrol':itercontrol,'fifteen_min_ini_sim':fifteen_min_ini_sim, 'fifteen_min_fin_sim':fifteen_min_fin_sim,'to_solartime':to_solartime, 'huso':huso}
 # ---------------------------------------------------
 
-origin=1 #0 if new record; -2 if it comes from www.ressspi.com
+origin=0 #0 if new record; -2 if it comes from www.ressspi.com
 
 if origin==0:
     #To perform simulations from command line using hardcoded inputs
@@ -2474,61 +2512,63 @@ elif origin==-3:
     
 else:
     #To perform simulations from command line using inputs like if they were from django
-    # inputsDjango={'pressureUnit':'bar',
-    #               'pressure':30,
-    #               'demand':1875*8760,
-    #               'demandUnit':'kWh',
-    #               'hourEND':24,
-    #               'hourINI':1,
-    #               'Jan':1/12,
-    #               'Feb':1/12,
-    #               'Mar':1/12,
-    #               'Apr':1/12,
-    #               'May':1/12,
-    #               'Jun':1/12,
-    #               'Jul':1/12,
-    #               'Aug':1/12,
-    #               'Sep':1/12,
-    #               'Oct':1/12,
-    #               'Nov':1/12,
-    #               'Dec':1/12,
-    #               'Mond':0.143,
-    #               'Tues':0.143,
-    #               'Wend':0.143,
-    #               'Thur':0.143,
-    #               'Fri':0.143,
-    #               'Sat':0.143,
-    #               'Sun':0.143,
-    #               'date':'2020-05-08',
-    #               'name':'jaarpa',
-    #               'industry':'comparison_test',
-    #               'email':'jaarpa97@gmail.com',
-    #               'sectorIndustry':'developing',
-    #               'fuel':'Gasoil-B',
-    #               'fuelPrice':0.05,
-    #               'co2TonPrice':0,
-    #               'co2factor':1,
-    #               'fuelUnit':'kWh',
-    #               'businessModel':'turnkey',
-    #               'location':'Bakersfield',
-    #               'location_aux':'',
-    #               'surface':None,
-    #               'terrain':'',
-    #               'orientation':'NS',
-    #               'inclination':'flat',
-    #               'shadows':'free',
-    #               'distance':None,
-    #               'process':'',
-    #               'fluid':'steam',
-    #               'connection':'',
-    #               'tempOUT':235,
-    #               'tempIN':20,
-    #               'last_reg':666
-    #              }
+    inputsDjango={'pressureUnit':'bar',
+                  'pressure':30,
+                  'demand':1875*8760,
+                  'demandUnit':'kWh',
+                  'hourEND':24,
+                  'hourINI':1,
+                  'Jan':1/12,
+                  'Feb':1/12,
+                  'Mar':1/12,
+                  'Apr':1/12,
+                  'May':1/12,
+                  'Jun':1/12,
+                  'Jul':1/12,
+                  'Aug':1/12,
+                  'Sep':1/12,
+                  'Oct':1/12,
+                  'Nov':1/12,
+                  'Dec':1/12,
+                  'Mond':0.143,
+                  'Tues':0.143,
+                  'Wend':0.143,
+                  'Thur':0.143,
+                  'Fri':0.143,
+                  'Sat':0.143,
+                  'Sun':0.143,
+                  'date':'2020-05-08',
+                  'name':'jaarpa',
+                  'industry':'comparison_test',
+                  'email':'jaarpa97@gmail.com',
+                  'sectorIndustry':'developing',
+                  'fuel':'Gasoil-B',
+                  'fuelPrice':0.05,
+                  'co2TonPrice':0,
+                  'co2factor':1,
+                  'fuelUnit':'kWh',
+                  'businessModel':'turnkey',
+                  'location':'Bakersfield',
+                  'location_aux':'',
+                  'surface':None,
+                  'terrain':'',
+                  'orientation':'NS',
+                  'inclination':'flat',
+                  'shadows':'free',
+                  'distance':None,
+                  'process':'',
+                  'fluid':'steam',
+                  'connection':'',
+                  'tempOUT':235,
+                  'tempIN':20,
+                  'last_reg':666
+                 }
     
     last_reg=666
-    inputsDjango= {'date': '2020-07-06', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'seminario', 'sectorIndustry': 'Agro_Livestock', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Albuquerque', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'steam', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 80.0, 'tempOUT': 135.0, 'connection': '', 'process': '', 'demand': 7884.0, 'demandUnit': 'MWh', 'hourINI': 1, 'hourEND': 24, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.083, 'Feb': 0.083, 'Mar': 0.083, 'Apr': 0.083, 'May': 0.083, 'Jun': 0.083, 'Jul': 0.083, 'Aug': 0.083, 'Sep': 0.083, 'Oct': 0.083, 'Nov': 0.083, 'Dec': 0.083, 'last_reg': 772}
+    #inputsDjango= {'date': '2020-03-29', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'SOLPINTER', 'sectorIndustry': 'Dummy', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'MexicoDF', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': 'steam', 'pressure': 6.0, 'pressureUnit': 'bar', 'tempIN': 20.0, 'tempOUT': 130.0, 'connection': '', 'process': '', 'demand': 2000.0, 'demandUnit': 'MWh', 'hourINI': 4, 'hourEND': 21, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.091, 'Feb': 0.091, 'Mar': 0.091, 'Apr': 0.091, 'May': 0.091, 'Jun': 0.091, 'Jul': 0.091, 'Aug': 0.0, 'Sep': 0.091, 'Oct': 0.091, 'Nov': 0.091, 'Dec': 0.091, 'last_reg': 709}
     #last_reg=inputsDjango['last_reg']
     
 [jSonResults,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,last_reg)
+
+
 '''

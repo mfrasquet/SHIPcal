@@ -17,6 +17,7 @@ import base64
 import os
 
 
+
 def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,DNI_anual_irradiation,Area,num_loops,imageQlty,plotPath,**kwargs):
 
     #Proportions for Sankey
@@ -463,7 +464,7 @@ def demandVsRadiation(sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_pro
         ax2.set_ylabel('Solar Radiaton - W/m2',color='red')
         plt.legend(loc='upper right', borderaxespad=0.)
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or origin == 1:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -726,7 +727,7 @@ def flowRatesPlot(sender,origin,step_sim,steps_sim,flow_rate_kgs,flow_rate_rec,n
 #    output3.columns=['T_out_K']
 #    output_excel_FlowratesTemps=pd.concat([output1,output2,output3], axis=1)
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or origin ==1:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1151,7 +1152,7 @@ def storageNonAnnual(sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_prod_lim,step_s
     plt.tight_layout()
     
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or origin ==1:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()

@@ -69,6 +69,8 @@ def IAMAnglesPlot2(itercontrol,sender,origin,step_sim,IAM_long,IAM_t,IAM,plotPat
     
 def demandVsRadiation2(itercontrol,sender,origin,lang,step_sim,Demand,Q_prod,Q_prod_lim,Q_prod_rec,steps_sim,DNI,plotPath,imageQlty,**kwargs):
     fig = plt.figure()
+    # print(len(step_sim))
+    # print(len(Demand))
     if origin==-2 or origin == -3:
         fig.patch.set_alpha(0)
     if lang=="spa": 
@@ -112,7 +114,7 @@ def demandVsRadiation2(itercontrol,sender,origin,lang,step_sim,Demand,Q_prod,Q_p
         ax2.set_ylabel('Solar Radiaton - W/m2',color='red')
         plt.legend(loc='upper right', borderaxespad=0.)
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or origin == 1:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -161,7 +163,7 @@ def flowRatesPlot2(itercontrol,sender,origin,step_sim,steps_sim,flow_rate_kgs,fl
 #    output3.columns=['T_out_K']
 #    output_excel_FlowratesTemps=pd.concat([output1,output2,output3], axis=1)
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or origin==1:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -637,7 +639,7 @@ def storageNonAnnual2(itercontrol,sender,origin,SOC,Q_useful,Q_prod,Q_charg,Q_pr
     plt.tight_layout()
     
     
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or origin == 1:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -682,7 +684,7 @@ def storageNonAnnualSL_S_PDR2(itercontrol,sender,origin,SOC,Q_useful,Q_prod_stea
     plt.tight_layout()
 
 
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or origin == 1:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1132,7 +1134,7 @@ def SL_S_PDR_Plot2(itercontrol,sender,origin,step_sim,steps_sim,SD_min_energy,SD
     # output3.columns=['T_out_K']
     # output_excel_FlowratesTemps=pd.concat([output1,output2,output3], axis=1)
 
-    if origin==-2 or origin == -3:
+    if origin==-2 or origin == -3 or origin == 1:
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
