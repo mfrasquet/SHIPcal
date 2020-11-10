@@ -817,7 +817,7 @@ def arraysMonth2(itercontrol,Q_prod,Q_prod_lim,DNI,Demand,**kwargs):
             Dic_demd[i]=Demand[i]
     array_de_meses=[np.sum(Ene_prod),np.sum(Feb_prod),np.sum(Mar_prod),np.sum(Abr_prod),np.sum(May_prod),np.sum(Jun_prod),np.sum(Jul_prod),np.sum(Ago_prod),np.sum(Sep_prod),np.sum(Oct_prod),np.sum(Nov_prod),np.sum(Dic_prod)]
     array_de_meses_lim=[np.sum(Ene_prod_lim),np.sum(Feb_prod_lim),np.sum(Mar_prod_lim),np.sum(Abr_prod_lim),np.sum(May_prod_lim),np.sum(Jun_prod_lim),np.sum(Jul_prod_lim),np.sum(Ago_prod_lim),np.sum(Sep_prod_lim),np.sum(Oct_prod_lim),np.sum(Nov_prod_lim),np.sum(Dic_prod_lim)]   
-    array_de_DNI=[np.sum(Ene_DNI),np.sum(Feb_DNI),np.sum(Mar_DNI),np.sum(Abr_DNI),np.sum(May_DNI),np.sum(Jun_DNI),np.sum(Jul_DNI),np.sum(Ago_DNI),np.sum(Sep_DNI),np.sum(Oct_DNI),np.sum(Nov_DNI),np.sum(Dic_DNI)]
+    array_de_DNI=[np.sum(Ene_DNI)/factor,np.sum(Feb_DNI)/factor,np.sum(Mar_DNI)/factor,np.sum(Abr_DNI)/factor,np.sum(May_DNI)/factor,np.sum(Jun_DNI)/factor,np.sum(Jul_DNI)/factor,np.sum(Ago_DNI)/factor,np.sum(Sep_DNI)/factor,np.sum(Oct_DNI)/factor,np.sum(Nov_DNI)/factor,np.sum(Dic_DNI)/factor]
     array_de_demd=[np.sum(Ene_demd),np.sum(Feb_demd),np.sum(Mar_demd),np.sum(Abr_demd),np.sum(May_demd),np.sum(Jun_demd),np.sum(Jul_demd),np.sum(Ago_demd),np.sum(Sep_demd),np.sum(Oct_demd),np.sum(Nov_demd),np.sum(Dic_demd)]
     array_de_fraction=np.zeros(12)
 
