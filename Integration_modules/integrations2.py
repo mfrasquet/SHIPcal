@@ -372,7 +372,7 @@ def operationSimple2(itercontrol,fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_A
         bypass.append("PROD")
         newBypass="PROD"
         Q_prod=Q_prod/factor
-        Perd_termicas = Perd_termicas*num_loops/factor + (1-mofProd)*Q_prod #Takes into account all the loops, before it was only the losses of one serie (one loop) and the losses by the modificator mofProd
+        Perd_termicas = Perd_termicas*num_loops/(factor*1000) + (1-mofProd)*Q_prod #Takes into account all the loops, before it was only the losses of one serie (one loop) and the losses by the modificator mofProd
         flow_rate_rec=0
         Q_prod_rec=0
         #Perd_termicas [Wh]
@@ -460,7 +460,7 @@ def operationDSG2(itercontrol,bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp
         bypass.append("PROD")
         #newBypass="PROD" #Not used
     if Perd_termicas==0:
-        Perd_termicas=Q_loss_rec*n_coll_loop*Long/1000
+        Perd_termicas=Q_loss_rec*n_coll_loop*num_loops*Long/1000
     Perd_termicas=Perd_termicas/factor
     return [flow_rate_kgs,Perd_termicas,Q_prod,T_in_K,x_out,T_out_K,flow_rate_rec,Q_prod_rec,bypass]
 

@@ -1816,6 +1816,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             if SUN_ELV[i]>0:
                 theta_transv_deg[i],theta_i_deg[i]=theta_IAMs(SUN_AZ[i],SUN_ELV[i],beta,orient_az_rad)
                 theta_i_deg[i]=abs(theta_i_deg[i])
+                theta_i_rad[i]=theta_i_deg[i]*np.pi/180
                 [IAM_long[i]]=IAM_calc(theta_i_deg[i],0,IAMfile_loc) #Longitudinal
                 [IAM_t[i]]=IAM_calc(theta_transv_deg[i],1,IAMfile_loc) #Transversal
                 IAM[i]=IAM_long[i]*IAM_t[i]
