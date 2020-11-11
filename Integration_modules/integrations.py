@@ -320,7 +320,7 @@ def operationSimple(fluidInput,bypass,T_in_flag,T_in_K_old,T_in_C_AR,T_out_K_old
         Q_prod_rec=Q_prod_rec+Q_prod_rec_old #The Q_prod_rec is per serie or loop and it will be mutiplied by the num_loops when enters into production
         bypass.append("REC")
         newBypass="REC"
-        Perd_termicas = Perd_termicas*num_loops #Takes into account all the loops, before it was only the losses of one serie (one loop)
+        Perd_termicas = Perd_termicas*num_loops/1000 #Takes into account all the loops, before it was only the losses of one serie (one loop)
         
     else:
         #PRODUCCION
@@ -404,7 +404,7 @@ def operationDSG(bypass,bypass_old,T_out_K_old,T_in_C,P_op_Mpa,temp,REC_type,the
                 Q_prod=0
                 # Q_prod_rec=(DNI*IAM*Area*rho_optic_0-Q_loss_rec*n_coll_loop*Long)*num_loops*mofProd/1000
                 T_out_K,Perd_termicas=IT_temp("steam",T_in_K,P_op_Mpa,temp,theta_i_rad,DNI,IAM,Area,n_coll_loop,flow_rate_rec,REC_type,Long,rho_optic_0)    
-                Perd_termicas=Perd_termicas/1000
+                Perd_termicas=Perd_termicas*num_loops/1000
                 outlet=IAPWS97(P=P_op_Mpa, T=T_out_K)
                 h_out_kJkg=outlet.h
                 Q_prod_rec=flow_rate_rec*(h_out_kJkg-h_in_kJkg)*num_loops*mofProd

@@ -2069,7 +2069,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         DNI_anual_irradiation=sum(DNI)/1000 #kWh/year
 #   Optic_rho_average=(sum(IAM)*rho_optic_0)/steps_sim
     Perd_termicas=np.where(np.isnan(Perd_termicas), 0, Perd_termicas)
-    Perd_term_anual=sum(Perd_termicas)/(1000) #kWh/year
+    Perd_term_anual=sum(Perd_termicas) #kWh/year
     nonzeroflowrate_kgs = [flowrate_kgs[i] for i in np.nonzero(flowrate_kgs)[0]]
     Energy_module_max=Production_max/num_modulos_tot
     # annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
