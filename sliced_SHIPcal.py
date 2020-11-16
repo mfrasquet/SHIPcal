@@ -246,6 +246,7 @@ def SHIPcal_prep(origin,inputsDjango,confReport,modificators,simControl): #This 
             Huso = 0 #Not used currently, it is assumed to have solar hourly data
             #meteo_data.order_by('hour_year_sim').values_list('DNI',flat=True)
         else:
+            locationFromFrontEnd=inputs['location']
             meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
             localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
             file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
