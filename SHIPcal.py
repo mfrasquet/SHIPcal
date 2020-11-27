@@ -1833,7 +1833,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                 [IAM_long[i]]=IAM_calc(theta_i_deg[i],0,IAMfile_loc) #Longitudinal
                 [IAM_t[i]]=IAM_calc(theta_transv_deg[i],1,IAMfile_loc) #Transversal
                 IAM[i]=IAM_long[i]*IAM_t[i]
-                if itercontrol!='paso_10min' and itercontrol!='paso_15min':
+                if simControl['itercontrol']!='paso_10min' and simControl['itercontrol']!='paso_15min':
                     if i==1:
                         theta_transv_deg_0,theta_i_deg_0=theta_IAMs(SUN_AZ[0],SUN_ELV[0],beta,orient_az_rad)
                         theta_i_deg_mean[i]=(theta_i_deg[i]+abs(theta_i_deg_0))/2
