@@ -11,7 +11,7 @@ from matplotlib.sankey import Sankey
 import numpy as np
 import pandas as pd
 from iapws import IAPWS97
-from General_modules.func_General import bar_MPa,thermalOil,moltenSalt
+from SHIPcal.General_modules.func_General import bar_MPa,thermalOil,moltenSalt
 import io
 import base64
 import os

@@ -12,11 +12,11 @@ version: 1.0
 
 from iapws import IAPWS97
 import numpy as np
-from Solar_modules.iteration_process import flow_calc, flow_calcHTF, flow_calc_gen
-from Solar_modules.iteration_process import IT_temp, analytic_otemp
-from General_modules.func_General import thermalOil,moltenSalt
-from General_modules.func_General import bar_MPa,MPa_bar,K_C
-from Collector_modules.receivers import Rec_loss
+from SHIPcal.Solar_modules.iteration_process import flow_calc, flow_calcHTF, flow_calc_gen
+from SHIPcal.Solar_modules.iteration_process import IT_temp, analytic_otemp
+from SHIPcal.General_modules.func_General import thermalOil,moltenSalt
+from SHIPcal.General_modules.func_General import bar_MPa,MPa_bar,K_C
+from SHIPcal.Collector_modules.receivers import Rec_loss
 
 def offSimple(fluidInput,bypass,T_in_flag,T_in_C_AR,temp):
             

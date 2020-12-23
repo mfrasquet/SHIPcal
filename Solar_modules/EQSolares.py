@@ -4,7 +4,7 @@
 #Juan Martinez
 import numpy as np
 #from matplotlib import pyplot as plt
-from General_modules.func_General import calc_hour_year
+from SHIPcal.General_modules.func_General import calc_hour_year
 import os
 
 def SolarEQ_simple (Month,Day,Hour,Lat,Huso): #Returns the hour angle (W) [rad], sun elevation angle[rad], azimuth angle[rad], declination [rad] and zenithal angle [rad] of the sun for each the specified hour, latitude[°], anf time zone given in the inputs.

@@ -31,15 +31,15 @@ from iapws import IAPWS97
 
 #Place to import SHIPcal Libs
 
-from General_modules.func_General import DemandData,waterFromGrid_trim,thermalOil,reportOutputOffline, moltenSalt,waterFromGrid_v3 
-from General_modules.demandCreator_v1 import demandCreator
-from General_modules.fromDjangotoSHIPcal import djangoReport
-from Solar_modules.EQSolares import SolarData
-from Solar_modules.EQSolares import theta_IAMs
-from Solar_modules.EQSolares import IAM_calc
-from Finance_modules.FinanceModels import SP_plant_costFunctions
-from Integration_modules.integrations import offStorageSimple, operationSimple, operationDSG, outputOnlyStorageSimple, outputWithoutStorageSimple, outputStorageSimple, offSimple,outputFlowsHTF,outputFlowsWater,operationDSG_Rec,offDSG_Rec,outputDSG_Rec # offOnlyStorageSimple, operationOnlyStorageSimple,
-from Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageNonAnnual, financePlot, prodMonths, savingsMonths,SL_S_PDR_Plot,storageNonAnnualSL_S_PDR
+from SHIPcal.General_modules.func_General import DemandData,waterFromGrid_trim,thermalOil,reportOutputOffline, moltenSalt,waterFromGrid_v3 
+from SHIPcal.General_modules.demandCreator_v1 import demandCreator
+from SHIPcal.General_modules.fromDjangotoSHIPcal import djangoReport
+from SHIPcal.Solar_modules.EQSolares import SolarData
+from SHIPcal.Solar_modules.EQSolares import theta_IAMs
+from SHIPcal.Solar_modules.EQSolares import IAM_calc
+from SHIPcal.Finance_modules.FinanceModels import SP_plant_costFunctions
+from SHIPcal.Integration_modules.integrations import offStorageSimple, operationSimple, operationDSG, outputOnlyStorageSimple, outputWithoutStorageSimple, outputStorageSimple, offSimple,outputFlowsHTF,outputFlowsWater,operationDSG_Rec,offDSG_Rec,outputDSG_Rec # offOnlyStorageSimple, operationOnlyStorageSimple,
+from SHIPcal.Plot_modules.plottingSHIPcal import SankeyPlot, mollierPlotST, mollierPlotSH, thetaAnglesPlot, IAMAnglesPlot, demandVsRadiation, rhoTempPlotSalt, rhoTempPlotOil, viscTempPlotSalt, viscTempPlotOil, flowRatesPlot, prodWinterPlot, prodSummerPlot, productionSolar, storageWinter, storageSummer, storageNonAnnual, financePlot, prodMonths, savingsMonths,SL_S_PDR_Plot,storageNonAnnualSL_S_PDR
 
 
 def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDict,simControl,pk):
@@ -78,7 +78,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         from Solatom_modules.solatom_param import solatom_param
         from Solatom_modules.Solatom_finance import SOL_plant_costFunctions
         from Solatom_modules.templateSolatom import reportOutput
-        from Finance_modules.FinanceModels import Turn_key, ESCO
+        from SHIPcal.Finance_modules.FinanceModels import Turn_key, ESCO
     elif sender=='CIMAV': #The request comes from CIMAV front-end
         from CIMAV.CIMAV_modules.fromDjangotoRessspivCIMAV import djangoReport as djangoReportCIMAV
         from CIMAV.meteorologic_database.meteoDBmanager import Lat_Huso

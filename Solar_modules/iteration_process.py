@@ -5,8 +5,8 @@ Archivo que contiene las funciones de ITERACION
 
 @author: Miguel Frasquet
 """
-from Collector_modules.receivers import Rec_loss
-from General_modules.func_General import thermalOil,moltenSalt
+from SHIPcal.Collector_modules.receivers import Rec_loss
+from SHIPcal.General_modules.func_General import thermalOil,moltenSalt
 from iapws import IAPWS97
 import numpy as np
 
