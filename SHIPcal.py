@@ -229,12 +229,18 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         #Retrieve front-end inputs
         [inputs,annualConsumptionkWh,P_op_bar,monthArray,weekArray,dayArray]=djangoReport(inputsDjango) 
         ## METEO
-        meteoDB = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/meteoDB.csv", sep=',') #Reads the csv file where the register of the exiting TMY is.
-        locationFromRessspi=inputs['location'] #Extracts which place was selected from the form 
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'meteoFile'].iloc[0] #Selects the name of the TMY file that corresponds to the place selected in the form
-        file_loc=os.path.dirname(os.path.dirname(__file__))+"/ressspi_solatom/METEO/"+localMeteo #Stablishes the path to the TMY file
-        Lat=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Latitud'].iloc[0] #Extracts the latitude from the meteoDB.csv file for the selected place
-        Huso=meteoDB.loc[meteoDB['Provincia'] == locationFromRessspi, 'Huso'].iloc[0] #Extracts the time zone for the selected place
+
+        localMeteo = inputsDjango["location"]
+        #Stores the localization of the TMY as a list=[basedir,TMYlocalizationfolder,countryfolder,TMYcity]
+        file_loc='/'.join([os.path.dirname(os.path.dirname(__file__)),"ressspi_solatom/METEO/",inputsDjango["countrySim"],localMeteo]) #Converts file_loc_list into a single string for later use
+        with open(file_loc, "r") as file:
+            for i, line in enumerate(file):
+                if i==1:
+                    position=line
+                elif i>1:
+                    break
+        position=position.split()[1:] #Converts the string to a list of strings [Lat,Long,Altitude,TimeZone(Huso)]
+        Lat, Positional_longitude, Huso =[float(i) for i in position] #Converts each of the items into a float number
 
         ## INTEGRATION
         type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
