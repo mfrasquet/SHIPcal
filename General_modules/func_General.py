@@ -223,6 +223,8 @@ def waterFromGrid_v3(file_meteo, sender='CIMAV'):
         from simforms.models import Locations, MeteoData
         meteo_data = MeteoData.objects.filter(location=Locations.objects.get(pk=file_meteo))
         Tamb = meteo_data.order_by('hour_year_sim').values_list('temp',flat=True)
+    elif sender=="solatom":
+        Tamb = np.loadtxt(file_meteo, delimiter="\t", skiprows=4)[:,9]#Reads the temperature of the weather
     else:
         Tamb = np.loadtxt(file_meteo, delimiter="\t")[:,9]#Reads the temperature of the weather
     TambAverage=np.mean(Tamb) #Computes the year average
