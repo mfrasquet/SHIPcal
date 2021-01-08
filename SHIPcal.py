@@ -1416,7 +1416,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     annualProdDict={'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'Demand':Demand.tolist(),'Q_charg':Q_charg.tolist(),
                     'Q_discharg':Q_discharg.tolist(),'Q_defocus':Q_defocus.tolist(),'solar_fraction_max':solar_fraction_max,
                     'solar_fraction_lim':solar_fraction_lim,'improvStorage':improvStorage,'Utilitation_ratio':Utilitation_ratio,
-                    'flow_rate_kgs':flowrate_kgs.tolist()}
+                    'flow_rate_kgs':flowrate_kgs}
     
 
 #%%
@@ -1479,26 +1479,19 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             Selling_price=0 #No existe inversión
             FCF[0]=0
             
-        Energy_savingsList=[]
-        OMList=[]
-        fuelPrizeArrayList=[]
         Acum_FCFList=[]
         for i in range(0,len(Acum_FCF)):
             if Acum_FCF[i]<0:
                 Acum_FCFList.append("("+str(int(abs(Acum_FCF[i])))+")")
             else:
                 Acum_FCFList.append(str(int(Acum_FCF[i])))
-        
-        for i in range(0,len(fuelPrizeArray)):
-            Energy_savingsList.append(round(Net_anual_savings[i]))
-            OMList.append(OM_cost[i])
-            fuelPrizeArrayList.append(fuelPrizeArray[i])
+
                
         finance={'AmortYear':AmortYear,'finance_study':finance_study,'CO2':CO2,'co2Savings':co2Savings,
-                 'fuelPrizeArrayList':fuelPrizeArrayList,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Energy_savingsList,
+                 'fuelPrizeArrayList':fuelPrizeArray,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Net_anual_savings,
                  'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
                  'co2TonPrice':co2TonPrice,'fuelIncremento':fuelCostRaise,'IPC':CPI,'Selling_price':Selling_price,
-                 'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OMList, 'LCOE':LCOE}
+                 'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OM_cost, 'LCOE':LCOE}
     
     else:
         n_years_sim=0 #No finance simulation
@@ -1515,18 +1508,18 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
     plotVars={'lang':lang,'Production_max':Production_max,'Production_lim':Production_lim,
               'Perd_term_anual':Perd_term_anual,'DNI_anual_irradiation':DNI_anual_irradiation,
               'Area':Area,'num_loops':num_loops,'imageQlty':imageQlty,'plotPath':plotPath,
-              'Demand':Demand.tolist(),'Q_prod':Q_prod.tolist(),'Q_prod_lim':Q_prod_lim.tolist(),'type_integration':type_integration,
-              'Q_charg':Q_charg.tolist(),'Q_discharg':Q_discharg.tolist(),'DNI':DNI.tolist(),'SOC':SOC.tolist(),
-              'Q_useful':Q_useful.tolist(),'Q_defocus':Q_defocus.tolist(),'T_alm_K':T_alm_K.tolist(),
-              'n_years_sim':n_years_sim,'Acum_FCF':Acum_FCF.tolist(),'FCF':FCF.tolist(),'m_dot_min_kgs':m_dot_min_kgs,
+              'Demand':Demand,'Q_prod':Q_prod,'Q_prod_lim':Q_prod_lim,'type_integration':type_integration,
+              'Q_charg':Q_charg,'Q_discharg':Q_discharg,'DNI':DNI,'SOC':SOC,
+              'Q_useful':Q_useful,'Q_defocus':Q_defocus,'T_alm_K':T_alm_K,
+              'n_years_sim':n_years_sim,'Acum_FCF':Acum_FCF,'FCF':FCF,'m_dot_min_kgs':m_dot_min_kgs,
               'steps_sim':steps_sim,'AmortYear':AmortYear,'Selling_price':Selling_price,
               'in_s':in_s,'out_s':out_s,'T_in_flag':T_in_flag,'Fuel_price':Fuel_price,'Boiler_eff':Boiler_eff,
-              'T_in_C':T_in_C,'T_in_C_AR':T_in_C_AR.tolist(),'T_out_C':T_out_C,
+              'T_in_C':T_in_C,'T_in_C_AR':T_in_C_AR,'T_out_C':T_out_C,
               'outProcess_s':s_process_in,'T_out_process_C':T_process_in_C,'P_op_bar':P_op_bar,
               'x_design':x_design,'h_in':h_in,'h_out':h_out,'hProcess_out':h_process_in,'outProcess_h':h_process_in,
               'Break_cost':Break_cost,'sender':sender,'origin':origin,
-              'Q_prod_steam':Q_prod_steam.tolist(),'Q_drum':Q_drum.tolist(),'SD_min_energy':SD_min_energy,
-              'SD_max_energy':SD_max_energy,'SD_energy':SD_energy.tolist()}
+              'Q_prod_steam':Q_prod_steam,'Q_drum':Q_drum,'SD_min_energy':SD_min_energy,
+              'SD_max_energy':SD_max_energy,'SD_energy':SD_energy}
     
 
     
