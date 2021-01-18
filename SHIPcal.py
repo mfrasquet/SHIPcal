@@ -1713,7 +1713,7 @@ almVolumen=13000 #litros
 confReport={'lang':'spa','sender':'solatom','cabecera':'Resultados de la <br> simulación','mapama':0}
 modificators={'mofINV':mofINV,'mofDNI':mofDNI,'mofProd':mofProd}
 desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
-simControl={'finance_study':finance_study,'mes_ini_sim':month_initype_integration_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
+simControl={'finance_study':finance_study,'mes_ini_sim':month_ini_sim,'dia_ini_sim':day_ini_sim,'hora_ini_sim':hour_ini_sim,'mes_fin_sim':month_fin_sim,'dia_fin_sim':day_fin_sim,'hora_fin_sim':hour_fin_sim}    
 # ---------------------------------------------------
 
 origin=-2 #0 if new record; -2 if it comes from www.ressspi.com
