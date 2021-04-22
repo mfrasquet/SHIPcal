@@ -6,6 +6,8 @@ Created on Wed Jul 18 12:19:06 2018
 @author: miguel
 """
 import sys
+from os.path import isfile
+
 sys.path.append('General_modules')
 
 #from General_modules.func_General import annualConsumpFromSHIPcal
@@ -30,35 +32,36 @@ def djangoReport(inputsDjango):
     
     
     #Energy calculations for graphs
-    
-    annualConsumption=inputsDjango['demand']
-    
-    #definicion unidades de energia
-    if inputsDjango['demandUnit']=='kWh':
-        factor_uni_consum=1/1000
-    if inputsDjango['demandUnit']=='MWh':
-        factor_uni_consum=1000/1000
-    if inputsDjango['demandUnit']=='GWh':
-        factor_uni_consum=1000000/1000
-    if inputsDjango['demandUnit']=='KJ':
-        factor_uni_consum=0.000278/1000
-    if inputsDjango['demandUnit']=='BTU':
-        factor_uni_consum=0.000293/1000
-    if inputsDjango['demandUnit']=='kcal':
-        factor_uni_consum=0.001162/1000
+    annualConsumptionkWh,monthArray,weekArray,dayArray = [10000, [1/12]*12, [1/7]*7, [1/24]*24] #Dummy values
+    if not isfile(inputsDjango.get("location_aux")):
+
+        annualConsumption=inputsDjango['demand']
         
-    annualConsumption=annualConsumption*factor_uni_consum
-    annualConsumptionkWh=annualConsumption*1000
+        #definicion unidades de energia
+        if inputsDjango['demandUnit']=='kWh':
+            factor_uni_consum=1/1000
+        elif inputsDjango['demandUnit']=='MWh':
+            factor_uni_consum=1000/1000
+        elif inputsDjango['demandUnit']=='GWh':
+            factor_uni_consum=1000000/1000
+        elif inputsDjango['demandUnit']=='KJ':
+            factor_uni_consum=0.000278/1000
+        elif inputsDjango['demandUnit']=='BTU':
+            factor_uni_consum=0.000293/1000
+        elif inputsDjango['demandUnit']=='kcal':
+            factor_uni_consum=0.001162/1000
+            
+        annualConsumption=annualConsumption*factor_uni_consum
+        annualConsumptionkWh=annualConsumption*1000 
     
-   
-    dayArray=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    activeHours=int(inputsDjango['hourEND'])-1-int(inputsDjango['hourINI'])
-    porctDay=1/activeHours
-    for j in range(int(inputsDjango['hourINI'])-1,int(inputsDjango['hourEND'])):
-        dayArray[j]=porctDay
-    
-    monthArray=[inputsDjango['Jan'],inputsDjango['Feb'],inputsDjango['Mar'],inputsDjango['Apr'],inputsDjango['May'],inputsDjango['Jun'],inputsDjango['Jul'],inputsDjango['Aug'],inputsDjango['Sep'],inputsDjango['Oct'],inputsDjango['Nov'],inputsDjango['Dec']]
-    weekArray=[inputsDjango['Mond'],inputsDjango['Tues'],inputsDjango['Wend'],inputsDjango['Thur'],inputsDjango['Fri'],inputsDjango['Sat'],inputsDjango['Sun']]
+        dayArray=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        activeHours=int(inputsDjango['hourEND'])-1-int(inputsDjango['hourINI'])
+        porctDay=1/activeHours
+        for j in range(int(inputsDjango['hourINI'])-1,int(inputsDjango['hourEND'])):
+            dayArray[j]=porctDay
+        
+        monthArray=[inputsDjango['Jan'],inputsDjango['Feb'],inputsDjango['Mar'],inputsDjango['Apr'],inputsDjango['May'],inputsDjango['Jun'],inputsDjango['Jul'],inputsDjango['Aug'],inputsDjango['Sep'],inputsDjango['Oct'],inputsDjango['Nov'],inputsDjango['Dec']]
+        weekArray=[inputsDjango['Mond'],inputsDjango['Tues'],inputsDjango['Wend'],inputsDjango['Thur'],inputsDjango['Fri'],inputsDjango['Sat'],inputsDjango['Sun']]
     
     inputs = {"date":inputsDjango['date'], "nameUser" :inputsDjango['name'],"companyName": inputsDjango['industry'],
             "emailUser" :inputsDjango['email'],"sectorUser":inputsDjango['sectorIndustry'],

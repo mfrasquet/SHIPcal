@@ -249,10 +249,14 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             
             #>> ENERGY DEMAND
         
-        if inputs['location_aux']=="":
-            file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
+        if os.path.isfile(inputsDjango.get("location_aux")):
+            #Use the demand file
+            print("Using demad file")
+            file_demand = np.genfromtxt(inputsDjango.get("location_aux"), delimiter=',')
+
         else:
-            file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi/"+inputs['location_aux'], sep=',')   
+            #Compute the demand profile
+            file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
 
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
