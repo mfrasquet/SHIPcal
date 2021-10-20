@@ -258,7 +258,7 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         if inputs['location_aux']=="":
             file_demand=demandCreator(annualConsumptionkWh,dayArray,weekArray,monthArray)
         else:
-            file_demand = pd.read_csv(os.path.dirname(os.path.dirname(__file__))+"/ressspi/"+inputs['location_aux'], sep=',')   
+            file_demand = pd.read_csv(inputs['location_aux'])
 
         arraysConsumption={'dayArray':dayArray,'weekArray':weekArray,'monthArray':monthArray}
         inputs.update(arraysConsumption)
