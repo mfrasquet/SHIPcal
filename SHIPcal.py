@@ -992,9 +992,10 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         out_s=outputState.s
         h_out=outputState.h
         
-    elif type_integration=="SL_S_PD": #Direct steam generation (Steam drum)
+    elif type_integration=="SL_S_PD": # Direct steam generation (Steam drum)
         
-        P_op_Mpa=P_op_bar/10 #The solar field will use the same pressure than the process 
+        # The solar field will use the same pressure than the process 
+        P_op_Mpa=P_op_bar/10
        
         # Outlet of the process
         T_process_out_C=T_process_out
