@@ -1293,7 +1293,7 @@ def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_
         
     plt.legend(bbox_to_anchor=(0, 1), loc=2, borderaxespad=0.)
     
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or "mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1484,7 +1484,7 @@ def prodMonths(sender,origin,Q_prod,Q_prod_lim,DNI,Demand,lang,plotPath,imageQlt
         plt.legend(loc='upper right', borderaxespad=0.,frameon=True)        
       
     
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()

@@ -363,7 +363,11 @@ def Meteo_data (file_meteo,sender='notCIMAV', optic_type='0'): #This function ex
         DNI=data[:,8]
         temp=data[:,9]
         return [data,DNI,temp]
-
+    elif sender == "mprod":
+        data = np.loadtxt(file_meteo, delimiter="\t", skiprows=4)
+        DNI=data[:,8]
+        temp=data[:,9]
+        return [data,DNI,temp]
     else:
         data = np.loadtxt(file_meteo, delimiter="\t")
         DNI=data[:,8]

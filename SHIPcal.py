@@ -310,11 +310,18 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
         ## METEO (free available meteo sets)
         locationFromFrontEnd=inputs['location']
         
-        meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
-        localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
-        file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
-        Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
-        Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
+        if sender == "mprod":
+            localMeteo=locationFromFrontEnd.meteo_file.name
+            
+            file_loc=locationFromFrontEnd.get_normalized_tmy(inputsDjango["rad_1"],inputsDjango["rad_2"])
+            Lat=locationFromFrontEnd.lat
+            Huso=locationFromFrontEnd.get_huso()
+        else:
+            meteoDB = pd.read_csv(os.path.dirname(__file__)+"/Meteo_modules/meteoDB.csv", sep=',')  
+            localMeteo=meteoDB.loc[meteoDB['Provincia'] == locationFromFrontEnd, 'meteoFile'].iloc[0]
+            file_loc=os.path.dirname(__file__)+"/Meteo_modules/"+localMeteo
+            Lat=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Latitud'].iloc[0]
+            Huso=meteoDB.loc[meteoDB['meteoFile'] == localMeteo, 'Huso'].iloc[0]
         
         ## INTEGRATION
         type_integration=desginDict['type_integration'] # Type of integration scheme from IEA SHC Task 49 "Integration guidelines" http://task49.iea-shc.org/Data/Sites/7/150218_iea-task-49_d_b2_integration_guideline-final.pdf
@@ -1479,7 +1486,11 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
             AmortYear=0
             Selling_price=0 #No existe inversión
             FCF[0]=0
-            
+
+        anual_energy_cost = fuelPrizeArray*Energy_Before_annual
+        Energy_savings_mean = np.mean(Net_anual_savings)
+        fraction_savings = np.mean(Net_anual_savings/anual_energy_cost)*100
+
         Acum_FCFList=[]
         for i in range(0,len(Acum_FCF)):
             if Acum_FCF[i]<0:
@@ -1492,7 +1503,9 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                  'fuelPrizeArrayList':fuelPrizeArray,'Acum_FCFList':Acum_FCFList,'Energy_savingsList':Net_anual_savings,
                  'TIRscript':TIRscript,'TIRscript10':TIRscript10,'Amortscript':Amortscript,
                  'co2TonPrice':co2TonPrice,'fuelIncremento':fuelCostRaise,'IPC':CPI,'Selling_price':Selling_price,
-                 'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OM_cost, 'LCOE':LCOE}
+                 'IRR':IRR,'IRR10':IRR10,'tonCo2Saved':tonCo2Saved,'OM_cost_year':OM_cost, 'LCOE':LCOE,
+                 'anual_energy_cost': anual_energy_cost, 'Energy_savings_mean': Energy_savings_mean, 'fraction_savings': fraction_savings, 
+                 }
     
     else:
         n_years_sim=0 #No finance simulation
@@ -1622,7 +1635,8 @@ def SHIPcal(origin,inputsDjango,plots,imageQlty,confReport,modificators,desginDi
                         'num_loops':num_loops,'m_dot_min_kgs':m_dot_min_kgs,
                         'Production_max':Production_max,'Production_lim':Production_lim,
                         'Demand_anual':Demand_anual,'solar_fraction_max':solar_fraction_max,
-                        'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation}
+                        'solar_fraction_lim':solar_fraction_lim,'DNI_anual_irradiation':DNI_anual_irradiation,
+                        }
             reportsVar.update(finance)
             reportsVar.update(confReport)
             reportsVar.update(annualProdDict)
