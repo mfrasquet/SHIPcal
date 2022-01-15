@@ -85,7 +85,7 @@ def SankeyPlot(sender,origin,lang,Production_max,Production_lim,Perd_term_anual,
     plt.tight_layout()
        
 
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -231,7 +231,7 @@ def mollierPlotST(sender,origin,lang,type_integration,in_s,out_s,T_in_flag,T_in_
     axes.set_ylim([0,400])
     axes.set_xlim([-3,11])
         
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -368,7 +368,7 @@ def  mollierPlotSH(sender,origin,lang,type_integration,h_in,h_out,hProcess_out,o
     axes.set_ylim([0,3000])
     axes.set_xlim([-3,11])
    
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -516,7 +516,7 @@ def rhoTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -569,7 +569,7 @@ def rhoTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         plt .hlines(y=Cp,xmin=min(range(len(CpList)), key=lambda i: abs(CpList[i]-Cp)),xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -618,7 +618,7 @@ def viscTempPlotSalt(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         ax1.set_ylabel('Dynamic viscosity*1e3  - Ns/m2')
         ax1.set_yscale('log')
            
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -681,7 +681,7 @@ def viscTempPlotOil(sender,origin,lang,T_out_C,plotPath,imageQlty,**kwargs):
         plt .hlines(y=Kv*1e6,xmin=min(range(len(DvList)), key=lambda i: abs(DvList[i]-Dv*1e3))+4,xmax=len(T_step),color="blue",linewidth=1,zorder=0)     
 
     
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -797,7 +797,7 @@ def prodWinterPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
 #    output6.columns=['Q_prod']
 #    output_excel_Prod_wee_Jan=pd.concat([output1,output2,output3,output4,output5,output6], axis=1)
     
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -870,7 +870,7 @@ def prodSummerPlot(sender,origin,lang,Demand,Q_prod,Q_prod_lim,type_integration,
 #    
 #    output_excel_Prod_week_Jun=pd.concat([output1,output2,output3,output4,output5,output6], axis=1)
     
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1293,7 +1293,7 @@ def financePlot(sender,origin,lang,n_years_sim,Acum_FCF,FCF,m_dot_min_kgs,steps_
         
     plt.legend(bbox_to_anchor=(0, 1), loc=2, borderaxespad=0.)
     
-    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or "mprod")):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
@@ -1680,7 +1680,7 @@ def savingsMonths(sender,origin,Q_prod_lim,Demand,Fuel_price,Boiler_eff,lang,plo
 
       
     
-    if origin==-2 or origin == -3 or (origin==1 and sender=='SHIPcal'):
+    if origin==-2 or origin == -3 or (origin==1 and (sender=='SHIPcal' or sender=="mprod")):
         f = io.BytesIO()           # Python 3
         plt.savefig(f, format="png", facecolor=(0.95,0.95,0.95))
         plt.clf()
