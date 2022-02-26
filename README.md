@@ -39,5 +39,5 @@ and that's it!
 - Finaly, open a browser and go to http://localhost:8000/
 
 # Developers
-Miguel Frasquet Herraiz
-Juan Antonio Aramburo Pasapera
+- Miguel Frasquet Herraiz
+- Juan Antonio Aramburo Pasapera
