@@ -139,3 +139,4 @@ settings.py
 # End of https://www.gitignore.io/api/python
 
 ressspi_solatom/
+*.code-workspace
