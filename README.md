@@ -40,3 +40,4 @@ and that's it!
 
 # Developers
 Miguel Frasquet Herraiz
+Juan Antonio Aramburo Pasapera
