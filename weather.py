@@ -13,6 +13,11 @@ class Weather:
     def __init__(self, location_file, mofDNI=1):
         self.mofDNI = mofDNI
         self.location_file = location_file
+        [
+            self._lat, self._lon, self._elev, 
+            self._tz_loc, self._DNI, self._GHI, 
+            self._T_amb
+        ] = self.read_file()
         self.set_T_grid()
     
     def read_file(self):
@@ -26,13 +31,14 @@ class Weather:
         with open(self.location_file, "r") as tmy:
             tmy.readline()
             location_data = tmy.readline()
-        self.lat, self.lon, self.elev, self.tz_loc = location_data.split()
+        lat, lon, elev, tz_loc = location_data.split()
         
         tmy = np.loadtxt(self.location_file, skiprows=4)
         
-        self.DNI = tmy[:,5]*self.mofDNI
-        self.GHI = tmy[:,6]*self.mofDNI
-        self.T_amb = tmy[:,7]
+        DNI = tmy[:,5]*self.mofDNI
+        GHI = tmy[:,6]*self.mofDNI
+        T_amb = tmy[:,7]
+        return lat, lon, elev, tz_loc, DNI, GHI, T_amb
      
     def interpolate_prop(self, h_id, prop_array):
         """ Interpolate the property to a fractional index of the array """
@@ -51,37 +57,21 @@ class Weather:
     def tz_loc(self):
         """ [-] Int. Timezone of the location in simulation """
         return self._tz_loc
-    
-    @tz_loc.setter
-    def tz_loc(self, value):
-        self._tz_loc = value
 
     @property
     def elev(self):
         """ [m] Float. Height above sea level """
         return self._elev
-    
-    @elev.setter
-    def elev(self, value):
-        self._elev = value
         
     @property
     def lat(self):
         """ [°] Float. Latitude of location in simulation """
         return self._lat
     
-    @lat.setter
-    def lat(self, value):
-        self._lat = value
-    
     @property
     def lon(self):
         """ [°] Float. Longitude of location in simulation. """
         return self._lon
-    
-    @lon.setter
-    def lon(self, value):
-        self._lon = value
         
     @property
     def location_file(self):
@@ -102,12 +92,9 @@ class Weather:
         else:
             return self._DNI
     
-    def set_DNI(self, hourly_DNI):
-        self._DNI = hourly_DNI
         
     DNI = property(
         get_DNI,
-        set_DNI,
         doc=""" [W/m^2] Hourly array. Direct Normal Irradiation (DNI). """
     )
 
@@ -119,12 +106,9 @@ class Weather:
         else:
             return self._GHI
     
-    def set_GHI(self, hourly_GHI):
-        self._GHI = hourly_GHI
         
     GHI = property(
         get_GHI,
-        set_GHI,
         doc=""" [W/m^2] Hourly array. Global Horizontal Irradiation (GHI). """
     )
     
@@ -134,13 +118,10 @@ class Weather:
                 
         else:
             return self._T_amb
-    
-    def set_T_amb(self, hourly_T_amb):
-        self._T_amb = hourly_T_amb
+
 
     T_amb = property(
         get_T_amb,
-        set_T_amb,
         doc=""" [°C] Hourly array. Ambient temperature. """
     )
 
@@ -187,13 +168,9 @@ class Weather:
                 
         else:
             return self._humidity
-    
-    def set_humidity(self, hourly_humidity):
-        self._humidity = hourly_humidity
-        
+
     humidity = property(
         get_humidity,
-        set_humidity,
         doc=""" [-] Hourly array. Relative humidity. """
     )
 
