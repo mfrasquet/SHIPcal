@@ -1,6 +1,6 @@
 from elements import Element
 
-class Colector(Element):
+class Collector(Element):
     """
     Super class for every collector. This is the base class
     for all the other implemenation of collectors.
