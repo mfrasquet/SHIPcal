@@ -13,7 +13,76 @@ class Weather:
     """
     This class handles the TMY file reads and prepare the variables to
     return the weather state at any hour of the simulation.
-    Assumes solar time.
+    Assumes solar time. The following units are assumed
+
+    Date (MM/DD/YYYY)
+    Time (HH:MM)
+    ETR (W/m^2)
+    ETRN (W/m^2)
+    GHI (W/m^2)
+    GHI source
+    GHI uncert (%)
+    DNI (W/m^2)
+    DNI source
+    DNI uncert (%)
+    DHI (W/m^2)
+    DHI source
+    DHI uncert (%)
+    GH illum (lx)
+    GH illum source
+    Global illum uncert (%)
+    DN illum (lx)
+    DN illum source
+    DN illum uncert (%)
+    DH illum (lx)
+    DH illum source
+    DH illum uncert (%)
+    Zenith lum (cd/m^2)
+    Zenith lum source
+    Zenith lum uncert (%)
+    TotCld (tenths)
+    TotCld source
+    TotCld uncert (code)
+    OpqCld (tenths)
+    OpqCld source
+    OpqCld uncert (code)
+    Dry-bulb (C)
+    Dry-bulb source
+    Dry-bulb uncert (code)
+    Dew-point (C)
+    Dew-point source
+    Dew-point uncert (code)
+    RHum (%)
+    RHum source
+    RHum uncert (code)
+    Pressure (mbar)
+    Pressure source
+    Pressure uncert (code)
+    Wdir (degrees)
+    Wdir source
+    Wdir uncert (code)
+    Wspd (m/s)
+    Wspd source
+    Wspd uncert (code)
+    Hvis (m)
+    Hvis source
+    Hvis uncert (code)
+    CeilHgt (m)
+    CeilHgt source
+    CeilHgt uncert (code)
+    Pwat (cm)
+    Pwat source
+    Pwat uncert (code)
+    AOD (unitless)
+    AOD source
+    AOD uncert (code)
+    Alb (unitless)
+    Alb source
+    Alb uncert (code)
+    Lprecip depth (mm)
+    Lprecip quantity (hr)
+    Lprecip source
+    Lprecip uncert (code)
     """
 
     def __init__(self, location_file, step_resolution="1h", mofdni=1):
