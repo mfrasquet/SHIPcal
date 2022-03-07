@@ -9,7 +9,16 @@ class Element:
     """
 
     def __init__(self):
-        pass
+        # First sets everything to 0
+        [
+            self.pressure_1_in, self.m_dot_1_in, self.temp_1_in,
+            self.h_1_in, self.s_1_in, self.pressure_1_out,
+            self.m_dot_1_out, self.temp_1_out, self.h_1_out,
+            self.s_1_out, self.pressure_s_in, self.m_dot_s_in,
+            self.temp_s_in, self.h_s_in, self.s_s_in,
+            self.pressure_s_out, self.m_dot_s_out,
+            self.temp_s_out, self.h_s_out, self.s_s_out
+        ] = [0]*20
 
     # Primary
     # Inlet

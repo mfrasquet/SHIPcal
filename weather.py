@@ -6,6 +6,7 @@ to model the weather at the provided location from an hourly TMY.
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 
 from pvlib.iotools import read_tmy3, read_tmy2
 
@@ -155,7 +156,8 @@ class Weather:
         10min = 10 minutes steps
         5T = 5 minutes steps
         """
-        return prop_series.resample(step_resolution).interpolate()
+        distribution_norm = pd.tseries.frequencies.to_offset(step_resolution)/pd.Timedelta('1h')
+        return prop_series.resample(step_resolution).bfill()*distribution_norm
 
     def interpolate_prop(self, h_id, prop_array):
         """ Interpolate the property to a fractional index of the array """
