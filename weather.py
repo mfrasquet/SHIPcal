@@ -7,6 +7,8 @@ from pathlib import Path
 
 import numpy as np
 
+from pvlib.iotools import read_tmy3, read_tmy2
+
 class Weather:
     """
     This class handles the TMY file reads and prepare the variables to
@@ -14,9 +16,10 @@ class Weather:
     Assumes solar time.
     """
 
-    def __init__(self, location_file, mofdni=1):
+    def __init__(self, location_file, step_resolution="1h", mofdni=1):
         self.mofdni = mofdni
         self.location_file = location_file
+        self._step_resolution = step_resolution
         [
             self._lat, self._lon, self._elev,
             self._tz_loc, self._dni, self._ghi,
@@ -29,22 +32,61 @@ class Weather:
         Gets file location, reads its content and stores its data in
         this class variables.
 
-        Modify this method if your TMY does not have the standard format.
+        Modify this method if your TMY does not have the standard
+        format.
         """
+        file_ext = self.location_file.as_posix().split(".")[-1]
+        if file_ext == "csv":
+            data, metadata = read_tmy3(self.location_file)
+        elif file_ext == "tm2":
+            data, metadata =  read_tmy2(self.location_file)
 
-        with open(self.location_file, "r", encoding="utf-8") as tmy:
-            tmy.readline()
-            location_data = tmy.readline()
-        lat, lon, elev, tz_loc = location_data.split()
+        lat = metadata["latitude"]
+        lon = metadata["longitude"]
+        elev = metadata["altitude"]
+        tz_loc = metadata["TZ"]
+        dni = self.resample_distribute(self.step_resolution, data.DNI)
+        ghi = self.resample_distribute(self.step_resolution, data.GHI)
+        amb_temp = self.resample_interpolate(self.step_resolution, data.DryBulb)
+        humidity = self.resample_interpolate(self.step_resolution, data.RHum)
+        wind_speed = self.resample_interpolate(self.step_resolution, data.Wspd)
 
-        tmy = np.loadtxt(self.location_file, skiprows=4)
+        return lat, lon, elev, tz_loc, dni, ghi, amb_temp, humidity, wind_speed
 
-        dni = tmy[:,5]*self.mofdni
-        ghi_ghi = tmy[:,6]*self.mofdni
-        amb_temp = tmy[:,7]
-        humidity = amb_temp
-        wind_speed = humidity
-        return lat, lon, elev, tz_loc, dni, ghi_ghi, amb_temp, humidity, wind_speed
+    def resample_interpolate(self, step_resolution, prop_series):
+        """
+        This method receives a time series based property and a step
+        resolution description and returns a time series with this step
+        resolution where each entry is an interpolation of the the two
+        nearest hourly entries.
+
+        Time descriptors examples
+
+        1h = 1 hour steps
+        10min = 10 minutes steps
+        5T = 5 minutes steps
+        """
+        return prop_series.resample(step_resolution).interpolate()
+
+    def resample_distribute(self, step_resolution, prop_series):
+        """
+        This method receives a time series based property and a step
+        resolution description and returns a time series with this step
+        resolution where the sum of all entries between two consecutive
+        hours adds up to the original hourly entry.
+
+        If the time step is dh and the original value in the hourly array
+        is v at h_n then
+
+        v=sum from h_{n-1} to h_n of v_i
+
+        Time descriptors examples
+
+        1h = 1 hour steps
+        10min = 10 minutes steps
+        5T = 5 minutes steps
+        """
+        return prop_series.resample(step_resolution).interpolate()
 
     def interpolate_prop(self, h_id, prop_array):
         """ Interpolate the property to a fractional index of the array """
@@ -58,6 +100,24 @@ class Weather:
         prop = prop_array[h_floor] + (dprop/h_change)*(h_id-h_floor)
 
         return prop
+
+    def distribute_prop(self, h_id, prop_array):
+        """
+        This method distributes the property in prop_array[h] through
+        the interval [h-1, h] uniformely.
+        """
+        h_ceil = int(np.ceil(h_id))
+        h_floor = int(np.floor(h_id))
+        val = (prop_array[h_ceil])*(h_id-h_floor)
+        return val
+
+    @property
+    def step_resolution(self):
+        """
+        [-] This property is the number of entries in the array of
+        the properties.
+        """
+        return self._step_resolution
 
     @property
     def tz_loc(self):
@@ -89,14 +149,13 @@ class Weather:
         self._location_file = Path(path_to_file)
         if not self.location_file.exists():
             raise ValueError(f"No such file {path_to_file}.")
-        self.read_file()
 
     def get_dni(self, hour=None):
         """
         Returns DNI array or the hth DNI in the array. hour can be nonninteger.
         """
         if hour:
-            return self.interpolate_prop(hour, self._dni)
+            return self.distribute_prop(hour, self._dni)
         else:
             return self._dni
 
@@ -108,7 +167,7 @@ class Weather:
     def get_ghi(self, hour=None):
         """ [W/m^2] Hourly array. Global Horizontal Irradiation (ghi_ghi). """
         if hour:
-            return self.interpolate_prop(hour, self._ghi)
+            return self.distribute_prop(hour, self._ghi)
         else:
             return self._ghi
 
@@ -211,11 +270,8 @@ if __name__ == "__main__":
     sevilla_file = Path(
         "./TMYs/Sevilla.csv"
     )
-    sevilla = Weather(sevilla_file)
+    sevilla = Weather(sevilla_file, "10min")
 
     print(sevilla.amb_temp.mean())
-    print(sevilla.amb_temp[2])
-    print(sevilla.get_amb_temp(2.1))
-    print(sevilla.get_amb_temp(2.5))
-    print(sevilla.get_amb_temp(2.9))
-    print(sevilla.get_amb_temp(3))
+    for i in range(11):
+        print(sevilla.amb_temp[i])

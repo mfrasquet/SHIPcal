@@ -1,0 +1,10 @@
+name: SHIPcal
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9
+  - numpy
+  - pylint
+  - pvlib-python
+prefix: /home/jaarpa/miniconda3/envs/SHIPcal
