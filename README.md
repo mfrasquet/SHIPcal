@@ -41,4 +41,10 @@ and that's it!
 # Developers
 - Miguel Frasquet Herraiz
 - Juan Antonio Aramburo Pasapera
+
 - Carlos Santiago Rocha Leyva
+
+- Jose Alfonso Romero Ramos
+- Mercedes Ibarra Mollá
+- Mihail Pislaru
+
