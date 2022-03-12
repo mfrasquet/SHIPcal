@@ -4,34 +4,39 @@ components of any simulation.
 """
 from iapws import IAPWS97
 
+def is_num(value):
+    """ returns if the instance is a number. !! check if there is an
+    already built function for this """
+
+    if isinstance(value,(int,float)):
+        return True
+    else:
+        return False
+
 class Element:
     """
     Base class inherits every other element in SHIPcal.
     """
 
-    def __init__(self):
-        self._state_1 = IAPWS97(P=0.1, T=303) #Init state 1bar / 30ºC
-        self._state_2 = IAPWS97(P=0.1, T=303) #Init state 1bar / 30ºC
-        # First sets everything to 0
-        [
-            self.pressure_1_in, self.m_dot_1_in, self.temp_1_in,
-            self.h_1_in, self.s_1_in, self.pressure_1_out,
-            self.m_dot_1_out, self.temp_1_out, self.h_1_out,
-            self.s_1_out, self.pressure_s_in, self.m_dot_s_in,
-            self.temp_s_in, self.h_s_in, self.s_s_in,
-            self.pressure_s_out, self.m_dot_s_out,
-            self.temp_s_out, self.h_s_out, self.s_s_out
-        ] = [0]*20
+    def __init__(self,P_bar=1,T_cel=30,h_kWh=''):
+        if is_num(h_kWh):
+            self._state_1_in=IAPWS97(P=P_bar/10, h=h_kWh * 3600 )
+        if is_num(T_cel):
+            self._state_1_in=IAPWS97(P=P_bar/10, T=T_cel + 273)
+        try:
+            self._state_1_in
+        except:
+            raise ValueError("boundary condition init without T or h")
 
     # Primary
     # Inlet
     @property
-    def pressure_1_in(self):
+    def p_1_in(self):
         """ [ bar ] Pressure at the primary inlet of the element """
-        return self._pressure_1_in
-    @pressure_1_in.setter
-    def pressure_1_in(self, val):
-        self._pressure_1_in = val
+        return self._state_1_in.P * 10
+    @p_1_in.setter
+    def p_1_in(self, val):
+        self._state_1_in = IAPWS97(P=val/10, T=self.t_1_in + 273)
 
     @property
     def m_dot_1_in(self):
@@ -40,30 +45,38 @@ class Element:
     @m_dot_1_in.setter
     def m_dot_1_in(self, val):
         self._m_dot_1_in = val
+    
+    @property
+    def x_1_in(self):
+        """ [ % ] Steam quality of the state """
+        return self._state_1_in.x
+    @x_1_in.setter
+    def x_1_in(self, val):
+        self._state_1_in = IAPWS97(x=val, P=self.p_1_in/10)
 
     @property
-    def temp_1_in(self):
+    def t_1_in(self):
         """ [ C ] Temperature at the primary inlet of the element """
-        return self._state_1.T-273
-    @temp_1_in.setter
-    def temp_1_in(self, val):
-        self._state_1 = IAPWS97(P=self.pressure_1_in/10, T=val+273)
+        return self._state_1_in.T - 273
+    @t_1_in.setter
+    def t_1_in(self, val):
+        self._state_1_in = IAPWS97(P=self.p_1_in/10, T=val + 273)
 
     @property
     def h_1_in(self):
         """ [ kWh/kg ] Specific enthalpy at the primary inlet of the element """
-        return self._state_1.h/3600
+        return self._state_1_in.h/3600
     @h_1_in.setter
     def h_1_in(self,val):
-        self._state_1 = IAPWS97(P=self.pressure_1_in/10, h=val*3600)
+        self._state_1_in = IAPWS97(P=self.p_1_in/10, h=val)
 
     @property
     def s_1_in(self):
         """ [ kWh/kgK ] Specifi entropy at the primary inlet of the element """
-        return self._state_1.s/3600
+        return self._state_1_in.s/3600
     @s_1_in.setter
     def s_1_in(self, val):
-        self._state_1 = IAPWS97(P=self.pressure_1_in/10, s=val*3600)
+        self._state_1_in = IAPWS97(P=self.p_1_in/10, s=val)
 
     # Outlet
     @property
@@ -192,10 +205,8 @@ class Element:
 
 
     # Thermal innertia
-    
-test1 = Element()
-test1.pressure_1_in=6
-test1.temp_1_in=60
-print(test1.h_1_in)
-test1.h_1_in = 0.06
+
+test1 = Element(P_bar=1,T_cel=60)
+test1.p_1_in=6
+test1.t_1_in=60
 print(test1.h_1_in)
