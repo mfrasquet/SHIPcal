@@ -2,6 +2,7 @@
 This file includes the base Element class, this inherits most of the
 components of any simulation.
 """
+from iapws import IAPWS97
 
 class Element:
     """
@@ -9,6 +10,8 @@ class Element:
     """
 
     def __init__(self):
+        self._state_1 = IAPWS97(P=0.1, T=303) #Init state 1bar / 30ºC
+        self._state_2 = IAPWS97(P=0.1, T=303) #Init state 1bar / 30ºC
         # First sets everything to 0
         [
             self.pressure_1_in, self.m_dot_1_in, self.temp_1_in,
@@ -41,26 +44,26 @@ class Element:
     @property
     def temp_1_in(self):
         """ [ C ] Temperature at the primary inlet of the element """
-        return self._temp_1_in
+        return self._state_1.T-273
     @temp_1_in.setter
     def temp_1_in(self, val):
-        self._temp_1_in = val
+        self._state_1 = IAPWS97(P=self.pressure_1_in/10, T=val+273)
 
     @property
     def h_1_in(self):
-        """ [ kWh ] Enthalpy at the primary inlet of the element """
-        return self._h_1_in
+        """ [ kWh/kg ] Specific enthalpy at the primary inlet of the element """
+        return self._state_1.h/3600
     @h_1_in.setter
-    def h_1_in(self, val):
-        self._h_1_in = val
+    def h_1_in(self,val):
+        self._state_1 = IAPWS97(P=self.pressure_1_in/10, h=val*3600)
 
     @property
     def s_1_in(self):
-        """ [ kWh ] Entropy at the primary inlet of the element """
-        return self._s_1_in
+        """ [ kWh/kgK ] Specifi entropy at the primary inlet of the element """
+        return self._state_1.s/3600
     @s_1_in.setter
     def s_1_in(self, val):
-        self._s_1_in = val
+        self._state_1 = IAPWS97(P=self.pressure_1_in/10, s=val*3600)
 
     # Outlet
     @property
@@ -190,3 +193,9 @@ class Element:
 
     # Thermal innertia
     
+test1 = Element()
+test1.pressure_1_in=6
+test1.temp_1_in=60
+print(test1.h_1_in)
+test1.h_1_in = 0.06
+print(test1.h_1_in)
