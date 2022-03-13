@@ -120,7 +120,7 @@ class Weather:
         print(julian_days,"days")
 
         #"equation of time" operations
-        B=(julian_days-81)*(360/364)
+        B=(julian_days-81)*(360/365)
         equation_time=(9.87*(math.sin(2*B))-7.53*(math.cos(B))-1.5*(math.sin(B)))
         print("Current Date:")
         print(current_date_time)
