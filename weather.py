@@ -7,6 +7,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from datetime import datetime
+import math 
 
 from pvlib.iotools import read_tmy3, read_tmy2
 
@@ -96,6 +98,37 @@ class Weather:
             self._amb_temp, self._humidity, self._wind_speed
         ] = self.read_file()
         self.set_grid_temp()
+        
+        if self._tz_loc==True:
+            self.convertion()
+
+
+    def convertion(self):
+        #Current day and hour
+        date_time=datetime.today()
+
+        #Time and date format structure
+        current_date_time = datetime(year =date_time.year, month =date_time.month, day =date_time.day, hour =date_time.hour, minute =date_time.minute, second =date_time.second)
+
+        #Time and date format structure starting from 0
+        date_0 = datetime(year = date_time.year, month = 1, day = 1, hour = 0, minute = 0, second = 0)
+
+        #Get elapsed days
+        julian_days=(current_date_time-date_0).days
+
+        #only_days to integer for can operate
+        print(julian_days,"days")
+
+        #"equation of time" operations
+        B=(julian_days-81)*(360/365)
+        equation_time=(9.87*(math.sin(2*B))-7.53*(math.cos(B))-1.5*(math.sin(B)))
+        print("Current Date:")
+        print(current_date_time)
+        print ("-------------------------------------------")
+        print("Equation of time results:")
+        print (equation_time)
+        print ("-------------------------------------------")
+
 
     def read_file(self):
         """
