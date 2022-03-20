@@ -7,5 +7,6 @@ dependencies:
   - numpy
   - pylint
   - pvlib-python
+  - coverage
   - iapws
 prefix: /home/jaarpa/miniconda3/envs/SHIPcal

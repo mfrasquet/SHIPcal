@@ -6,7 +6,7 @@ Created on Sun Mar 29 17:27:44 2020
 @author: miguel
 """
 
-from SHIPcal import SHIPcal
+from shipcal import shipcal
 #from sliced_SHIPcal import SHIPcal
 
 """
@@ -111,7 +111,7 @@ for type_integration in ["SL_L_P","SL_L_PS","SL_L_S","SL_L_S_PH","SL_L_RF"]:
     
     desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
     inputsDjango= {'date': '2020-03-23', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'prueba2', 'sectorIndustry': 'Chemical', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Bakersfield', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': fluid, 'pressure': pressure, 'pressureUnit': 'bar', 'tempIN': tempIN, 'tempOUT': tempOUT, 'connection': '', 'process': '', 'demand': demand, 'demandUnit': 'kWh', 'hourINI': 1, 'hourEND': 24, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.08333333333333333, 'Feb': 0.08333333333333333, 'Mar': 0.08333333333333333, 'Apr': 0.08333333333333333, 'May': 0.08333333333333333, 'Jun': 0.08333333333333333, 'Jul': 0.08333333333333333, 'Aug': 0.08333333333333333, 'Sep': 0.08333333333333333, 'Oct': 0.08333333333333333, 'Nov': 0.08333333333333333, 'Dec': 0.08333333333333333, 'last_reg': 711}
-    [template_vars,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],200,confReport,modificators,desginDict,simControl,666)
+    [template_vars,plotVars,reportsVar,version]=shipcal(origin,inputsDjango,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],200,confReport,modificators,desginDict,simControl,666)
     [error,aux]=print_results(type_integration,fluid,plotVars,solutions[type_integration][0],solutions[type_integration][1],solutions[type_integration][2])
     print(aux)
     errorList.append(error)
@@ -162,7 +162,7 @@ for type_integration in ["SL_L_P","SL_L_PS","SL_L_S","SL_L_S_PH","SL_L_RF"]:
     
     desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
     inputsDjango= {'date': '2020-03-23', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'prueba2', 'sectorIndustry': 'Chemical', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Bakersfield', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': fluid, 'pressure': pressure, 'pressureUnit': 'bar', 'tempIN': tempIN, 'tempOUT': tempOUT, 'connection': '', 'process': '', 'demand': demand, 'demandUnit': 'kWh', 'hourINI': 1, 'hourEND': 24, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.08333333333333333, 'Feb': 0.08333333333333333, 'Mar': 0.08333333333333333, 'Apr': 0.08333333333333333, 'May': 0.08333333333333333, 'Jun': 0.08333333333333333, 'Jul': 0.08333333333333333, 'Aug': 0.08333333333333333, 'Sep': 0.08333333333333333, 'Oct': 0.08333333333333333, 'Nov': 0.08333333333333333, 'Dec': 0.08333333333333333, 'last_reg': 711}
-    [template_vars,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],200,confReport,modificators,desginDict,simControl,666)
+    [template_vars,plotVars,reportsVar,version]=shipcal(origin,inputsDjango,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],200,confReport,modificators,desginDict,simControl,666)
     [error,aux]=print_results(type_integration,fluid,plotVars,solutions[type_integration][0],solutions[type_integration][1],solutions[type_integration][2])
     print(aux)
     errorList.append(error)
@@ -213,7 +213,7 @@ for type_integration in ["SL_L_P","SL_L_PS","SL_L_S","SL_L_S_PH","SL_L_RF"]:
     
     desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
     inputsDjango= {'date': '2020-03-23', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'prueba2', 'sectorIndustry': 'Chemical', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Bakersfield', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': fluid, 'pressure': pressure, 'pressureUnit': 'bar', 'tempIN': tempIN, 'tempOUT': tempOUT, 'connection': '', 'process': '', 'demand': demand, 'demandUnit': 'kWh', 'hourINI': 1, 'hourEND': 24, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.08333333333333333, 'Feb': 0.08333333333333333, 'Mar': 0.08333333333333333, 'Apr': 0.08333333333333333, 'May': 0.08333333333333333, 'Jun': 0.08333333333333333, 'Jul': 0.08333333333333333, 'Aug': 0.08333333333333333, 'Sep': 0.08333333333333333, 'Oct': 0.08333333333333333, 'Nov': 0.08333333333333333, 'Dec': 0.08333333333333333, 'last_reg': 711}
-    [template_vars,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],200,confReport,modificators,desginDict,simControl,666)
+    [template_vars,plotVars,reportsVar,version]=shipcal(origin,inputsDjango,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],200,confReport,modificators,desginDict,simControl,666)
     [error,aux]=print_results(type_integration,fluid,plotVars,solutions[type_integration][0],solutions[type_integration][1],solutions[type_integration][2])
     print(aux)
     errorList.append(error)
@@ -263,7 +263,7 @@ for type_integration in ["SL_S_PD","SL_S_FW",'SL_S_FWS']:
     
     desginDict={'num_loops':num_loops,'n_coll_loop':n_coll_loop,'type_integration':type_integration,'almVolumen':almVolumen}
     inputsDjango= {'date': '2020-03-23', 'name': 'miguel', 'email': 'miguel.frasquet@solatom.com', 'industry': 'prueba2', 'sectorIndustry': 'Chemical', 'fuel': 'NG', 'fuelPrice': 0.05, 'co2TonPrice': 0.0, 'co2factor': 0.0002, 'fuelUnit': 'eur_kWh', 'businessModel': 'turnkey', 'location': 'Bakersfield', 'location_aux': '', 'surface': None, 'terrain': '', 'distance': None, 'orientation': 'NS', 'inclination': 'flat', 'shadows': 'free', 'fluid': fluid, 'pressure': pressure, 'pressureUnit': 'bar', 'tempIN': tempIN, 'tempOUT': tempOUT, 'connection': '', 'process': '', 'demand': demand, 'demandUnit': 'kWh', 'hourINI': 1, 'hourEND': 24, 'Mond': 0.143, 'Tues': 0.143, 'Wend': 0.143, 'Thur': 0.143, 'Fri': 0.143, 'Sat': 0.143, 'Sun': 0.143, 'Jan': 0.08333333333333333, 'Feb': 0.08333333333333333, 'Mar': 0.08333333333333333, 'Apr': 0.08333333333333333, 'May': 0.08333333333333333, 'Jun': 0.08333333333333333, 'Jul': 0.08333333333333333, 'Aug': 0.08333333333333333, 'Sep': 0.08333333333333333, 'Oct': 0.08333333333333333, 'Nov': 0.08333333333333333, 'Dec': 0.08333333333333333, 'last_reg': 711}
-    [template_vars,plotVars,reportsVar,version]=SHIPcal(origin,inputsDjango,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],200,confReport,modificators,desginDict,simControl,666)
+    [template_vars,plotVars,reportsVar,version]=shipcal(origin,inputsDjango,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],200,confReport,modificators,desginDict,simControl,666)
     [error,aux]=print_results(type_integration,fluid,plotVars,solutions[type_integration][0],solutions[type_integration][1],solutions[type_integration][2])
     print(aux)
     errorList.append(error)

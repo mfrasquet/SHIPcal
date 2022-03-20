@@ -1,6 +1,4 @@
 reated by https://www.gitignore.io/api/python
-CIMAV/
-prueba.py
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
@@ -123,6 +121,8 @@ venv.bak/
 pyvenv.cfg
 pip-selfcheck.json
 
+# End of https://www.gitignore.io/api/python
+
 # Ressspi
  
 counter.csv
@@ -135,8 +135,7 @@ municipioDB.pk
 municipioDB.pk
 settings.py
 
-.vscode/
-# End of https://www.gitignore.io/api/python
-
 ressspi_solatom/
-*.code-workspace
+**/.vscode/**
+CIMAV/
+prueba.py

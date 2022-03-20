@@ -29,8 +29,8 @@ class Element:
 
         try:
             self._state_1_in
-        except:
-            raise ValueError("boundary condition init without T or h")
+        except Exception as error:
+            raise ValueError("boundary condition init without T or h") from error
 
     # Primary 1
     # Inlet

@@ -1,4 +1,4 @@
-from elements import Element
+from shipcal.elements import Element
 
 class Collector(Element):
     """
