@@ -4,6 +4,7 @@ components of any simulation.
 """
 from iapws import IAPWS97
 
+
 def is_num(value):
     """ returns if the instance is a number. !! check if there is an
     already built function for this """
@@ -12,6 +13,7 @@ def is_num(value):
         return True
     else:
         return False
+
 
 class Element:
     """
@@ -29,8 +31,8 @@ class Element:
 
         try:
             self._state_1_in
-        except:
-            raise ValueError("boundary condition init without T or h")
+        except Exception as error:
+            raise ValueError("boundary condition init without T or h") from error
 
     # Primary 1
     # Inlet
@@ -231,10 +233,11 @@ class Element:
     def s_2_out(self, val):
         self._state_2_out = IAPWS97(P=self.p_2_out/10, s=val)
 
-
     # Thermal innertia
 
-test1 = Element(P_bar=1,T_cel=60)
-test1.p_1_in=6
-test1.t_1_in=60
-print(test1.h_1_in)
+
+if __name__ == "__main__":
+    test1 = Element(P_bar=1, T_cel=60)
+    test1.p_1_in = 6
+    test1.t_1_in = 60
+    print(test1.h_1_in)

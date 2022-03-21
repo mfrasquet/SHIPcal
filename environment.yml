@@ -4,8 +4,14 @@ channels:
   - conda-forge
 dependencies:
   - python=3.9
-  - numpy
-  - pylint
-  - pvlib-python
+  - pip
+  - pandas
   - iapws
-prefix: /home/jaarpa/miniconda3/envs/SHIPcal
+  - pvlib-python
+  - pysolar
+  - coverage
+  - pytest
+  - pytest-cov
+  - tox
+  - pip:
+    - pylama[all]

@@ -1,4 +1,11 @@
-from ..weather import Weather
+"""
+This module contains the test for the Weather class
+"""
+from shipcal import Weather
 
-celaya_loc_tmy = "/home/jaarpa/aProjects/solatom/SHIPcal/tests/Celaya.dat"
-celaya = Weather(celaya_loc_tmy)
+
+def test_read_tmy3():
+    """ Check that tmy3 format is bein read correctly """
+    sevilla_tmy3_loc = "src/shipcal/weather/data/Sevilla.csv"
+    sevilla = Weather(sevilla_tmy3_loc)
+    assert sevilla.lat == 37.410
