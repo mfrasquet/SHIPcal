@@ -8,6 +8,7 @@ import pandas as pd
 
 from shipcal.elements import Element
 
+
 class Consumer(Element):
     """
     This class creates objects that consumes the energy produced by the
@@ -23,12 +24,12 @@ class Consumer(Element):
     """
 
     def __init__(
-            self, location_csv=None, demand_profile=None, step_resolution=None,
-            boiler_efficiency = 0.8
-        ):
+        self, location_csv=None, demand_profile=None, step_resolution=None,
+        boiler_efficiency=0.8
+    ):
         super().__init__()
 
-        self.boiler_efficiency=boiler_efficiency
+        self.boiler_efficiency = boiler_efficiency
 
         if location_csv:
             self._demand_vector, self._step_resolution = self.read_demand_file(
@@ -41,7 +42,7 @@ class Consumer(Element):
         #     )
         else:
             raise ValueError(
-            "Missing demand file (location_csv) or demand_profile dict"
+                "Missing demand file (location_csv) or demand_profile dict"
             )
         self._annual_demand = self._demand_vector.sum()
 
@@ -89,8 +90,8 @@ class Consumer(Element):
             step_resolution = pd.tseries.frequencies.to_offset("1h")
         else:
             # Sets the step resolution.]
-            year_mins = 365*24*60
-            step_mins = year_mins/len(demand_vector)
+            year_mins = 365 * 24 * 60
+            step_mins = year_mins / len(demand_vector)
             if not step_mins % 1 == 0:
                 raise ValueError("File exceeds max resolution of 1min")
             step_mins = int(step_mins)
@@ -135,6 +136,7 @@ class Consumer(Element):
     #     demand_vector = None
     #     step_resolution = None
     #     return demand_vector, step_resolution
+
 
 if __name__ == "__main__":
     demand_file_csv = Path("./tests/demand_sin.csv")

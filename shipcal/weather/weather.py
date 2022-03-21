@@ -10,6 +10,7 @@ import pandas as pd
 
 from pvlib.iotools import read_tmy3, read_tmy2
 
+
 class Weather:
     """
     This class handles the TMY file reads and prepare the variables to
@@ -109,7 +110,7 @@ class Weather:
         if file_ext == "csv":
             data, metadata = read_tmy3(self.location_file)
         elif file_ext == "tm2":
-            data, metadata =  read_tmy2(self.location_file)
+            data, metadata = read_tmy2(self.location_file)
 
         lat = metadata["latitude"]
         lon = metadata["longitude"]
@@ -156,19 +157,19 @@ class Weather:
         10min = 10 minutes steps
         5T = 5 minutes steps
         """
-        distribution_norm = pd.tseries.frequencies.to_offset(step_resolution)/pd.Timedelta('1h')
-        return prop_series.resample(step_resolution).bfill()*distribution_norm
+        distribution_norm = pd.tseries.frequencies.to_offset(step_resolution) / pd.Timedelta('1h')
+        return prop_series.resample(step_resolution).bfill() * distribution_norm
 
     def interpolate_prop(self, h_id, prop_array):
         """ Interpolate the property to a fractional index of the array """
         h_floor = int(np.floor(h_id))
         h_ceil = int(np.ceil(h_id))
-        h_change = h_ceil-h_floor
+        h_change = h_ceil - h_floor
         if h_change == 0:
             return prop_array[h_floor]
-        dprop = prop_array[h_ceil]-prop_array[h_floor]
+        dprop = prop_array[h_ceil] - prop_array[h_floor]
 
-        prop = prop_array[h_floor] + (dprop/h_change)*(h_id-h_floor)
+        prop = prop_array[h_floor] + (dprop / h_change) * (h_id - h_floor)
 
         return prop
 
@@ -179,7 +180,7 @@ class Weather:
         """
         h_ceil = int(np.ceil(h_id))
         h_floor = int(np.floor(h_id))
-        val = (prop_array[h_ceil])*(h_id-h_floor)
+        val = (prop_array[h_ceil]) * (h_id - h_floor)
         return val
 
     @property
@@ -284,21 +285,21 @@ class Weather:
         # compiled by Abrams and Shedd [8], the FloridaSolar Energy
         # Center [9], and Sandia National Labs
         offset = 3
-        ratio = 0.22 + 0.0056*(amb_temp_mean - 6.67)
-        lag = 1.67 - 0.56*(amb_temp_mean - 6.67)
+        ratio = 0.22 + 0.0056 * (amb_temp_mean - 6.67)
+        lag = 1.67 - 0.56 * (amb_temp_mean - 6.67)
 
-        grid_temps=[]
+        grid_temps = []
 
         for day in range(365):
             # The hourly year array is built by the temperature
             # calculated for the day printed 24 times for each day
             # This was taken from TRNSYS documentation.
-            grid_temps+=[(
-                    (amb_temp_mean+offset)+
-                    ratio*(amb_temp_max/2)*np.sin(
-                            np.radians(-90+(day-15-lag)*360/365)
-                        )
-                )]*24
+            grid_temps += [(
+                (amb_temp_mean + offset) +
+                ratio * (amb_temp_max / 2) * np.sin(
+                    np.radians(-90 + (day - 15 - lag) * 360 / 365)
+                )
+            )] * 24
         self._grid_temp = np.array(grid_temps)
 
     grid_temp = property(
@@ -337,9 +338,10 @@ class Weather:
         doc=""" [m/s] Hourly array. Wind speed. """
     )
 
+
 if __name__ == "__main__":
     sevilla_file = Path(
-        "./TMYs/Sevilla.csv"
+        "./data/Sevilla.csv"
     )
     sevilla = Weather(sevilla_file, "10min")
 

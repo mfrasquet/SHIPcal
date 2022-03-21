@@ -3,9 +3,10 @@ This file contains the main class SHIPcal which contains the logic
 to connect the elements together
 """
 
-from shipcal.weather import Weather
+from shipcal.weather.weather import Weather
 from shipcal.energy_consumer import Consumer
 from shipcal.collectors.collector import Collector
+
 
 class SHIPcal:
     """
@@ -17,6 +18,7 @@ class SHIPcal:
         self.elements_array = elements_array
         self.colector = colector
         self.weather = weather
+
 
 if __name__ == "__main__":
     sigma_aldrich = Consumer("./tests/demand_sin.csv")
