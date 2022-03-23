@@ -25,5 +25,5 @@ class Collector(Element):
     nu_2 = 0.003163  # [W/(m^2 K^2)]
     mdot_test = 0.0308  # [kg/sm2]
 
-
-optic = FresnelOptics(67.56,45)
+if __name__ == "__main__":
+    optic = FresnelOptics(67.56,45)
