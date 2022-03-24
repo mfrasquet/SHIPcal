@@ -12,6 +12,7 @@ def test_read_tmy3():
     sevilla = Weather(sevilla_tmy3_loc)
     assert sevilla.lat == 37.410
 
+@pytest.mark.skip(reason="Carlos is currently working on this tests")
 def test_localtime_to_solartime():
     """
     Test if a few of the data index changed properly to solar time
