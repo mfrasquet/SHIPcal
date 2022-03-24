@@ -1,6 +1,8 @@
 """
 This module contains the test for the Weather class
 """
+import pytest
+
 from shipcal import Weather
 from datetime import datetime
 
@@ -38,5 +40,19 @@ def test_sunposition():
     """
     Tests that the sun position is correct for few dates and locations
     """
-    pass
+    sevilla_tmy3_loc = "src/shipcal/weather/data/Madrid_false.csv"
+    sevilla = Weather(sevilla_tmy3_loc)
+    
+    # The altitude in the step 13 (the 14 h) in Sevilla must be
+    # This takes the datetime in the 16th element in the data
+    sevilla.get_solar_altitude(13) == pytest.approx(59.75,0.05)
+    # and azimut
+    sevilla.get_solar_azimut(13) == pytest.approx(65.67,0.05)
+
+    # I should be able to find the same altitude by entering a datetime
+    # This should return the solar altitude in
+    # the datetime '2005-01-01 17:00:00+0100'
+    sevilla.get_solar_altitude("2005-01-01 14:00:00+0100") == pytest.approx(59.75,0.05)
+    # and azimut
+    sevilla.get_solar_azimut("2005-01-01 14:00:00+0100") == pytest.approx(65.67,0.05)
     
