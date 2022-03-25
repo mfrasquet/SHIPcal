@@ -98,6 +98,36 @@ class Weather:
         ] = self.read_file()
         self.set_grid_temp()
 
+    def _add_dummy_fields_tmy2(self):
+        """
+        If the tmy2 has missing fields in metadata line adds them with
+        'dummy' for pvlib readthem properly.
+        """
+        with open(self.location_file, "r",) as orig_tmy2:
+            metaraw = orig_tmy2.readline()
+            metaraw = " ".join(metaraw.split()).split(" ")
+            if len(metaraw) < 11:
+                n_missing_fields = 11 - len(metaraw)
+                # Search for S or N index
+                i = -1
+                for item in metaraw:
+                    if item == "S" or item == "N":
+                        break
+                    i += 1
+                dummy_list = ["dummy"] * n_missing_fields
+                metaraw = metaraw[:i] + dummy_list + metaraw[i:]
+                metaraw = " ".join(metaraw)
+                modified_location_list = str(self.location_file).split(".")
+                modified_location = "".join(
+                    modified_location_list[:-1] + ["_mod."] + modified_location_list[-1:]
+                )
+            # Write into new file
+            mod_file = open(modified_location, "w")
+            mod_file.write(metaraw)
+            mod_file.write(orig_tmy2.read())
+            mod_file.close()
+            self.location_file = modified_location
+
     def read_file(self):
         """
         Gets file location, reads its content and stores its data in
@@ -110,6 +140,7 @@ class Weather:
         if file_ext == "csv":
             data, metadata = read_tmy3(self.location_file)
         elif file_ext == "tm2":
+            self._add_dummy_fields_tmy2()
             data, metadata = read_tmy2(self.location_file)
 
         lat = metadata["latitude"]

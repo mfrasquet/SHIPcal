@@ -10,6 +10,12 @@ def test_read_tmy3():
     sevilla = Weather(sevilla_tmy3_loc)
     assert sevilla.lat == 37.410
 
+def test_read_tmy2():
+    """ Check that tmy2 files are being read properly """
+    rome_tmy2_loc = "src/shipcal/weather/data/Roma_Ciampino_local_hour.tm2"
+    rome = Weather(rome_tmy2_loc)
+    assert rome.lat == 41.800
+
 def test_localtime_to_solartime():
     """
     Test if a few of the data index changed properly to solar time
