@@ -2,6 +2,7 @@
 This module contains the definition of the Weather class, used
 to model the weather at the provided location from an hourly TMY.
 """
+import datetime
 
 from pathlib import Path
 
@@ -9,6 +10,39 @@ import numpy as np
 import pandas as pd
 
 from pvlib.iotools import read_tmy3, read_tmy2
+
+
+def read_explorador_solar_tmy(file_loc):
+    """
+    Reads tmy exported from the Chilean explorador solar app.
+    """
+    with open(file_loc, "r", encoding="utf-8") as tmy_file:
+        metadata_line = tmy_file.readline()
+        while metadata_line != "CARACTERISTICAS DEL SITIO\n":
+            metadata_line = tmy_file.readline()
+        name = tmy_file.readline().split(",")[-1]
+        latitude = tmy_file.readline().split(",")[-1]
+        longitude = tmy_file.readline().split(",")[-1]
+        altitude = tmy_file.readline().split(",")[-1]
+
+        metadata = dict(
+            Name=name.strip('\n'),
+            latitude=float(latitude),
+            longitude=float(longitude),
+            altitude=float(altitude),
+        )
+        # Explorador solar works only for Chilean locations, then the
+        # timezone is always -3
+        metadata["TZ"] = -3
+        data = pd.read_csv(tmy_file, skiprows=41)
+        # get the date column as a pd.Series of numpy datetime64
+        data_ymd = pd.to_datetime(data['Fecha/Hora'], format='%Y-%m-%d %H:%M:%S')
+        data_index = pd.DatetimeIndex(data_ymd)
+        # use indices to check for a leap day and advance it to March 1st
+        leapday = (data_index.month == 2) & (data_index.day == 29)
+        data_ymd[leapday] += datetime.timedelta(days=1)
+        # glb,dir,dif,sct,ghi,dirh,difh,dni,temp,vel,shadow,cloud
+        return data, metadata
 
 
 class Weather:
@@ -138,7 +172,10 @@ class Weather:
         """
         file_ext = self.location_file.as_posix().split(".")[-1]
         if file_ext == "csv":
-            data, metadata = read_tmy3(self.location_file)
+            try:
+                data, metadata = read_tmy3(self.location_file)
+            except pd.errors.ParserError:
+                data, metadata = read_explorador_solar_tmy(self.location_file)
         elif file_ext == "tm2":
             self._add_dummy_fields_tmy2()
             data, metadata = read_tmy2(self.location_file)
