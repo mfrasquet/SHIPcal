@@ -2,8 +2,6 @@
 This module contains the definition of the Weather class, used
 to model the weather at the provided location from an hourly TMY.
 """
-import datetime
-
 from pathlib import Path
 
 import numpy as np
@@ -16,33 +14,36 @@ def read_explorador_solar_tmy(file_loc):
     """
     Reads tmy exported from the Chilean explorador solar app.
     """
-    with open(file_loc, "r", encoding="utf-8") as tmy_file:
-        metadata_line = tmy_file.readline()
-        while metadata_line != "CARACTERISTICAS DEL SITIO\n":
-            metadata_line = tmy_file.readline()
-        name = tmy_file.readline().split(",")[-1]
-        latitude = tmy_file.readline().split(",")[-1]
-        longitude = tmy_file.readline().split(",")[-1]
-        altitude = tmy_file.readline().split(",")[-1]
-
-        metadata = dict(
-            Name=name.strip('\n'),
-            latitude=float(latitude),
-            longitude=float(longitude),
-            altitude=float(altitude),
+    metadata_line = pd.read_csv(file_loc, nrows=1)
+    tmy_data = pd.read_csv(file_loc, skiprows=2)
+    metadata = dict(
+        Name=metadata_line["City"][0],
+        latitude=float(metadata_line["Latitude"]),
+        longitude=float(metadata_line["Longitude"]),
+        altitude=float(metadata_line["Elevation"]),
+        TZ=float(metadata_line["Time Zone"])
+    )
+    # get the date column as a pd.Series of numpy datetime64
+    data_index = pd.DatetimeIndex(
+        pd.to_datetime(
+            tmy_data.loc[:, ["Year", "Month", "Day", "Hour", "Minute"]]
         )
-        # Explorador solar works only for Chilean locations, then the
-        # timezone is always -3
-        metadata["TZ"] = -3
-        data = pd.read_csv(tmy_file, skiprows=41)
-        # get the date column as a pd.Series of numpy datetime64
-        data_ymd = pd.to_datetime(data['Fecha/Hora'], format='%Y-%m-%d %H:%M:%S')
-        data_index = pd.DatetimeIndex(data_ymd)
-        # use indices to check for a leap day and advance it to March 1st
-        leapday = (data_index.month == 2) & (data_index.day == 29)
-        data_ymd[leapday] += datetime.timedelta(days=1)
-        # glb,dir,dif,sct,ghi,dirh,difh,dni,temp,vel,shadow,cloud
-        return data, metadata
+    )
+    tmy_data.index = data_index
+    tmy_data.tz_localize(int(metadata["TZ"] * 3600))
+    columns_names = {
+        "GHI": "GHI (W/m^2)",
+        "DNI": "DNI (W/m^2)",
+        "DHI": "DHI (W/m^2)",
+        "Tdry": "Dry-bulb (C)",
+        "Tdew": "Dew-point (C)",
+        "RH": "RHum (%)",
+        "Pres": "Pressure (mbar)",
+        "Wspd": "Wspd (m/s)",
+        "Wdir": "Wdir (degrees)",
+    }
+    tmy_data.rename(columns=columns_names, inplace=True)
+    return tmy_data, metadata
 
 
 class Weather:
@@ -125,11 +126,14 @@ class Weather:
         self.mofdni = mofdni
         self.location_file = location_file
         self._step_resolution = step_resolution
-        [
-            self._lat, self._lon, self._elev,
-            self._tz_loc, self._dni, self._ghi,
-            self._amb_temp, self._humidity, self._wind_speed
-        ] = self.read_file()
+        self._data, self._metadata = self.read_file()
+
+        self.dni = self.resample_distribute(self.step_resolution, self._data.DNI)
+        self.ghi = self.resample_distribute(self.step_resolution, self._data.GHI)
+        self.amb_temp = self.resample_interpolate(self.step_resolution, self._data.DryBulb)
+        self.humidity = self.resample_interpolate(self.step_resolution, self._data.RHum)
+        self.wind_speed = self.resample_interpolate(self.step_resolution, self._data.Wspd)
+
         self.set_grid_temp()
 
     def _add_dummy_fields_tmy2(self):
@@ -180,17 +184,7 @@ class Weather:
             self._add_dummy_fields_tmy2()
             data, metadata = read_tmy2(self.location_file)
 
-        lat = metadata["latitude"]
-        lon = metadata["longitude"]
-        elev = metadata["altitude"]
-        tz_loc = metadata["TZ"]
-        dni = self.resample_distribute(self.step_resolution, data.DNI)
-        ghi = self.resample_distribute(self.step_resolution, data.GHI)
-        amb_temp = self.resample_interpolate(self.step_resolution, data.DryBulb)
-        humidity = self.resample_interpolate(self.step_resolution, data.RHum)
-        wind_speed = self.resample_interpolate(self.step_resolution, data.Wspd)
-
-        return lat, lon, elev, tz_loc, dni, ghi, amb_temp, humidity, wind_speed
+        return data, metadata
 
     def resample_interpolate(self, step_resolution, prop_series):
         """
@@ -262,22 +256,22 @@ class Weather:
     @property
     def tz_loc(self):
         """ [-] Int. Timezone of the location in simulation """
-        return self._tz_loc
+        return self._metadata["TZ"]
 
     @property
     def elev(self):
         """ [m] Float. Height above sea level """
-        return self._elev
+        return self._metadata["altitude"]
 
     @property
     def lat(self):
         """ [°] Float. Latitude of location in simulation """
-        return self._lat
+        return self._metadata["latitude"]
 
     @property
     def lon(self):
         """ [°] Float. Longitude of location in simulation. """
-        return self._lon
+        return self._metadata["longitude"]
 
     @property
     def location_file(self):
