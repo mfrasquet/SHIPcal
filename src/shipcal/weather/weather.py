@@ -122,17 +122,17 @@ class Weather:
     Lprecip uncert (code)
     """
 
-    def __init__(self, location_file, step_resolution="1h", mofdni=1):
+    def __init__(self, location_file, step_resolution="1h", mofdni=1, local_time=False):
         self.mofdni = mofdni
         self.location_file = location_file
         self._step_resolution = step_resolution
         self._data, self._metadata = self.read_file()
 
-        self.dni = self.resample_distribute(self.step_resolution, self._data.DNI)
-        self.ghi = self.resample_distribute(self.step_resolution, self._data.GHI)
-        self.amb_temp = self.resample_interpolate(self.step_resolution, self._data.DryBulb)
-        self.humidity = self.resample_interpolate(self.step_resolution, self._data.RHum)
-        self.wind_speed = self.resample_interpolate(self.step_resolution, self._data.Wspd)
+        self._dni = self.resample_distribute(self.step_resolution, self._data.DNI)
+        self._ghi = self.resample_distribute(self.step_resolution, self._data.GHI)
+        self._amb_temp = self.resample_interpolate(self.step_resolution, self._data.DryBulb)
+        self._humidity = self.resample_interpolate(self.step_resolution, self._data.RHum)
+        self._wind_speed = self.resample_interpolate(self.step_resolution, self._data.Wspd)
 
         self.set_grid_temp()
 
