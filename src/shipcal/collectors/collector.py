@@ -2,8 +2,10 @@
 This file contains the classes that define the collector in
 shipcal
 """
+from pathlib import Path
 
 from shipcal.elements import Element
+from shipcal.weather import Weather
 
 
 class FresnelOptics():
@@ -62,13 +64,9 @@ class Collector(Element, FresnelOptics):
     aperture_area = 13.14  # [m^2]
 
     def __init__(
-        self, eff_opt_norm, iam_file, azimuth_field, roll_field, pitch,
-        P_bar=1, T_cel=30, h_kWh=''
-    ):
-        Element.__init__(P_bar, T_cel, h_kWh)
-        FresnelOptics.__init__(
-            eff_opt_norm, iam_file, azimuth_field, roll_field, pitch
-        )
+        self, eff_opt_norm, iam_file, azimuth_field, roll_field, pitch):
+        Element.__init__(self)
+        FresnelOptics.__init__(self, eff_opt_norm, iam_file, azimuth_field, roll_field, pitch)
 
     def get_energy_gain(self, step, weather):
         """
@@ -135,4 +133,8 @@ class Collector(Element, FresnelOptics):
 
 
 if __name__ == "__main__":
-    optic = FresnelOptics(67.56, 45)
+    optic = FresnelOptics(67.56, 45,0,0,0)
+    collec = Collector(67,45,0,0,0)
+    #sevilla_file = Path("./data/Sevilla.csv")
+    #sevilla = Weather(sevilla_file, "10min")
+    #collec.get_energy_gain(5,sevilla)
