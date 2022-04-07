@@ -37,11 +37,10 @@ class Consumer(Element):
             self._demand_vector, self._step_resolution = self.read_demand_file(
                 location_csv, step_resolution
             )
-        # TODO Add demand creator functions
-        # elif demand_profile:
-        #     self._demand_vector, self._step_resolution = self.create_demand_vector(
-        #         demand_profile, step_resolution
-        #     )
+        elif demand_profile:
+            self._demand_vector, self._step_resolution = self.create_demand_vector(
+                demand_profile, step_resolution
+            )
         else:
             raise ValueError(
                 "Missing demand file (location_csv) or demand_profile dict"
@@ -101,32 +100,43 @@ class Consumer(Element):
 
         return demand_vector, step_resolution
 
-    def create_demand_vector(self, demand_profile, step_resolution=None,  default_year=2022):
+    def create_demand_vector(self, demand_profile, step_resolution=None,  year=2022):
         """
         Receives a dictionary with the annual demand and monthly, week,
         and daily consumption profile to build the demand vector. If a
         step_resolution smaller than hourly is provided the demand through
-        each hour is uniformily distributed. The demand_profile dictionary
-        has the following format
-        demand_profile = {
-            'annual_demand': 20000, # [kWh]
-            'monthly_profile': [usage_ratio_January,usage_ratio_Feb, ... ],
-            'week_profile': [usage_ratio_Monday, usage_ratio_Tuesday, ... ],
-            'day_profile':[hour_start, hour_end]}
+        each hour is uniformily distributed.
 
-            And example of the
+        Parameters
+        ----------
+        demand_profile : Dictionary
+            It is the dictionary with the demand profile. It has
+            the following format
+
+            demand_profile = {
+                'annual_demand': 20000, # [kWh]
+                'monthly_profile': [usage_ratio_January,usage_ratio_Feb, ... ],
+                'week_profile': [usage_ratio_Monday, usage_ratio_Tuesday, ... ],
+                'day_profile':[hour_start, hour_end]}
+
+            An example of the
             demand_profile dictionary where the demand is constant trough the
             whole year is:
             demand_profile = {
-                'annual_demand': 20000 # [kWh],
+                'annual_demand': 20000, # [kWh]
                 'monthly_profile': [1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12],
                 'week_profile':[1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7],
                 'day_profile':[0,24]}
+        step_resolution : String | Float, optional
+            Stablishes a resolution different than hourly. If receives a String
+            it will try to convert it using, by default None
+        year : int, optional
+            The current year in simulation, by default 2022
 
-
-            Returns:
-                - demand_vector
-                - step_resolution
+        Returns
+        -------
+        _type_
+            _description_
         """
 
         # days_in_the_month[month_number]=how many days are in the month number "month_number"
@@ -147,8 +157,8 @@ class Consumer(Element):
         # Creates the array "hour_profile".
         # This array has 24 entrace that uniformily distribute the hourly demand of all days
         hour_profile = np.zeros(24)
-        for i in range(day_profile[0], (day_profile[1] + 1)):
-            hour_profile[i] = 1 / ((day_profile[1] + 1) - day_profile[0])
+        for i in range(day_profile[0], day_profile[1]):
+            hour_profile[i] = 1 / (day_profile[1] - day_profile[0])
 
         # Creates an empty list that will save the hourly demand
         demand_vector = []
@@ -162,7 +172,7 @@ class Consumer(Element):
             for ny_day in range(days_in_the_month[n_month]):
 
                 # Calculates wich day of the week correspondes a certain date
-                day_of_the_week = datetime.date(default_year, (n_month + 1), (ny_day + 1)).weekday()
+                day_of_the_week = datetime.date(year, (n_month + 1), (ny_day + 1)).weekday()
 
                 # Calculates the demand of each day based on the weekly demand and
                 # week profile for a certain day of the week
@@ -184,9 +194,15 @@ class Consumer(Element):
 
             demand_vector = demand_vector_aux
 
-        return (demand_vector, step_resolution)
+        return (np.array(demand_vector), step_resolution)
 
 
 if __name__ == "__main__":
-    demand_file_csv = Path("./tests/demand_sin.csv")
-    sigma_aldrich = Consumer(demand_file_csv)
+    # demand_file_csv = Path("./tests/demand_sin.csv")
+    # sigma_aldrich = Consumer(demand_file_csv)
+    demand_profile = {
+                'annual_demand': 20000, # [kWh]
+                'monthly_profile': [1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12],
+                'week_profile':[1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7],
+                'day_profile':[0,24]}
+    c = Consumer(demand_profile=demand_profile)
