@@ -201,8 +201,9 @@ if __name__ == "__main__":
     # demand_file_csv = Path("./tests/demand_sin.csv")
     # sigma_aldrich = Consumer(demand_file_csv)
     demand_profile = {
-                'annual_demand': 20000, # [kWh]
-                'monthly_profile': [1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12],
-                'week_profile':[1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7],
-                'day_profile':[0,24]}
+        'annual_demand': 20000,  # [kWh]
+        'monthly_profile': [1/12, 1/12, 1/12, 1/12, 1/12, 1/12, 1/12, 1/12, 1/12, 1/12, 1/12, 1/12], # noqa
+        'week_profile': [1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7], # noqa
+        'day_profile': [0, 24]
+    }
     c = Consumer(demand_profile=demand_profile)
