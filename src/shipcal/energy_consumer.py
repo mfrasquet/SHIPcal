@@ -3,8 +3,10 @@ This file contains the classes that define the energy consumers
 in the simulation.
 """
 from pathlib import Path
+import datetime
 
 import pandas as pd
+import numpy as np
 
 from shipcal.elements import Element
 
@@ -99,43 +101,90 @@ class Consumer(Element):
 
         return demand_vector, step_resolution
 
-    # def create_demand_vector(self, demand_profile, step_resolution = None):
-    #     """
-    #     Receives a dictionary with the annual demand and monthly, week,
-    #     and daily consumption profile to build the demand vector. If a
-    #     step_resolution smaller than hourly is provided the demand though
-    #     each hour is uniformily distributed. The demand_profile dictionary
-    #     has the following format
-    #     demand_profile = {
-    #         'annual_demand': 20000, # [kWh]
-    #         'monthly_profile': [usage_ratio_January,usage_ratio_Feb, ... ], # [-]
-    #         'week_profile': [usage_ratio_Monday, usage_ratio_Tuesday, ... ], # [-]
-    #         'day_profile':[hour_start, hour_end], # [-]
-    #     }
-    #     And example of the
-    #     demand_profile dictionary where the demand is constant trough the
-    #     whole year is:
-    #     demand_profile = {
-    #         'annual_demand': 20000 # [kWh],
-    #         'monthly_profile': [
-    #              1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12
-    #          ], # [-]
-    #         'week_profile':20000 [1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7], # [-]
-    #         'day_profile':[0,24] # [-]
-    #     }
-    #     Returns:
-    #         - demand_vector
-    #         - step_resolution
-    #     """
-    #     #days_in_the_month[month_number]=how many days are in the month number "month_number"
-    #     days_in_the_month=[31,28,31,30,31,30,31,31,30,31,30,31]
-    #     monthly_demand = demand_profile["monthly_profile"]*demand_profile["annual_demand"]
-    #     hourly_demand = []
-    #     for n_month in range(12):
-    #         for ny_day in range(days_in_the_month[n_month]):
-    #     demand_vector = None
-    #     step_resolution = None
-    #     return demand_vector, step_resolution
+    def create_demand_vector(self, demand_profile, step_resolution=None,  default_year=2022):
+        """
+        Receives a dictionary with the annual demand and monthly, week,
+        and daily consumption profile to build the demand vector. If a
+        step_resolution smaller than hourly is provided the demand through
+        each hour is uniformily distributed. The demand_profile dictionary
+        has the following format
+        demand_profile = {
+            'annual_demand': 20000, # [kWh]
+            'monthly_profile': [usage_ratio_January,usage_ratio_Feb, ... ],
+            'week_profile': [usage_ratio_Monday, usage_ratio_Tuesday, ... ],
+            'day_profile':[hour_start, hour_end]}
+
+            And example of the
+            demand_profile dictionary where the demand is constant trough the
+            whole year is:
+            demand_profile = {
+                'annual_demand': 20000 # [kWh],
+                'monthly_profile': [1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12],
+                'week_profile':[1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7],
+                'day_profile':[0,24]}
+
+
+            Returns:
+                - demand_vector
+                - step_resolution
+        """
+
+        # days_in_the_month[month_number]=how many days are in the month number "month_number"
+        days_in_the_month = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+
+        # weeks_in_the_month[month_number]=how many weeks are in the month number "month_number"
+        weeks_in_the_month = days_in_the_month / 7
+
+        # saves 'week_profile' and 'day_profile' as numpy arrays
+        monthly_profile = np.array(demand_profile["monthly_profile"])
+        week_profile = np.array(demand_profile["week_profile"])
+        day_profile = np.array(demand_profile["day_profile"])
+
+        # monthly_demand is the the distribuiton of the annual demand through the months,
+        # define by the monthly profile
+        monthly_demand = monthly_profile * demand_profile["annual_demand"]
+
+        # Creates the array "hour_profile".
+        # This array has 24 entrace that uniformily distribute the hourly demand of all days
+        hour_profile = np.zeros(24)
+        for i in range(day_profile[0], (day_profile[1] + 1)):
+            hour_profile[i] = 1 / ((day_profile[1] + 1) - day_profile[0])
+
+        # Creates an empty list that will save the hourly demand
+        demand_vector = []
+
+        for n_month in range(12):
+
+            # Calculates the weekly_demand based on the monthly demand and
+            # the number of weeks in each month
+            weekly_demand = np.array(monthly_demand[n_month]) / weeks_in_the_month[n_month]
+
+            for ny_day in range(days_in_the_month[n_month]):
+
+                # Calculates wich day of the week correspondes a certain date
+                day_of_the_week = datetime.date(default_year, (n_month + 1), (ny_day + 1)).weekday()
+
+                # Calculates the demand of each day based on the weekly demand and
+                # week profile for a certain day of the week
+                day_demand = weekly_demand * week_profile[day_of_the_week]
+
+                # Saves the demand of each hour based on the day demand and
+                # the hour profile distribution
+                for hour in range(24):
+                    demand_vector.append(day_demand * hour_profile[hour])
+
+        # If a step_resolution is declared then the demand through each hour is
+        # uniformily distributed
+        if step_resolution:
+            time_step = int(60 / step_resolution)
+            demand_vector_aux = []
+            for i in range(len(demand_vector)):
+                for j in range(time_step):
+                    demand_vector_aux.append(demand_vector[i] / time_step)
+
+            demand_vector = demand_vector_aux
+
+        return (demand_vector, step_resolution)
 
 
 if __name__ == "__main__":
