@@ -29,3 +29,13 @@ def test_addup_toannualenery():
     company_consumer = Consumer(demand_profile=demand_profile)
     assert company_consumer.demand_vector.sum() == approx(demand_profile["annual_demand"]), \
         "The demand vector does not add up to the provided annual demand"
+
+    demand_profile = {
+        'annual_demand': 20000, # [kWh]
+        'week_profile':[0, 0, 0, 1/2, 1/2, 0, 0],
+        'monthly_profile': [1/11,1/11,1/11,1/11,1/11,1/11,1/11,1/11,1/11,1/11,1/11,0],
+        'day_profile':[8,20]
+    }
+    company_consumer = Consumer(demand_profile=demand_profile)
+    assert company_consumer.demand_vector.sum() == approx(demand_profile["annual_demand"]), \
+        "The demand vector does not add up to the provided annual demand"
