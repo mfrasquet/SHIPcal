@@ -5,6 +5,8 @@ shipcal
 
 from shipcal.elements import Element
 
+import pandas as pd
+
 class FresnelOptics():
     """
     Class for the optics in Linear Fresnel collectors.
@@ -29,6 +31,36 @@ class FresnelOptics():
         theta_trans = 1*step #Dummy eq -- change
         return [theta_long,theta_trans]
 
+    def get_IAM(self,theta_long,theta_trans):
+        """
+        Returns the IAM obtained as IAM = IAM_long(theta_long) * IAM_trans(theta_trans)  [-]
+        """
+        IAMs_df=pd.read_csv(self.iam_file)
+        
+        # Los IAMs están disponibles para valores de angulo que van de 5º en 5º. Es necesario interpolar el resultado
+        theta_id=[int(round(theta_long/5,0)),int(round(theta_trans/5,0))]
+        theta_diff=[theta_long-(theta_id[0])*5,theta_trans-(theta_id[1])*5]
+        iam=[]
+        
+        for i in range(0,len(theta_diff)):
+            
+            if theta_diff[i]<0:     # Hemos redondeado hacia arriba, interpolamos con el valor actual y el anterior
+                a=IAMs_df.iloc[theta_id[i],i+2]
+                b=IAMs_df.iloc[theta_id[i]-1,i+2]
+                iam.append(a+((a-b)/5)*theta_diff[i])
+            
+            elif theta_diff[i]>0:   # Hemos redondeado hacia abajo, interpolamos con el valor actual y el siguiente
+                a=IAMs_df.iloc[theta_id[i],i+2]
+                b=IAMs_df.iloc[theta_id[i]+1,i+2]
+                iam.append(a+((b-a)/5)*theta_diff[i])
+            
+            elif theta_diff[i]==0:
+                iam.append(IAMs_df.iloc[theta_id[i],i+2])
+        
+        product=iam[0]*iam[1] 
+        iam.append(product)         # iam = [iam_long, iam_transv, iam_long*iam_transv]
+        return iam
+    
     def get_optic_eff(self,theta_long,theta_trans):
         """
         Returns the optic efficiency at one specific time step
