@@ -1,4 +1,4 @@
-Angle deg,Incidence angle rad,IAM_log,IAM_transv
+Angle deg,Incidence angle rad,IAM_long,IAM_transv
 0,0,1,1
 5,0.087266463,0.999683544,0.999525316
 10,0.174532925,0.996518987,1

@@ -4,10 +4,11 @@ shipcal
 """
 from pathlib import Path
 
-from shipcal.elements import Element
-from shipcal.weather import Weather
-
+import pkg_resources
 import pandas as pd
+
+from shipcal.elements import Element
+
 
 class FresnelOptics():
     """
@@ -18,12 +19,38 @@ class FresnelOptics():
     roll_field => roll of the solar field [deg]
     pitch_field => pitch of the solar field
     """
-    def __init__(self, eff_opt_norm, iam_file, azimuth_field, roll_field, pitch):
+
+    def __init__(self, eff_opt_norm, iam_file=None, azimuth_field=0, roll_field=0, pitch=0):
         self.eff_opt_norm = eff_opt_norm
         self.iam_file = iam_file
         self.azimuth_field = azimuth_field
         self.roll_field = roll_field
         self.pitch = pitch
+
+    @property
+    def iam_file(self):
+        """
+        Location of the IAM file table of values. The file must have the
+        following format:
+
+        Angle deg,Incidence angle rad,IAM_long,IAM_transv
+        0,0,1,1.01
+        5,0.0872,0.9924,0.998
+
+        this is one line per equally spaced angle with its IAM values
+        """
+        return self._iam_file
+
+    @iam_file.setter
+    def iam_file(self, path_to_file):
+        if path_to_file is None:
+            self._iam_file = Path(
+                pkg_resources.resource_filename("shipcal.collectors", "data/SOLATOM_real.csv")
+            )
+        else:
+            self._iam_file = Path(path_to_file)
+            if not self._iam_file.exists():
+                raise ValueError(f"No such IAM file {path_to_file}.")
 
     def get_incidence_angle(self, step=None):
         """
@@ -33,37 +60,60 @@ class FresnelOptics():
         theta_trans = 1 * step  # Dummy eq -- change
         return [theta_long, theta_trans]
 
-    def get_IAM(self,theta_long,theta_trans):
+    def get_IAM(self, theta_long=0, theta_trans=0):
         """
-        Returns the IAM obtained as IAM = IAM_long(theta_long) * IAM_trans(theta_trans)  [-]
+        Obtains the IAM longitudinal, transversal, and its product
+        obtained as IAM = IAM_long(theta_long) * IAM_trans(theta_trans) [-]
+        from the longitudinal and transversal angles measured in degrees
+        from the normal to the collector plane. The values are obtained
+        from interpolating the vaues in the provided iam_file.
+
+        Parameters
+        ----------
+        theta_long : float
+            [°] Longitudinal incidence angle. Measured from the collector
+            normal in the direction parallel to the longest side of the
+            collector.
+        theta_trans : float
+            [°] Transversal incidence angle. Measured from the collector
+            normal in the direction perpendicular to the longest side of the
+            collector.
+
+        Returns
+        -------
+        iams : List
+            Returns a list of the IAMs; long, trans and its product
+            IAM_long*IAM*trans. [IAM_long, IAM_trans, IAM]
         """
-        IAMs_df=pd.read_csv(self.iam_file)
-        
-        # IAMs are available fot angle values ranging from 5º to 5º, it is necessary to interpolate the result
-        theta_id=[int(round(theta_long/5,0)),int(round(theta_trans/5,0))]
-        theta_diff=[theta_long-(theta_id[0])*5,theta_trans-(theta_id[1])*5]
-        iam=[]
-        
-        for i in range(0,len(theta_diff)):
-            
-            if theta_diff[i]<0:     # It has been rounded up, it is necessary to interpolate with the current value and the previous one
-                a=IAMs_df.iloc[theta_id[i],i+2]
-                b=IAMs_df.iloc[theta_id[i]-1,i+2]
-                iam.append(a+((a-b)/5)*theta_diff[i])
-            
-            elif theta_diff[i]>0:   # It has been rounded down, it is necessary to interpolate with the current value and the next one
-                a=IAMs_df.iloc[theta_id[i],i+2]
-                b=IAMs_df.iloc[theta_id[i]+1,i+2]
-                iam.append(a+((b-a)/5)*theta_diff[i])
-            
-            elif theta_diff[i]==0:
-                iam.append(IAMs_df.iloc[theta_id[i],i+2])
-        
-        product=iam[0]*iam[1] 
-        iam.append(product)         # iam = [iam_long, iam_transv, iam_long*iam_transv]
-        return iam
-    
-    def get_optic_eff(self,theta_long,theta_trans):
+        IAMs_df = pd.read_csv(self.iam_file)
+
+        # IAMs are available fot angle values ranging from 5º to 5º,
+        # it is necessary to interpolate the result
+        theta_id = [int(round(theta_long / 5, 0)), int(round(theta_trans / 5, 0))]
+        theta_diff = [theta_long - (theta_id[0]) * 5, theta_trans - (theta_id[1]) * 5]
+        iams = []
+
+        for i in range(0, len(theta_diff)):
+            # It has been rounded up, it is necessary to interpolate
+            # with the current value and the previous one
+            if theta_diff[i] < 0:
+                a = IAMs_df.iloc[theta_id[i], i + 2]
+                b = IAMs_df.iloc[theta_id[i] - 1, i + 2]
+                iams.append(a + ((a - b) / 5) * theta_diff[i])
+            # It has been rounded down, it is necessary to interpolate
+            # with the current value and the next one
+            elif theta_diff[i] > 0:
+                a = IAMs_df.iloc[theta_id[i], i + 2]
+                b = IAMs_df.iloc[theta_id[i] + 1, i + 2]
+                iams.append(a + ((b - a) / 5) * theta_diff[i])
+            elif theta_diff[i] == 0:
+                iams.append(IAMs_df.iloc[theta_id[i], i + 2])
+        product = iams[0] * iams[1]
+        # iams = [iam_long, iam_transv, iam_long*iam_transv]
+        iams.append(product)
+        return iams
+
+    def get_optic_eff(self, theta_long, theta_trans):
         """
         Returns the optic efficiency at one specific time step
         """
@@ -95,7 +145,8 @@ class Collector(Element, FresnelOptics):
     aperture_area = 13.14  # [m^2]
 
     def __init__(
-        self, eff_opt_norm, iam_file, azimuth_field, roll_field, pitch):
+        self, eff_opt_norm, iam_file, azimuth_field, roll_field, pitch
+    ):
         Element.__init__(self)
         FresnelOptics.__init__(self, eff_opt_norm, iam_file, azimuth_field, roll_field, pitch)
 
@@ -164,8 +215,8 @@ class Collector(Element, FresnelOptics):
 
 
 if __name__ == "__main__":
-    optic = FresnelOptics(67.56, 45,0,0,0)
-    collec = Collector(67,45,0,0,0)
-    #sevilla_file = Path("./data/Sevilla.csv")
-    #sevilla = Weather(sevilla_file, "10min")
-    #collec.get_energy_gain(5,sevilla)
+    optic = FresnelOptics(67.56, 45, 0, 0, 0)
+    collec = Collector(67, 45, 0, 0, 0)
+    # sevilla_file = Path("./data/Sevilla.csv")
+    # sevilla = Weather(sevilla_file, "10min")
+    # collec.get_energy_gain(5,sevilla)
