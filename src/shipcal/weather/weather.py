@@ -166,6 +166,14 @@ class Weather:
             mod_file.close()
             self.location_file = modified_location
 
+    def _conv_local_to_solar(self, loc_datetime):
+        self._metadata["TZ"]
+        self._metadata["latitude"]
+        self._metadata["longitude"]
+        # Convertir
+        solar_datetime = None
+        return solar_datetime
+
     def read_file(self):
         """
         Gets file location, reads its content and stores its data in
@@ -184,6 +192,24 @@ class Weather:
             self._add_dummy_fields_tmy2()
             data, metadata = read_tmy2(self.location_file)
 
+        # Después
+        # Primero obtener fechas y horas desde la tabla en self._data
+        sevilla._data.index  # Esto devuelve el indice (fecha y horas)
+        # Obtener solo las horas hh:mm con .time()
+        sevilla._data.index[4].time()
+        # Pasarlo por la función de conversión a tiempo solar en cada entrada
+        self._conv_local_to_solar(sevilla._data.index[4])
+        # Sustituir los resultados en el indice que self._data
+        # get the date column as a pd.Series of numpy datetime64
+        # data_index = pd.DatetimeIndex(
+        #     pd.to_datetime(
+        #         tmy_data.loc[:, ["Year", "Month", "Day", "Hour", "Minute"]]
+        #     )
+        # )
+        # tmy_data.index = data_index
+
+        # Obtener la hora desde el archivo Sevilla con el atributo _data, con el .time(), 
+        # y para transformarlos a hora solar  
         return data, metadata
 
     def resample_interpolate(self, step_resolution, prop_series):
