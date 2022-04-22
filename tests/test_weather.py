@@ -2,8 +2,10 @@
 This module contains the test for the Weather class
 """
 import pytest
-
+import pvlib
+import pandas as pd
 from shipcal import Weather
+
 from datetime import datetime
 
 def test_read_tmy3():
@@ -49,7 +51,6 @@ def test_sunposition():
     sevilla.get_solar_altitude(13) == pytest.approx(59.75,0.05)
     # and azimut
     sevilla.get_solar_azimut(13) == pytest.approx(65.67,0.05)
-
     # I should be able to find the same altitude by entering a datetime
     # This should return the solar altitude in
     # the datetime '2005-01-01 17:00:00+0100'
@@ -57,3 +58,12 @@ def test_sunposition():
     # and azimut
     sevilla.get_solar_azimut("2005-01-01 14:00:00+0100") == pytest.approx(65.67,0.05)
     
+
+# def test_solar_pos():
+#     """ Calculate solar position from one-value or array (solar hour)"""
+#     date = pd.date_range(start='1/1/2018', periods=8, freq="H")
+#     solar_position = pvlib.solarposition.get_solarposition(sevilla.index[:168],
+#         sevilla.lat,          
+#         sevilla.lon,
+#         )
+#     assert solar
