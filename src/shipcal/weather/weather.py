@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from pvlib.iotools import read_tmy3, read_tmy2
-
+from pvlib.solarposition import get_solarposition
 
 class Weather:
     """
@@ -93,7 +93,7 @@ class Weather:
         self._step_resolution = step_resolution
         [
             self._lat, self._lon, self._elev,
-            self._tz_loc, self._dni, self._ghi,
+            self._tz_loc, self._time, self._dni, self._ghi,
             self._amb_temp, self._humidity, self._wind_speed
         ] = self.read_file()
         self.set_grid_temp()
@@ -116,13 +116,14 @@ class Weather:
         lon = metadata["longitude"]
         elev = metadata["altitude"]
         tz_loc = metadata["TZ"]
+        time = self.resample_interpolate_time(self.step_resolution, data)
         dni = self.resample_distribute(self.step_resolution, data.DNI)
         ghi = self.resample_distribute(self.step_resolution, data.GHI)
         amb_temp = self.resample_interpolate(self.step_resolution, data.DryBulb)
         humidity = self.resample_interpolate(self.step_resolution, data.RHum)
         wind_speed = self.resample_interpolate(self.step_resolution, data.Wspd)
 
-        return lat, lon, elev, tz_loc, dni, ghi, amb_temp, humidity, wind_speed
+        return lat, lon, elev, tz_loc, time, dni, ghi, amb_temp, humidity, wind_speed
 
     def resample_interpolate(self, step_resolution, prop_series):
         """
@@ -139,6 +140,21 @@ class Weather:
         """
         return prop_series.resample(step_resolution).interpolate()
 
+    def resample_interpolate_time(self, step_resolution, time_series):
+        """
+        This method receives a time series (from tmy3 index) based
+        property and a step resolution description and returns a time
+        series with this step resolution where each entry is an
+        interpolation of the the two nearest hourly entries.
+        
+        Time descriptors examples
+        
+        1h = 1 hour steps
+        10min = 10 minutes steps
+        5T = 5 minutes steps
+        """
+        return time_series.resample(step_resolution).interpolate("index").index
+    
     def resample_distribute(self, step_resolution, prop_series):
         """
         This method receives a time series based property and a step
@@ -338,6 +354,65 @@ class Weather:
         doc=""" [m/s] Hourly array. Wind speed. """
     )
 
+    def get_solar_pos(self, hour=None):
+        """
+        Returns sun's azimuth and elevation for the nth hour in the time array
+        hour can be non integer.
+        """
+        if hour:
+            time = self.interpolate_prop(hour, self._time)
+            lat = self._lat
+            lon = self._lon
+            azimuth = float(get_solarposition(time, lat, lon)["azimuth"])
+            elevation = float(get_solarposition(time, lat, lon)["elevation"])
+            return azimuth, elevation
+        
+        else:
+            azimuth = get_solarposition(self._time, self.lat, self.lon)["azimuth"]
+            elevation = get_solarposition(self._time, self.lat, self.lon)["azimuth"]
+            return azimuth, elevation
+
+    def get_solar_altitude(self, hour=None):
+        """
+        Returns sun's elevation for the nth hour in the time array
+        hour can be non integer.
+        """
+        if type(hour) == str:
+            elevation = float(get_solarposition(hour, self.lat, self.lon)["elevation"])
+            return elevation
+        
+        elif type(hour) == pd.core.indexes.datetimes.DatetimeIndex:
+            elevation=[]
+            for h in hour:
+                elev = float(get_solarposition(h, self.lat, self.lon)["elevation"])
+                elevation.append(elev)
+            return elevation
+                        
+        else:
+            time = self.interpolate_prop(hour, self._time)
+            elevation = float(get_solarposition(time, self.lat, self.lon)["elevation"])
+            return elevation
+
+    def get_solar_azimut(self, hour=None):
+        """
+        Returns sun's azimuth for the nth hour in the time array
+        hour can be non integer.
+        """
+        if type(hour) == str:
+            azimuth = float(get_solarposition(hour, self.lat, self.lon)["azimuth"])
+            return azimuth
+        
+        elif type(hour) == pd.core.indexes.datetimes.DatetimeIndex:
+            azimuth=[]
+            for h in hour:
+                azim = float(get_solarposition(h, self.lat, self.lon)["azimuth"])
+                azimuth.append(azim)
+            return azimuth
+           
+        else:
+            time = self.interpolate_prop(hour, self._time)
+            azimuth = float(get_solarposition(time, self.lat, self.lon)["azimuth"])
+            return azimuth
 
 if __name__ == "__main__":
     sevilla_file = Path(
