@@ -10,6 +10,7 @@ import pandas as pd
 from pvlib.iotools import read_tmy3, read_tmy2
 from pvlib.solarposition import get_solarposition
 
+
 def read_explorador_solar_tmy(file_loc):
     """
     Reads tmy exported from the Chilean explorador solar app.
@@ -209,8 +210,8 @@ class Weather:
         # )
         # tmy_data.index = data_index
 
-        # Obtener la hora desde el archivo Sevilla con el atributo _data, con el .time(), 
-        # y para transformarlos a hora solar  
+        # Obtener la hora desde el archivo Sevilla con
+        # el atributo _data, con el .time(), y para transformarlos a hora solar
         return data, metadata
 
     def resample_interpolate(self, step_resolution, prop_series):
@@ -234,15 +235,15 @@ class Weather:
         property and a step resolution description and returns a time
         series with this step resolution where each entry is an
         interpolation of the the two nearest hourly entries.
-        
+
         Time descriptors examples
-        
+
         1h = 1 hour steps
         10min = 10 minutes steps
         5T = 5 minutes steps
         """
         return time_series.resample(step_resolution).interpolate("index").index
-    
+
     def resample_distribute(self, step_resolution, prop_series):
         """
         This method receives a time series based property and a step
@@ -454,7 +455,7 @@ class Weather:
             azimuth = float(get_solarposition(time, lat, lon)["azimuth"])
             elevation = float(get_solarposition(time, lat, lon)["elevation"])
             return azimuth, elevation
-        
+
         else:
             azimuth = get_solarposition(self._time, self.lat, self.lon)["azimuth"]
             elevation = get_solarposition(self._time, self.lat, self.lon)["azimuth"]
@@ -468,14 +469,14 @@ class Weather:
         if type(hour) == str:
             elevation = float(get_solarposition(hour, self.lat, self.lon)["elevation"])
             return elevation
-        
+
         elif type(hour) == pd.core.indexes.datetimes.DatetimeIndex:
-            elevation=[]
+            elevation = []
             for h in hour:
                 elev = float(get_solarposition(h, self.lat, self.lon)["elevation"])
                 elevation.append(elev)
             return elevation
-                        
+
         else:
             time = self.interpolate_prop(hour, self._time)
             elevation = float(get_solarposition(time, self.lat, self.lon)["elevation"])
@@ -489,18 +490,19 @@ class Weather:
         if type(hour) == str:
             azimuth = float(get_solarposition(hour, self.lat, self.lon)["azimuth"])
             return azimuth
-        
+
         elif type(hour) == pd.core.indexes.datetimes.DatetimeIndex:
-            azimuth=[]
+            azimuth = []
             for h in hour:
                 azim = float(get_solarposition(h, self.lat, self.lon)["azimuth"])
                 azimuth.append(azim)
             return azimuth
-           
+
         else:
             time = self.interpolate_prop(hour, self._time)
             azimuth = float(get_solarposition(time, self.lat, self.lon)["azimuth"])
             return azimuth
+
 
 if __name__ == "__main__":
     sevilla_file = Path(

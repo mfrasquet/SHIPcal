@@ -2,8 +2,6 @@
 This module contains the test for the Weather class
 """
 import pytest
-import pvlib
-import pandas as pd
 from shipcal import Weather
 
 from datetime import datetime
