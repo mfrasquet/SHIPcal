@@ -14,7 +14,14 @@ def test_read_tmy3():
     sevilla = Weather(sevilla_tmy3_loc)
     assert sevilla.lat == 37.410
 
-@pytest.mark.skip(reason="Carlos is currently working on this tests")
+
+def test_read_tmy2():
+    """ Check that tmy2 files are being read properly """
+    rome_tmy2_loc = "src/shipcal/weather/data/Roma_Ciampino_local_hour.tm2"
+    rome = Weather(rome_tmy2_loc)
+    assert rome.lat == 41.800
+
+
 def test_localtime_to_solartime():
     """
     Test if a few of the data index changed properly to solar time
@@ -29,15 +36,20 @@ def test_localtime_to_solartime():
 
     # Consider at a location at the east of the greenwich tz
     # Then, for sevilla, the 12:00 h of the 01/01/2005 must be 10:33
-    assert sevilla_localtime.dni.loc["2005-01-01 12:00:00+0100"] == sevilla.dni[11]
+    # assert sevilla_localtime.dni.loc["01/01/2005 12:00+0100"] == sevilla.dni[11]
+    # assert sevilla.dni.index[11].time() == datetime.time(datetime(day=1,month=1,year=2005,hour=12, minute=00))
+    assert sevilla_localtime.dni.loc["01/01/2005 12:00+0100"] == sevilla_localtime.dni[11]
     assert sevilla.dni.index[11].time() == datetime.time(datetime(day=1,month=1,year=2022,hour=10, minute=33))
 
     # Consider daytime saving
     # Then, for sevilla, the 12:00 h of the 30/03/2005 must be 09:31
+    #assert sevilla_localtime.dni.loc["01/01/2005 22:00+0100"] == sevilla.dni[21]
+    #assert sevilla.dni.index[21].time() == datetime.time(datetime(day=1,month=1,year=2005,hour=22, minute=00))
     assert sevilla_localtime.dni.loc["2005-03-30 12:00:00+0100"] == sevilla.dni[2123]
     assert sevilla.dni.index[2123].time() == datetime.time(datetime(day=1,month=1,year=2022,hour=9, minute=31))
 
     # Consider a  location at the east of the greenwich tz
+
 
 def test_sunposition():
     """

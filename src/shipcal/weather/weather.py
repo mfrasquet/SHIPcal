@@ -2,7 +2,6 @@
 This module contains the definition of the Weather class, used
 to model the weather at the provided location from an hourly TMY.
 """
-
 from pathlib import Path
 
 import numpy as np
@@ -10,6 +9,42 @@ import pandas as pd
 
 from pvlib.iotools import read_tmy3, read_tmy2
 from pvlib.solarposition import get_solarposition
+
+def read_explorador_solar_tmy(file_loc):
+    """
+    Reads tmy exported from the Chilean explorador solar app.
+    """
+    metadata_line = pd.read_csv(file_loc, nrows=1)
+    tmy_data = pd.read_csv(file_loc, skiprows=2)
+    metadata = dict(
+        Name=metadata_line["City"][0],
+        latitude=float(metadata_line["Latitude"]),
+        longitude=float(metadata_line["Longitude"]),
+        altitude=float(metadata_line["Elevation"]),
+        TZ=float(metadata_line["Time Zone"])
+    )
+    # get the date column as a pd.Series of numpy datetime64
+    data_index = pd.DatetimeIndex(
+        pd.to_datetime(
+            tmy_data.loc[:, ["Year", "Month", "Day", "Hour", "Minute"]]
+        )
+    )
+    tmy_data.index = data_index
+    tmy_data.tz_localize(int(metadata["TZ"] * 3600))
+    columns_names = {
+        "GHI": "GHI (W/m^2)",
+        "DNI": "DNI (W/m^2)",
+        "DHI": "DHI (W/m^2)",
+        "Tdry": "Dry-bulb (C)",
+        "Tdew": "Dew-point (C)",
+        "RH": "RHum (%)",
+        "Pres": "Pressure (mbar)",
+        "Wspd": "Wspd (m/s)",
+        "Wdir": "Wdir (degrees)",
+    }
+    tmy_data.rename(columns=columns_names, inplace=True)
+    return tmy_data, metadata
+
 
 class Weather:
     """
@@ -87,16 +122,58 @@ class Weather:
     Lprecip uncert (code)
     """
 
-    def __init__(self, location_file, step_resolution="1h", mofdni=1):
+    def __init__(self, location_file, step_resolution="1h", mofdni=1, local_time=False):
         self.mofdni = mofdni
         self.location_file = location_file
         self._step_resolution = step_resolution
-        [
-            self._lat, self._lon, self._elev,
-            self._tz_loc, self._time, self._dni, self._ghi,
-            self._amb_temp, self._humidity, self._wind_speed
-        ] = self.read_file()
+        self._data, self._metadata = self.read_file()
+
+        self._time = self.resample_interpolate_time(self.step_resolution, self._data)
+        self._dni = self.resample_distribute(self.step_resolution, self._data.DNI)
+        self._ghi = self.resample_distribute(self.step_resolution, self._data.GHI)
+        self._amb_temp = self.resample_interpolate(self.step_resolution, self._data.DryBulb)
+        self._humidity = self.resample_interpolate(self.step_resolution, self._data.RHum)
+        self._wind_speed = self.resample_interpolate(self.step_resolution, self._data.Wspd)
+
         self.set_grid_temp()
+
+    def _add_dummy_fields_tmy2(self):
+        """
+        If the tmy2 has missing fields in metadata line adds them with
+        'dummy' for pvlib readthem properly.
+        """
+        with open(self.location_file, "r",) as orig_tmy2:
+            metaraw = orig_tmy2.readline()
+            metaraw = " ".join(metaraw.split()).split(" ")
+            if len(metaraw) < 11:
+                n_missing_fields = 11 - len(metaraw)
+                # Search for S or N index
+                i = -1
+                for item in metaraw:
+                    if item == "S" or item == "N":
+                        break
+                    i += 1
+                dummy_list = ["dummy"] * n_missing_fields
+                metaraw = metaraw[:i] + dummy_list + metaraw[i:]
+                metaraw = " ".join(metaraw)
+                modified_location_list = str(self.location_file).split(".")
+                modified_location = "".join(
+                    modified_location_list[:-1] + ["_mod."] + modified_location_list[-1:]
+                )
+            # Write into new file
+            mod_file = open(modified_location, "w")
+            mod_file.write(metaraw)
+            mod_file.write(orig_tmy2.read())
+            mod_file.close()
+            self.location_file = modified_location
+
+    def _conv_local_to_solar(self, loc_datetime):
+        self._metadata["TZ"]
+        self._metadata["latitude"]
+        self._metadata["longitude"]
+        # Convertir
+        solar_datetime = None
+        return solar_datetime
 
     def read_file(self):
         """
@@ -108,22 +185,33 @@ class Weather:
         """
         file_ext = self.location_file.as_posix().split(".")[-1]
         if file_ext == "csv":
-            data, metadata = read_tmy3(self.location_file)
+            try:
+                data, metadata = read_tmy3(self.location_file)
+            except pd.errors.ParserError:
+                data, metadata = read_explorador_solar_tmy(self.location_file)
         elif file_ext == "tm2":
+            self._add_dummy_fields_tmy2()
             data, metadata = read_tmy2(self.location_file)
 
-        lat = metadata["latitude"]
-        lon = metadata["longitude"]
-        elev = metadata["altitude"]
-        tz_loc = metadata["TZ"]
-        time = self.resample_interpolate_time(self.step_resolution, data)
-        dni = self.resample_distribute(self.step_resolution, data.DNI)
-        ghi = self.resample_distribute(self.step_resolution, data.GHI)
-        amb_temp = self.resample_interpolate(self.step_resolution, data.DryBulb)
-        humidity = self.resample_interpolate(self.step_resolution, data.RHum)
-        wind_speed = self.resample_interpolate(self.step_resolution, data.Wspd)
+        # Después
+        # Primero obtener fechas y horas desde la tabla en self._data
+        sevilla._data.index  # Esto devuelve el indice (fecha y horas)
+        # Obtener solo las horas hh:mm con .time()
+        sevilla._data.index[4].time()
+        # Pasarlo por la función de conversión a tiempo solar en cada entrada
+        self._conv_local_to_solar(sevilla._data.index[4])
+        # Sustituir los resultados en el indice que self._data
+        # get the date column as a pd.Series of numpy datetime64
+        # data_index = pd.DatetimeIndex(
+        #     pd.to_datetime(
+        #         tmy_data.loc[:, ["Year", "Month", "Day", "Hour", "Minute"]]
+        #     )
+        # )
+        # tmy_data.index = data_index
 
-        return lat, lon, elev, tz_loc, time, dni, ghi, amb_temp, humidity, wind_speed
+        # Obtener la hora desde el archivo Sevilla con el atributo _data, con el .time(), 
+        # y para transformarlos a hora solar  
+        return data, metadata
 
     def resample_interpolate(self, step_resolution, prop_series):
         """
@@ -210,22 +298,22 @@ class Weather:
     @property
     def tz_loc(self):
         """ [-] Int. Timezone of the location in simulation """
-        return self._tz_loc
+        return self._metadata["TZ"]
 
     @property
     def elev(self):
         """ [m] Float. Height above sea level """
-        return self._elev
+        return self._metadata["altitude"]
 
     @property
     def lat(self):
         """ [°] Float. Latitude of location in simulation """
-        return self._lat
+        return self._metadata["latitude"]
 
     @property
     def lon(self):
         """ [°] Float. Longitude of location in simulation. """
-        return self._lon
+        return self._metadata["longitude"]
 
     @property
     def location_file(self):
