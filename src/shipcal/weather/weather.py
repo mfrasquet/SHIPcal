@@ -414,6 +414,9 @@ class Weather:
             azimuth = float(get_solarposition(time, self.lat, self.lon)["azimuth"])
             return azimuth
 
+    def una_fun_nueva(self):
+        pass
+
 if __name__ == "__main__":
     sevilla_file = Path(
         "./data/Sevilla.csv"
@@ -423,3 +426,5 @@ if __name__ == "__main__":
     print(sevilla.amb_temp.mean())
     for i in range(11):
         print(sevilla.amb_temp[i])
+
+# Este es un cambiio de mi funcionalidad nueva
