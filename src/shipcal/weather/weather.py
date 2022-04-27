@@ -414,9 +414,6 @@ class Weather:
             azimuth = float(get_solarposition(time, self.lat, self.lon)["azimuth"])
             return azimuth
 
-    def una_fun_nueva(self):
-        pass
-
 if __name__ == "__main__":
     sevilla_file = Path(
         "./data/Sevilla.csv"
