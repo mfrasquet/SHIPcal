@@ -414,6 +414,10 @@ class Weather:
             azimuth = float(get_solarposition(time, self.lat, self.lon)["azimuth"])
             return azimuth
 
+    def metodo_prueba(self):
+        print(self.location_file)
+        return 0
+
 if __name__ == "__main__":
     sevilla_file = Path(
         "./data/Sevilla.csv"
