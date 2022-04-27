@@ -489,3 +489,5 @@ def SolarData(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_
     else:
         return[output,hour_year_ini,hour_year_fin]        
      
+def PitchAngle(p):
+    print("hola")
