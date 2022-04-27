@@ -2,13 +2,14 @@
 This module contains the definition of the Weather class, used
 to model the weather at the provided location from an hourly TMY.
 """
+from faulthandler import disable
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from datetime import datetime
 
 from pvlib.iotools import read_tmy3, read_tmy2
-
 
 def read_explorador_solar_tmy(file_loc):
     """
@@ -122,11 +123,13 @@ class Weather:
     Lprecip uncert (code)
     """
 
+
     def __init__(self, location_file, step_resolution="1h", mofdni=1, local_time=False):
         self.mofdni = mofdni
         self.location_file = location_file
         self._step_resolution = step_resolution
         self._data, self._metadata = self.read_file()
+        self._conv_local_to_solar()
 
         self._dni = self.resample_distribute(self.step_resolution, self._data.DNI)
         self._ghi = self.resample_distribute(self.step_resolution, self._data.GHI)
@@ -135,6 +138,9 @@ class Weather:
         self._wind_speed = self.resample_interpolate(self.step_resolution, self._data.Wspd)
 
         self.set_grid_temp()
+
+        
+    
 
     def _add_dummy_fields_tmy2(self):
         """
@@ -166,13 +172,53 @@ class Weather:
             mod_file.close()
             self.location_file = modified_location
 
-    def _conv_local_to_solar(self, loc_datetime):
-        self._metadata["TZ"]
-        self._metadata["latitude"]
-        self._metadata["longitude"]
-        # Convertir
-        solar_datetime = None
-        return solar_datetime
+    def _conv_local_to_solar(self):
+        
+        data, metadata = read_tmy3(self.location_file)
+        
+        metadata["TZ"]
+        metadata["latitude"]
+        metadata["longitude"]
+        
+        #date_time=data.index[60]
+
+        for date_time in data.index[60:66]:
+            
+            #Time and date format structure
+            current_date_time = datetime(year =date_time.year, month =date_time.month, day =date_time.day, hour =date_time.hour, minute =date_time.minute, second =date_time.second)
+
+            #Time and date format structure starting from 0
+            date_0 = datetime(year = date_time.year, month = 1, day = 1, hour = 0, minute = 0, second = 0)
+
+            #Get elapsed days
+            julian_days=(current_date_time-date_0).days
+
+            #"equation of time" operations
+            B=(julian_days-81)*(360/365)
+            equation_time=(9.87*(np.sin(2*B))-7.53*(np.cos(B))-1.5*(np.sin(B)))
+
+            #data for the equation of the true solar time 
+            #get current hour
+            hour=(current_date_time).hour
+            #minutes in decimal for the format 24 hours
+            minutes=((current_date_time).minute)/60
+            #current hour
+            local_standar_time=hour+minutes
+            #México is in the time zone - 6 (six hours behind the Greenwich meridian) it is at a standard longitude of - 6 * 15° = - 90°(LSTM)
+            standar_longitude=-90
+            #example Durango in México it is at a longitude of approximate -104°
+            local_longitude=metadata["longitude"]
+            #correction fo time factor
+            correction_factor=4*(local_longitude-standar_longitude)+equation_time
+        
+            #structure of equation
+            local_solar_time=local_standar_time+(correction_factor/60)
+
+            print(local_solar_time)
+
+        
+        
+        return local_solar_time
 
     def read_file(self):
         """
@@ -191,26 +237,10 @@ class Weather:
         elif file_ext == "tm2":
             self._add_dummy_fields_tmy2()
             data, metadata = read_tmy2(self.location_file)
-
-        # Después
-        # Primero obtener fechas y horas desde la tabla en self._data
-        sevilla._data.index  # Esto devuelve el indice (fecha y horas)
-        # Obtener solo las horas hh:mm con .time()
-        sevilla._data.index[4].time()
-        # Pasarlo por la función de conversión a tiempo solar en cada entrada
-        self._conv_local_to_solar(sevilla._data.index[4])
-        # Sustituir los resultados en el indice que self._data
-        # get the date column as a pd.Series of numpy datetime64
-        # data_index = pd.DatetimeIndex(
-        #     pd.to_datetime(
-        #         tmy_data.loc[:, ["Year", "Month", "Day", "Hour", "Minute"]]
-        #     )
-        # )
-        # tmy_data.index = data_index
-
-        # Obtener la hora desde el archivo Sevilla con el atributo _data, con el .time(), 
-        # y para transformarlos a hora solar  
+ 
         return data, metadata
+
+    
 
     def resample_interpolate(self, step_resolution, prop_series):
         """
