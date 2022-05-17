@@ -8,6 +8,7 @@ import pkg_resources
 import pandas as pd
 
 from shipcal.elements import Element
+from shipcal.weather import Weather
 
 
 class FresnelOptics():
@@ -117,8 +118,9 @@ class FresnelOptics():
         """
         Returns the optic efficiency at one specific time step
         """
-        iam = self.iam_file * theta_long * theta_trans  # Dummy eq -- change
-        return self.eff_opt_norm * iam
+        iams = self.get_IAM(theta_long, theta_trans)
+
+        return self.eff_opt_norm * iams[0]
 
 
 class Collector(Element, FresnelOptics):
@@ -167,8 +169,10 @@ class Collector(Element, FresnelOptics):
         energy_gain : float
             Maximum energy that the collector could obtain. Energy before losses
         """
+        
+        [theta_long, theta_trans] = self.get_incidence_angle(step)
         energy_gain = weather.dni[step] * self.aperture_area\
-            * self.get_optic_eff(self.get_incidence_angle(step))
+            * self.get_optic_eff(theta_long,theta_trans)
         return energy_gain
 
     def get_energy_losses(self, step, weather):
@@ -215,8 +219,13 @@ class Collector(Element, FresnelOptics):
 
 
 if __name__ == "__main__":
-    optic = FresnelOptics(67.56, 45, 0, 0, 0)
-    collec = Collector(67, 45, 0, 0, 0)
-    # sevilla_file = Path("./data/Sevilla.csv")
+    #optic = FresnelOptics(67.56, None, 0, 0, 0)
+    sevilla_file = Path("C:/Users/migue/Desktop/PYTHON/SHIPcal/src/shipcal/weather/data/Sevilla.csv")
+    sevilla = Weather(sevilla_file, "10min")
+    collec = Collector(67, None, 0, 0, 0)
+    for i in range(1,68):
+        print(sevilla.dni[i])
+        print(collec.get_energy_gain(i,sevilla))
+
     # sevilla = Weather(sevilla_file, "10min")
     # collec.get_energy_gain(5,sevilla)
