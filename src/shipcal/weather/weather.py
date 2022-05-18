@@ -4,10 +4,10 @@ to model the weather at the provided location from an hourly TMY.
 """
 from pathlib import Path
 from typing import Dict, Tuple, Union
+import datetime
 
 import numpy as np
 import pandas as pd
-from datetime import datetime
 
 from pvlib.iotools import read_tmy3, read_tmy2
 
@@ -65,8 +65,11 @@ def read_explorador_solar_tmy(file_loc: str) -> Tuple[pd.DataFrame, Dict[str, Un
 class Weather:
     """
     This class handles the TMY file reads and prepare the variables to
-    return the weather state at any hour of the simulation.
-    Assumes solar time. The following units are assumed
+    return the weather state at any hour of the simulation. Assumes the
+    tmy file has a hourly resolution. The resolution of the hourly tmy
+    readed can be extended with the step_resolution parameter. Solar time
+    is assumed, if your tmy has official local time use local_time=True
+    in the constructor. The following units are assumed
 
     Date (MM/DD/YYYY)
     Time (HH:MM)
@@ -138,29 +141,48 @@ class Weather:
     Lprecip uncert (code)
     """
 
-    def __init__(self, location_file, step_resolution="1h", mofdni=1, local_time=False):
+    def __init__(
+        self, location_file: Union[Path, str], step_resolution: str = "1h",
+        mofdni: float = 1.0, local_time: bool = False
+    ) -> None:
+
         self.mofdni = mofdni
         self.location_file = location_file
         self._step_resolution = step_resolution
-        self._data, self._metadata = self.read_file()
+        self._data_h, self._metadata = self.read_file()
+
+        # Creates an empty frame which will hold only the used weather vars
+        # with a solar time index
+        self._data = pd.DataFrame(index=self._data_h.index)
+
+        # Distributes or interpolate property accordingly
+        self._data["DNI"] = self.resample_distribute(self._data_h["DNI"])
+        self._data["GHI"] = self.resample_distribute(self._data_h["GHI"])
+        self._data["DryBulb"] = self.resample_interpolate(self._data_h["DryBulb"])
+        self._data["RHum"] = self.resample_interpolate(self._data_h["RHum"])
+        self._data["Wspd"] = self.resample_interpolate(self._data_h["Wspd"])
+
+        # Computes the grid water temperature
+        self._data["grid_temp"] = self._compute_grid_temp()
 
         # Converts self._data index from local time to solar time
         if local_time:
-            self._conv_local_to_solar()
+            self.local_date_0 = self._data.index[0]
+            self._data["solar_time"] = self._data.index
+            data_index = pd.DatetimeIndex(self._data["solar_time"].apply(self._conv_local_to_solar))
+            self._data.index = data_index
+            self._data.rename(columns={"solar_time": "local_time"}, inplace=True)
+            del self.local_date_0
 
-        self._dni = self.resample_distribute(self.step_resolution, self._data.DNI)
-        self._ghi = self.resample_distribute(self.step_resolution, self._data.GHI)
-        self._amb_temp = self.resample_interpolate(self.step_resolution, self._data.DryBulb)
-        self._humidity = self.resample_interpolate(self.step_resolution, self._data.RHum)
-        self._wind_speed = self.resample_interpolate(self.step_resolution, self._data.Wspd)
-
-        self.set_grid_temp()
-
-    def _add_dummy_fields_tmy2(self):
+    def _add_dummy_fields_tmy2(self) -> None:
         """
         If the tmy2 has missing fields in metadata line adds them with
         'dummy' for pvlib readthem properly.
+
+        This method modifies the file, in self.location_file receives
+        no parameters and returns nothing.
         """
+
         with open(self.location_file, "r",) as orig_tmy2:
             metaraw = orig_tmy2.readline()
             metaraw = " ".join(metaraw.split()).split(" ")
@@ -186,61 +208,55 @@ class Weather:
             mod_file.close()
             self.location_file = modified_location
 
-    def _conv_local_to_solar(self):
-        
-        data, metadata = read_tmy3(self.location_file)
-        
-        metadata["TZ"]
-        metadata["latitude"]
-        metadata["longitude"]
-        
-        #date_time=data.index[60]
+    def _conv_local_to_solar(self, local_datetime: datetime.datetime) -> datetime.datetime:
+        """
+        Computes the local solar datetime from the official local datetime.
 
-        for date_time in data.index[60:66]:
-            
-            #Time and date format structure
-            current_date_time = datetime(year =date_time.year, month =date_time.month, day =date_time.day, hour =date_time.hour, minute =date_time.minute, second =date_time.second)
+        Parameters
+        ----------
+        local_datetime : datetime.datetime
+            Local official/civil time.
 
-            #Time and date format structure starting from 0
-            date_0 = datetime(year = date_time.year, month = 1, day = 1, hour = 0, minute = 0, second = 0)
+        Returns
+        -------
+        datetime.datetime
+            Local real solar time.
+        """
 
-            #Get elapsed days
-            julian_days=(current_date_time-date_0).days
+        local_longitude = self._metadata["longitude"]
+        standard_longitude = self._metadata["TZ"] * 15
 
-            #"equation of time" operations
-            B=(julian_days-81)*(360/365)
-            equation_time=(9.87*(np.sin(2*B))-7.53*(np.cos(B))-1.5*(np.sin(B)))
+        # Get number of day in the calendar
+        julian_days = (local_datetime - self.local_date_0).days + 1
 
-            #data for the equation of the true solar time 
-            #get current hour
-            hour=(current_date_time).hour
-            #minutes in decimal for the format 24 hours
-            minutes=((current_date_time).minute)/60
-            #current hour
-            local_standar_time=hour+minutes
-            #México is in the time zone - 6 (six hours behind the Greenwich meridian) it is at a standard longitude of - 6 * 15° = - 90°(LSTM)
-            standar_longitude=-90
-            #example Durango in México it is at a longitude of approximate -104°
-            local_longitude=metadata["longitude"]
-            #correction fo time factor
-            correction_factor=4*(local_longitude-standar_longitude)+equation_time
-        
-            #structure of equation
-            local_solar_time=local_standar_time+(correction_factor/60)
+        # "equation of time" operations
+        b = np.radians((julian_days - 81) * (360 / 365))
+        equation_time = 9.87 * (np.sin(2 * b)) - 7.53 * (np.cos(b))\
+            - 1.5 * (np.sin(b))
 
-            print(local_solar_time)
+        # Create correction factor timedelta
+        correction_factor = datetime.timedelta(
+            minutes=4 * (local_longitude - standard_longitude) + equation_time
+        )
 
-        
-        
+        # Structure of equation
+        local_solar_time = local_datetime + correction_factor
+
         return local_solar_time
 
-    def read_file(self):
+    def read_file(self) -> Tuple[pd.DataFrame, Dict[str, Union[str, float]]]:
         """
         Gets file location, reads its content and stores its data in
         this class variables.
 
         Modify this method if your TMY does not have the standard
-        format.
+        format. It should return the same dataframe format.
+
+        Returns
+        -------
+        Tuple[pd.DataFrame, Dict[str, Union[str, float]]]
+            Tuple containg a pandas dataframe with the tmy data and a
+            tuple with info about the location (name, lat, lon, altitude, tz)
         """
         file_ext = self.location_file.as_posix().split(".")[-1]
         if file_ext == "csv":
@@ -251,12 +267,10 @@ class Weather:
         elif file_ext == "tm2":
             self._add_dummy_fields_tmy2()
             data, metadata = read_tmy2(self.location_file)
- 
+
         return data, metadata
 
-    
-
-    def resample_interpolate(self, step_resolution, prop_series):
+    def resample_interpolate(self, prop_series: pd.Series) -> pd.Series:
         """
         This method receives a time series based property and a step
         resolution description and returns a time series with this step
@@ -268,10 +282,21 @@ class Weather:
         1h = 1 hour steps
         10min = 10 minutes steps
         5T = 5 minutes steps
-        """
-        return prop_series.resample(step_resolution).interpolate()
 
-    def resample_distribute(self, step_resolution, prop_series):
+        Parameters
+        ----------
+        prop_series : pd.Series
+            Series of property to interpolate. Must have a datetime index.
+
+        Returns
+        -------
+        pd.Series
+            Interpolated panda series of the property. Datetime Index is updated
+        """
+
+        return prop_series.resample(self.step_resolution).interpolate()
+
+    def resample_distribute(self, prop_series: pd.Series) -> pd.Series:
         """
         This method receives a time series based property and a step
         resolution description and returns a time series with this step
@@ -288,12 +313,38 @@ class Weather:
         1h = 1 hour steps
         10min = 10 minutes steps
         5T = 5 minutes steps
-        """
-        distribution_norm = pd.tseries.frequencies.to_offset(step_resolution) / pd.Timedelta('1h')
-        return prop_series.resample(step_resolution).bfill() * distribution_norm
 
-    def interpolate_prop(self, h_id, prop_array):
-        """ Interpolate the property to a fractional index of the array """
+        Parameters
+        ----------
+        prop_series : pd.Series
+            Series of property to distributed. Must have a datetime index.
+
+        Returns
+        -------
+        pd.Series
+            Distributed panda series of the property. Datetime Index is updated
+        """
+
+        distribution_norm = pd.tseries.frequencies.to_offset(self.step_resolution)\
+            / pd.Timedelta('1h')
+        return prop_series.resample(self.step_resolution).bfill() * distribution_norm
+
+    def interpolate_prop(self, h_id: float, prop_array: pd.Series) -> float:
+        """
+        Interpolate the property to a fractional index of the array
+
+        Parameters
+        ----------
+        h_id : float
+            Noninteger index
+        prop_array : pd.Series
+            Series of property to interpolate. Must have a datetime index.
+
+        Returns
+        -------
+        float
+            Interpolated property value at h_id.
+        """
         h_floor = int(np.floor(h_id))
         h_ceil = int(np.ceil(h_id))
         h_change = h_ceil - h_floor
@@ -305,10 +356,22 @@ class Weather:
 
         return prop
 
-    def distribute_prop(self, h_id, prop_array):
+    def distribute_prop(self, h_id: float, prop_array: pd.Series) -> float:
         """
         This method distributes the property in prop_array[h] through
         the interval [h-1, h] uniformely.
+
+        Parameters
+        ----------
+        h_id : float
+            Noninteger index
+        prop_array : pd.Series
+            Series of property to distribute. Must have a datetime index.
+
+        Returns
+        -------
+        float
+            Distributed property value at h_id.
         """
         h_ceil = int(np.ceil(h_id))
         h_floor = int(np.floor(h_id))
@@ -359,9 +422,9 @@ class Weather:
         Returns DNI array or the hth DNI in the array. hour can be nonninteger.
         """
         if hour:
-            return self.distribute_prop(hour, self._dni)
+            return self.distribute_prop(hour, self._data["DNI"])
         else:
-            return self._dni
+            return self._data["DNI"]
 
     dni = property(
         get_dni,
@@ -370,8 +433,9 @@ class Weather:
 
     def get_ghi(self, hour=None):
         """ [W/m^2] Hourly array. Global Horizontal Irradiation (ghi_ghi). """
+
         if hour:
-            return self.distribute_prop(hour, self._ghi)
+            return self.distribute_prop(hour, self._data["GHI"])
         else:
             return self._ghi
 
@@ -386,9 +450,9 @@ class Weather:
         in the array. hour can be nonninteger.
         """
         if hour:
-            return self.interpolate_prop(hour, self._amb_temp)
+            return self.interpolate_prop(hour, self._data["DryBulb"])
         else:
-            return self._amb_temp
+            return self._data["DryBulb"]
 
     amb_temp = property(
         get_amb_temp,
@@ -401,11 +465,11 @@ class Weather:
         hour can be nonninteger.
         """
         if hour:
-            return self.interpolate_prop(hour, self._grid_temp)
+            return self.interpolate_prop(hour, self._data["grid_temp"])
         else:
-            return self._grid_temp
+            return self._data["grid_temp"]
 
-    def set_grid_temp(self):
+    def _compute_grid_temp(self) -> np.ndarray:
         """
         This method computes the water temperature in grid from
         the ambient temperature property.
@@ -432,11 +496,10 @@ class Weather:
                     np.radians(-90 + (day - 15 - lag) * 360 / 365)
                 )
             )] * 24
-        self._grid_temp = np.array(grid_temps)
+        return np.array(grid_temps)
 
     grid_temp = property(
         get_grid_temp,
-        set_grid_temp,
         doc=""" [°C] Hourly array. Water temperature from grid. """
     )
 
@@ -446,9 +509,9 @@ class Weather:
         in the array. hour can be nonninteger.
         """
         if hour:
-            return self.interpolate_prop(hour, self._humidity)
+            return self.interpolate_prop(hour, self._data["RHum"])
         else:
-            return self._humidity
+            return self._data["RHum"]
 
     humidity = property(
         get_humidity,
@@ -461,9 +524,9 @@ class Weather:
         hour can be nonninteger.
         """
         if hour:
-            return self.interpolate_prop(hour, self._wind_speed)
+            return self.interpolate_prop(hour, self._data["Wspd"])
         else:
-            return self._wind_speed
+            return self._data["Wspd"]
 
     wind_speed = property(
         get_wind_speed,
