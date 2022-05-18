@@ -2,8 +2,8 @@
 This module contains the definition of the Weather class, used
 to model the weather at the provided location from an hourly TMY.
 """
-from faulthandler import disable
 from pathlib import Path
+from typing import Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -11,10 +11,25 @@ from datetime import datetime
 
 from pvlib.iotools import read_tmy3, read_tmy2
 
-def read_explorador_solar_tmy(file_loc):
+
+def read_explorador_solar_tmy(file_loc: str) -> Tuple[pd.DataFrame, Dict[str, Union[str, float]]]:
     """
     Reads tmy exported from the Chilean explorador solar app.
+
+    Parameters
+    ----------
+    file_loc : Path | str
+        Path to file.
+
+    Returns
+    -------
+    tmy_data : pd.DataFrame
+        Pandas dataframe including hourly weather data (tmy).
+    metadata : Dict
+        Dictionary containing location data as Name, latitude,
+        longitude, altitude and TZ
     """
+
     metadata_line = pd.read_csv(file_loc, nrows=1)
     tmy_data = pd.read_csv(file_loc, skiprows=2)
     metadata = dict(
@@ -123,13 +138,15 @@ class Weather:
     Lprecip uncert (code)
     """
 
-
     def __init__(self, location_file, step_resolution="1h", mofdni=1, local_time=False):
         self.mofdni = mofdni
         self.location_file = location_file
         self._step_resolution = step_resolution
         self._data, self._metadata = self.read_file()
-        self._conv_local_to_solar()
+
+        # Converts self._data index from local time to solar time
+        if local_time:
+            self._conv_local_to_solar()
 
         self._dni = self.resample_distribute(self.step_resolution, self._data.DNI)
         self._ghi = self.resample_distribute(self.step_resolution, self._data.GHI)
@@ -138,9 +155,6 @@ class Weather:
         self._wind_speed = self.resample_interpolate(self.step_resolution, self._data.Wspd)
 
         self.set_grid_temp()
-
-        
-    
 
     def _add_dummy_fields_tmy2(self):
         """
