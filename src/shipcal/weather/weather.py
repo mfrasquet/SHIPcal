@@ -13,7 +13,6 @@ from pvlib.iotools import read_tmy3, read_tmy2
 from pvlib.solarposition import get_solarposition, declination_spencer71
 
 
-
 def read_explorador_solar_tmy(file_loc: str) -> Tuple[pd.DataFrame, Dict[str, Union[str, float]]]:
     """
     Reads tmy exported from the Chilean explorador solar app.
@@ -590,7 +589,6 @@ class Weather:
         get_solar_declination,
         doc=""" [°] Earth's declination."""
     )
-
 
 
 if __name__ == "__main__":
