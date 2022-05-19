@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from pvlib.iotools import read_tmy3, read_tmy2
+from pvlib.solarposition import get_solarposition, declination_spencer71
 
 
 def read_explorador_solar_tmy(file_loc: str) -> Tuple[pd.DataFrame, Dict[str, Union[str, float]]]:
@@ -153,7 +154,7 @@ class Weather:
 
         # Creates an empty frame which will hold only the used weather vars
         # with a solar time index
-        self._data = pd.DataFrame(index=self._data_h.index)
+        self._data = pd.DataFrame()
 
         # Distributes or interpolate property accordingly
         self._data["DNI"] = self.resample_distribute(self._data_h["DNI"])
@@ -163,16 +164,27 @@ class Weather:
         self._data["Wspd"] = self.resample_interpolate(self._data_h["Wspd"])
 
         # Computes the grid water temperature
-        self._data["grid_temp"] = self._compute_grid_temp()
+        self._data["grid_temp"] = self.resample_interpolate(
+            pd.Series(self._compute_grid_temp(), index=self._data_h.index)
+        )
+
+        solarpos_df = get_solarposition(self._data.index,  self.lat, self.lon)
+        self._data = pd.concat([self._data, solarpos_df], axis=1)
+
+        # Computes and stores the declination
+        self.local_date_0 = self._data.index[0]
+        self._data["julian_day"] = (self._data.index - self.local_date_0).days + 1
+        self._data["declination"] = self._data["julian_day"].apply(declination_spencer71)
 
         # Converts self._data index from local time to solar time
         if local_time:
-            self.local_date_0 = self._data.index[0]
             self._data["solar_time"] = self._data.index
             data_index = pd.DatetimeIndex(self._data["solar_time"].apply(self._conv_local_to_solar))
             self._data.index = data_index
             self._data.rename(columns={"solar_time": "local_time"}, inplace=True)
-            del self.local_date_0
+
+        del self.local_date_0
+        del self._data_h
 
     def _add_dummy_fields_tmy2(self) -> None:
         """
@@ -533,10 +545,69 @@ class Weather:
         doc=""" [m/s] Hourly array. Wind speed. """
     )
 
+    # TODO: Check self._time sustitution
+    def get_solar_pos(self, hour=None):
+        """
+        Returns sun's azimuth and elevation for the nth hour in the time array
+        hour can be non integer.
+        """
+        if hour:
+            time = self._data.index
+            azimuth = float(get_solarposition(time, self.lat, self.lon)["azimuth"])
+            elevation = float(get_solarposition(time, self.lat, self.lon)["elevation"])
+            return azimuth, elevation
+
+        else:
+            azimuth = get_solarposition(time, self.lat, self.lon)["azimuth"]
+            elevation = get_solarposition(time, self.lat, self.lon)["elevation"]
+            return azimuth, elevation
+
+    def get_solar_altitude(self, hour=None):
+        """
+        Returns sun's elevation for the nth hour in the time array
+        hour can be non integer.
+        """
+        if type(hour) == str:
+            elevation = float(get_solarposition(hour, self.lat, self.lon)["elevation"])
+            return elevation
+
+        elif isinstance(hour, pd.core.indexes.datetimes.DatetimeIndex):
+            elevation = []
+            for h in hour:
+                elev = float(get_solarposition(h, self.lat, self.lon)["elevation"])
+                elevation.append(elev)
+            return elevation
+
+        else:
+            time = self.interpolate_prop(hour, self._time)
+            elevation = float(get_solarposition(time, self.lat, self.lon)["elevation"])
+            return elevation
+
+    def get_solar_azimut(self, hour=None):
+        """
+        Returns sun's azimuth for the nth hour in the time array
+        hour can be non integer.
+        """
+        if type(hour) == str:
+            azimuth = float(get_solarposition(hour, self.lat, self.lon)["azimuth"])
+            return azimuth
+
+        elif isinstance(hour, pd.core.indexes.datetimes.DatetimeIndex):
+            azimuth = []
+            for h in hour:
+                azim = float(get_solarposition(h, self.lat, self.lon)["azimuth"])
+                azimuth.append(azim)
+            return azimuth
+
+        else:
+            time = self._data.index
+            azimuth = float(get_solarposition(time, self.lat, self.lon)["azimuth"])
+            return azimuth
+
 
 if __name__ == "__main__":
     sevilla_file = Path(
-        "./data/Sevilla.csv"
+        "./src/shipcal/weather/data/Sevilla.csv"
     )
     sevilla = Weather(sevilla_file, "10min")
 
