@@ -168,20 +168,20 @@ class Weather:
             pd.Series(self._compute_grid_temp(), index=self._data_h.index)
         )
 
-        solarpos_df = get_solarposition(self._data.index,  self.lat, self.lon)
+        # Column of julian day
+        self.local_date_0 = self._data.index[0]
+        self._data["julian_day"] = (self._data.index - self.local_date_0).days + 1
+
+        # Converts self._data index from local time to solar time
+        self._data["solar_time"] = self._data.index
+        if local_time:
+            self._data["solar_time"] = self._data["solar_time"].apply(self._conv_local_to_solar)
+
+        solarpos_df = get_solarposition(self._data["solar_time"],  self.lat, self.lon)
         self._data = pd.concat([self._data, solarpos_df], axis=1)
 
         # Computes and stores the declination
-        self.local_date_0 = self._data.index[0]
-        self._data["julian_day"] = (self._data.index - self.local_date_0).days + 1
         self._data["declination"] = self._data["julian_day"].apply(declination_spencer71)
-
-        # Converts self._data index from local time to solar time
-        if local_time:
-            self._data["solar_time"] = self._data.index
-            data_index = pd.DatetimeIndex(self._data["solar_time"].apply(self._conv_local_to_solar))
-            self._data.index = data_index
-            self._data.rename(columns={"solar_time": "local_time"}, inplace=True)
 
         del self.local_date_0
         del self._data_h
@@ -545,64 +545,50 @@ class Weather:
         doc=""" [m/s] Hourly array. Wind speed. """
     )
 
-    # TODO: Check self._time sustitution
-    def get_solar_pos(self, hour=None):
-        """
-        Returns sun's azimuth and elevation for the nth hour in the time array
-        hour can be non integer.
-        """
-        if hour:
-            time = self._data.index
-            azimuth = float(get_solarposition(time, self.lat, self.lon)["azimuth"])
-            elevation = float(get_solarposition(time, self.lat, self.lon)["elevation"])
-            return azimuth, elevation
-
-        else:
-            azimuth = get_solarposition(time, self.lat, self.lon)["azimuth"]
-            elevation = get_solarposition(time, self.lat, self.lon)["elevation"]
-            return azimuth, elevation
-
     def get_solar_altitude(self, hour=None):
         """
-        Returns sun's elevation for the nth hour in the time array
-        hour can be non integer.
+        Returns solar altitude array or the hth altitude in the array.
+        hour can be nonninteger.
         """
-        if type(hour) == str:
-            elevation = float(get_solarposition(hour, self.lat, self.lon)["elevation"])
-            return elevation
-
-        elif isinstance(hour, pd.core.indexes.datetimes.DatetimeIndex):
-            elevation = []
-            for h in hour:
-                elev = float(get_solarposition(h, self.lat, self.lon)["elevation"])
-                elevation.append(elev)
-            return elevation
-
+        if hour:
+            return self.interpolate_prop(hour, self._data["elevation"])
         else:
-            time = self.interpolate_prop(hour, self._time)
-            elevation = float(get_solarposition(time, self.lat, self.lon)["elevation"])
-            return elevation
+            return self._data["elevation"]
+
+    solar_altitude = property(
+        get_solar_altitude,
+        doc=""" [°] Altitude from the astronomical horizon."""
+    )
 
     def get_solar_azimut(self, hour=None):
         """
-        Returns sun's azimuth for the nth hour in the time array
-        hour can be non integer.
+        Returns solar azimuth array or the hth azimuth in the array.
+        hour can be nonninteger.
         """
-        if type(hour) == str:
-            azimuth = float(get_solarposition(hour, self.lat, self.lon)["azimuth"])
-            return azimuth
-
-        elif isinstance(hour, pd.core.indexes.datetimes.DatetimeIndex):
-            azimuth = []
-            for h in hour:
-                azim = float(get_solarposition(h, self.lat, self.lon)["azimuth"])
-                azimuth.append(azim)
-            return azimuth
-
+        if hour:
+            return self.interpolate_prop(hour, self._data["azimuth"])
         else:
-            time = self._data.index
-            azimuth = float(get_solarposition(time, self.lat, self.lon)["azimuth"])
-            return azimuth
+            return self._data["azimuth"]
+
+    solar_azimut = property(
+        get_solar_azimut,
+        doc=""" [°] Solar azimuth."""
+    )
+
+    def get_solar_declination(self, hour=None):
+        """
+        Returns declination array or the hth declination in the array.
+        hour can be nonninteger.
+        """
+        if hour:
+            return self.interpolate_prop(hour, self._data["declination"])
+        else:
+            return self._data["declination"]
+
+    declination = property(
+        get_solar_declination,
+        doc=""" [°] Earth's declination."""
+    )
 
 
 if __name__ == "__main__":
