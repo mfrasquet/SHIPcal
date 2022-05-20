@@ -488,4 +488,108 @@ def SolarData(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_
         return Lat,Huso,Positional_longitude,output
     else:
         return[output,hour_year_ini,hour_year_fin]        
-     
+#######################################################################
+#######################################################################
+#######################################################################
+#######################################################################
+#######################################################################
+#######################################################################
+#######################################################################
+#######################################################################
+#######################################################################     
+#######################################################################
+# Vector solar en función de la declinación y el ángulo horario
+#######################################################################
+"""	
+d -> declinacion
+l -> latitud
+w -> angulo horario
+"""
+def SE(d,w):
+    import numpy as np
+    SE = -np.cos(d*np.pi/180)*np.sin(w*np.pi/180)
+    return SE
+def SN(d,w,l):
+    import numpy as np
+    SN = np.sin(d*np.pi/180)*np.cos(l*np.pi/180)-np.cos(d*np.pi/180)*np.sin(l*np.pi/180)*np.cos(w*np.pi/180)
+    return SN
+def SZ(d,w,l):
+    import numpy as np
+    SZ = np.cos(d*np.pi/180)*np.cos(l*np.pi/180)*np.cos(w*np.pi/180)+np.sin(d*np.pi/180)*np.sin(l*np.pi/180)
+    return SZ
+
+#######################################################################
+# PITCH = Rotación del eje Y -- Sentido antihorario
+""" Rotamos el vector solar según el eje Y. Así, se crea una inclinación
+del terreno en dirección E/W. Aquí tenemos 1 grado de libertad. 
+Al captador le dejamos los otros dos grados de libertad (roll y yaw)"""
+#######################################################################
+
+def RNSpitch(pitch,SE,SN,SZ):
+    import numpy as np
+    import pandas as pd
+
+    Ry=np.array([
+        [np.cos(pitch*np.pi/180),0,np.sin(pitch*np.pi/180)],
+        [0,1,0],
+        [-np.sin(pitch*np.pi/180),0,np.cos(pitch*np.pi/180)]
+    ])
+    
+    for i in range(len(df)):
+        s = np.array([[se,sn,sz]])
+        sp = np.dot(Ry,np.transpose(s)) # Vector solar rotacion pitch
+        
+        # sep = sp[0][0]
+        # snp = sp[1][0]
+        # szp = sp[2][0]
+    return sp
+
+#######################################################################
+# Altitud solar, zenit solar y azimut solar en función del vector solar
+# Utilizar vector solar con pitch
+#######################################################################
+def altitude(SZ):
+	import numpy as np
+	altityde = np.arcsin(SZ)*180/np.pi
+	return altitude
+	
+def zenith(SZ):
+	import numpy as np
+	zenith = np.arccos(SZ)*180/np.pi
+	return zenith
+	
+def azimuth(SN, altitude):
+	import numpy as np
+	azimuth = np.arccos(SN/np.cos(Altitude*np.pi/180))*180/np.pi
+	return azimuth
+
+def azimuth_correction(azimuth):
+	#Sea x la serie o data frame que contiene los datos de azimuth.
+	#Sea xc la serie corregida
+	# .iloc[i,"columna x"]
+	xc = 0 # Inicializo la variable 
+	for i in range(len(x)):
+		if 0<=x.iloc[i,0]<=11:
+			xc = xc
+		elif 12<=x[i,0]<=23:
+			xc = 360 - x
+
+#######################################################################
+# Angulo Longitudinal y Transversal. Ecuaciones vectoriales
+# El vector "s" será el vector solar con pitch.
+#######################################################################
+def TLangles(s,n):
+    import numpy as np 
+    # s = (SE,SN,SZ)
+    # n = (NE,NN,NZ)
+	# proyecciones transversales
+    st = np.array([s[0][1],s[0][2]])
+    nt = np.array([n[0][1],n[0][2]])
+    # proyecciones longitudinales
+	sl = np.array([s[0][0],s[0][2]])
+    nl = np.array([n[0][0],n[0][2]])
+
+    Tangle = np.arccos(np.dot(st,np.transpose(nt))/np.sqrt(np.sum(st**2))/np.sqrt(np.sum(nt**2)))
+    Langle = np.arccos(np.dot(sl,np.transpose(nl))/np.sqrt(np.sum(sl**2))/np.sqrt(np.sum(nl**2)))
+
+    return Tangle*180/np.pi,Langle*180/np.pi
