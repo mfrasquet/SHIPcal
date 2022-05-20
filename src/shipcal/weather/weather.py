@@ -41,23 +41,18 @@ def read_explorador_solar_tmy(file_loc: str) -> Tuple[pd.DataFrame, Dict[str, Un
         TZ=float(metadata_line["Time Zone"])
     )
     # get the date column as a pd.Series of numpy datetime64
+    year_0 = tmy_data["Year"].iloc[0]
+    tmy_data["Year"] = tmy_data["Year"].apply(lambda d: year_0)
     data_index = pd.DatetimeIndex(
         pd.to_datetime(
             tmy_data.loc[:, ["Year", "Month", "Day", "Hour", "Minute"]]
         )
     )
     tmy_data.index = data_index
-    tmy_data.tz_localize(int(metadata["TZ"] * 3600))
+    tmy_data = tmy_data.tz_localize(int(metadata["TZ"] * 3600))
     columns_names = {
-        "GHI": "GHI (W/m^2)",
-        "DNI": "DNI (W/m^2)",
-        "DHI": "DHI (W/m^2)",
-        "Tdry": "Dry-bulb (C)",
-        "Tdew": "Dew-point (C)",
-        "RH": "RHum (%)",
-        "Pres": "Pressure (mbar)",
-        "Wspd": "Wspd (m/s)",
-        "Wdir": "Wdir (degrees)",
+        "Tdry": "DryBulb",
+        "RH": "RHum",
     }
     tmy_data.rename(columns=columns_names, inplace=True)
     return tmy_data, metadata
@@ -170,7 +165,7 @@ class Weather:
 
         # Column of julian day
         self.local_date_0 = self._data.index[0]
-        self._data["julian_day"] = (self._data.index - self.local_date_0).days + 1
+        self._data["julian_day"] = (np.arange(0,self._data.index.size)//24)+1
 
         # Converts self._data index from local time to solar time
         self._data["solar_time"] = self._data.index
@@ -178,10 +173,12 @@ class Weather:
             self._data["solar_time"] = self._data["solar_time"].apply(self._conv_local_to_solar)
 
         solarpos_df = get_solarposition(self._data["solar_time"],  self.lat, self.lon)
-        self._data = pd.concat([self._data, solarpos_df], axis=1)
+        self._data = self._data.join(solarpos_df, on="solar_time")
 
         # Computes and stores the declination
-        self._data["declination"] = self._data["julian_day"].apply(declination_spencer71)
+        self._data["declination"] = np.degrees(
+            self._data["julian_day"].apply(declination_spencer71)
+        )
 
         del self.local_date_0
         del self._data_h
@@ -208,10 +205,10 @@ class Weather:
                     i += 1
                 dummy_list = ["dummy"] * n_missing_fields
                 metaraw = metaraw[:i] + dummy_list + metaraw[i:]
-                metaraw = " ".join(metaraw)
+                metaraw = " ".join(metaraw) + "\n"
                 modified_location_list = str(self.location_file).split(".")
                 modified_location = "".join(
-                    modified_location_list[:-1] + ["_mod."] + modified_location_list[-1:]
+                    modified_location_list[:-1] + ["_modified."] + modified_location_list[-1:]
                 )
             # Write into new file
             mod_file = open(modified_location, "w")
@@ -239,7 +236,7 @@ class Weather:
         standard_longitude = self._metadata["TZ"] * 15
 
         # Get number of day in the calendar
-        julian_days = (local_datetime - self.local_date_0).days + 1
+        julian_days = self._data["julian_day"].loc[local_datetime]
 
         # "equation of time" operations
         b = np.radians((julian_days - 81) * (360 / 365))
@@ -274,7 +271,7 @@ class Weather:
         if file_ext == "csv":
             try:
                 data, metadata = read_tmy3(self.location_file)
-            except pd.errors.ParserError:
+            except Exception:
                 data, metadata = read_explorador_solar_tmy(self.location_file)
         elif file_ext == "tm2":
             self._add_dummy_fields_tmy2()
@@ -555,9 +552,9 @@ class Weather:
         else:
             return self._data["elevation"]
 
-    solar_altitude = property(
+    solar_elevation = property(
         get_solar_altitude,
-        doc=""" [°] Altitude from the astronomical horizon."""
+        doc=""" [°] Sun elevation from the astronomical horizon."""
     )
 
     def get_solar_azimut(self, hour=None):
@@ -590,13 +587,20 @@ class Weather:
         doc=""" [°] Earth's declination."""
     )
 
+    @property
+    def solar_time(self):
+        """ [-] Solar datetime corresponding to the current datetime in the index."""
+        return self._data["solar_time"]
+
 
 if __name__ == "__main__":
     sevilla_file = Path(
         "./src/shipcal/weather/data/Sevilla.csv"
     )
-    sevilla = Weather(sevilla_file, "10min")
+    sevilla = Weather(sevilla_file, local_time=True)
 
-    print(sevilla.amb_temp.mean())
-    for i in range(11):
-        print(sevilla.amb_temp[i])
+    rome_file = "./src/shipcal/weather/data/Roma_Ciampino_local_hour.tm2"
+    rome = Weather(rome_file, local_time=True)
+
+    santiago_explorador_loc = "./src/shipcal/weather/data/Santiago_Chile_exlorador_solar.csv"
+    santiago = Weather(santiago_explorador_loc, local_time=True)
