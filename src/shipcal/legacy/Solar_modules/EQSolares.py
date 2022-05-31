@@ -2,6 +2,7 @@
 #This function uses a very simple method
 #Miguel Frasquet
 #Juan Martinez
+from ctypes.wintypes import SIZE
 import numpy as np
 #from matplotlib import pyplot as plt
 from General_modules.func_General import calc_hour_year
@@ -500,23 +501,47 @@ def SolarData(file_loc,mes_ini_sim,dia_ini_sim,hora_ini_sim,mes_fin_sim,dia_fin_
 #######################################################################
 # Vector solar en función de la declinación y el ángulo horario
 #######################################################################
-"""	
-d -> declinacion
-l -> latitud
-w -> angulo horario
-"""
-def SE(d,w):
+
+def se(d,w):
+
+    """
+    Args:
+        d (float): declinación en grados
+        w (float): ángulo horario en grados
+
+    Returns:
+        float: vector solar componente Este
+    """
     import numpy as np
-    SE = -np.cos(d*np.pi/180)*np.sin(w*np.pi/180)
-    return SE
-def SN(d,w,l):
+    se = -np.cos(d*np.pi/180)*np.sin(w*np.pi/180)
+    return se
+
+def sn(d,w,l):
+    """
+    Args:
+        d (float): declinación en grados
+        w (float): ángulo horario en grados
+
+    Returns:
+        float: vector solar componente Norte
+    """
     import numpy as np
-    SN = np.sin(d*np.pi/180)*np.cos(l*np.pi/180)-np.cos(d*np.pi/180)*np.sin(l*np.pi/180)*np.cos(w*np.pi/180)
-    return SN
-def SZ(d,w,l):
+    sn = np.sin(d*np.pi/180)*np.cos(l*np.pi/180)-np.cos(d*np.pi/180)*np.sin(l*np.pi/180)*np.cos(w*np.pi/180)
+    return sn
+
+def sz(d,w,l):
+    """
+    Args:
+        d (float): declinación en grados
+        w (float): ángulo horario en grados
+        l (float): latitud del emplazamiento en grados
+
+    Returns:
+        float: vector solar componente zenital
+    """
     import numpy as np
-    SZ = np.cos(d*np.pi/180)*np.cos(l*np.pi/180)*np.cos(w*np.pi/180)+np.sin(d*np.pi/180)*np.sin(l*np.pi/180)
-    return SZ
+    sz = np.cos(d*np.pi/180)*np.cos(l*np.pi/180)*np.cos(w*np.pi/180)+np.sin(d*np.pi/180)*np.sin(l*np.pi/180)
+    return sz
 
 #######################################################################
 # PITCH = Rotación del eje Y -- Sentido antihorario
@@ -524,72 +549,121 @@ def SZ(d,w,l):
 del terreno en dirección E/W. Aquí tenemos 1 grado de libertad. 
 Al captador le dejamos los otros dos grados de libertad (roll y yaw)"""
 #######################################################################
-
-def RNSpitch(pitch,SE,SN,SZ):
+def RotY_NS_pitch(pitch,se,sn,sz):
+    """
+    Summary:
+        LFC con receptor EW.
+        Realizamos una rotación sobre el eje Y o línea Norte/Sur
+        para generar una inclinación del terreno.  
+    Args:
+        pitch (float): gradosº de inclinación
+        SE (float): componente Este del vector solar
+        SN (float): componente Norte del vector solar
+        SZ (float): componente Z del vector solar
+    Returns:
+        float: Vector solar sobre plano inclinado
+    """
     import numpy as np
-    import pandas as pd
-
+    
     Ry=np.array([
         [np.cos(pitch*np.pi/180),0,np.sin(pitch*np.pi/180)],
         [0,1,0],
-        [-np.sin(pitch*np.pi/180),0,np.cos(pitch*np.pi/180)]
-    ])
+        [-np.sin(pitch*np.pi/180),0,np.cos(pitch*np.pi/180)]])
     
-    for i in range(len(df)):
-        s = np.array([[se,sn,sz]])
-        sp = np.dot(Ry,np.transpose(s)) # Vector solar rotacion pitch
-        
-        # sep = sp[0][0]
-        # snp = sp[1][0]
-        # szp = sp[2][0]
-    return sp
+    s = np.array([[se,sn,sz]])
+    s_pitch = np.dot(Ry,np.transpose(s))
+    return s_pitch
 
 #######################################################################
 # Altitud solar, zenit solar y azimut solar en función del vector solar
 # Utilizar vector solar con pitch
 #######################################################################
-def altitude(SZ):
+def altitude(sz):
+    """
+    Args:
+        sz (float): componente z del vector solar
+
+    Returns:
+        float: altitud solar en grados
+    """
 	import numpy as np
-	altityde = np.arcsin(SZ)*180/np.pi
+	altitude = np.arcsin(sz)*180/np.pi
 	return altitude
 	
-def zenith(SZ):
+def zenith(sz):
+    """
+    Args:
+        sz (float): componente z del vector solar
+
+    Returns:
+        float: zenit solar en grados
+    """
 	import numpy as np
-	zenith = np.arccos(SZ)*180/np.pi
+	zenith = np.arccos(sz)*180/np.pi
 	return zenith
 	
-def azimuth(SN, altitude):
+def azimuth(sn, altitude):
+    """
+    Args:
+        sn (float): componente Norte del vector solar
+        altitude (float): altitud solar en grados
+
+    Returns:
+        float: azimut solar (sin corregir) en grados
+    """
 	import numpy as np
-	azimuth = np.arccos(SN/np.cos(Altitude*np.pi/180))*180/np.pi
+	azimuth = np.arccos(sn/np.cos(altitude*np.pi/180))*180/np.pi
 	return azimuth
 
-def azimuth_correction(azimuth):
-	#Sea x la serie o data frame que contiene los datos de azimuth.
-	#Sea xc la serie corregida
-	# .iloc[i,"columna x"]
-	xc = 0 # Inicializo la variable 
-	for i in range(len(x)):
-		if 0<=x.iloc[i,0]<=11:
-			xc = xc
-		elif 12<=x[i,0]<=23:
-			xc = 360 - x
+def azimuth_correction(azimuth, w):
+	if 0<=w<=11:
+		azimuth = azimuth
+	elif 12<=w<=23:
+		azimuth = 360 - azimuth
+  
+#######################################################################
+# Vector del captador
+#######################################################################
+def n(inc,azi):
+    """
+    summary: Vector del captador solar.
+    Args:
+        inc (float): grados de inclinación
+        azi (float): grados azimuth
+
+    Returns:
+        Vector del captador
+    """
+    import numpy as np
+    ne = np.sin(inc*np.pi/180)*np.sin(azi*np.pi/180)
+    nn = np.sin(inc*np.pi/180)*np.cos(azi*np.pi/180)
+    nz = np.cos(inc*np.pi/180)
+    n = np.array([[ne,nn,nz]])
+    return n
 
 #######################################################################
 # Angulo Longitudinal y Transversal. Ecuaciones vectoriales
 # El vector "s" será el vector solar con pitch.
 #######################################################################
 def TLangles(s,n):
+    """
+    Cálculo del ángulo transversal (T) y longitudinal (L)
+
+    Args:
+        s (array): vector solar
+        n (array): vector captador
+    Returns:
+        list(T, L) floats: Ángulos T y L en grados
+    """
     import numpy as np 
-    # s = (SE,SN,SZ)
-    # n = (NE,NN,NZ)
-	# proyecciones transversales
+    # proyecciones transversales YZ - receptor EW
     st = np.array([s[0][1],s[0][2]])
     nt = np.array([n[0][1],n[0][2]])
-    # proyecciones longitudinales
-	sl = np.array([s[0][0],s[0][2]])
+    # proyecciones longitudinales XZ - receptor EW
+    sl = np.array([s[0][0],s[0][2]])
     nl = np.array([n[0][0],n[0][2]])
-
+    # ángulos
     Tangle = np.arccos(np.dot(st,np.transpose(nt))/np.sqrt(np.sum(st**2))/np.sqrt(np.sum(nt**2)))
     Langle = np.arccos(np.dot(sl,np.transpose(nl))/np.sqrt(np.sum(sl**2))/np.sqrt(np.sum(nl**2)))
-
-    return Tangle*180/np.pi,Langle*180/np.pi
+    a = [Tangle*180/np.pi,Langle*180/np.pi]
+    return a
