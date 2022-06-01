@@ -6,8 +6,19 @@ from iapws import IAPWS97
 
 
 def is_num(value):
-    """ returns if the instance is a number. !! check if there is an
-    already built function for this """
+    """ Returns if the instance is a number.
+
+    Parameter
+    ------------------------------
+    Param1: value: type_description
+       Returns true if the entry of the
+       instance is an int, float number
+        
+    Returns: 
+    -----------------------------
+        false 
+        type_description
+    """
 
     if isinstance(value,(int,float)):
         return True
@@ -16,11 +27,27 @@ def is_num(value):
 
 
 class Element:
+    """ 
+        This is the base class that inherits all SHIPCAL elements.
     """
-    Base class inherits every other element in SHIPcal.
-    """
-
+    
     def __init__(self,P_bar=1,T_cel=30,h_kWh=''):
+        """ 
+        This method receives the imported attributes that 
+        are found located in General_modules specifically 
+        iapws97.py for perform two functions.
+        
+        Parameter
+        ----------------------------------
+         P_bar: (int, optional): type_description_. Defaults to 1.
+            The parameter is used for funtion P_bar/10 where P_bar is pressure 
+            
+        T_cel: (int, optional): type_description_. Defaults to 30.
+            The parameter is used for funtion T=T_cel + 273 where T_cel is celsius temperature
+            
+        h_kWh: (str, optional): type_description_. Defaults to ''.
+            The parameter is used for funtion h=h_kWh * 3600 where h_kWh is kilowatt hour
+        """
         if is_num(h_kWh):
             self._state_1_in = self._state_1_out = IAPWS97(P=P_bar/10, h=h_kWh * 3600 )
             self._state_2_in = self._state_2_out = self._state_1_in
@@ -236,6 +263,7 @@ class Element:
     # Thermal innertia
 
 
+      
 if __name__ == "__main__":
     test1 = Element(P_bar=1, T_cel=60)
     test1.p_1_in = 6
