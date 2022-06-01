@@ -1,4 +1,4 @@
-from shipcal import Weather, Consumer, Collector
+from shipcal import Weather  # , Consumer, Collector
 from bokeh.plotting import show, figure
 
 # This is just for the type hint you can ignore it.
@@ -34,16 +34,19 @@ def get_weather_plot(property_name: str = "dni") -> Figure:
 
     return graph
 
+
 def get_iams_plot():
     # This "self" variable is where you get the data from, this line will
     # help for the trasition to a class method
-    self = Weather("src/shipcal/weather/data/Sevilla.csv")
+    pass
+
 
 def get_energy_plot():
     pass
 
 
 if __name__ == "__main__":
-    show(get_dni_plot())
-    show(get_iams_plot())
-    show(get_energy_plot())
+    show(get_weather_plot())
+    show(get_weather_plot("amb_temp"))
+    # show(get_iams_plot())
+    # show(get_energy_plot())

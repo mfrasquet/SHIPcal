@@ -165,7 +165,7 @@ class Weather:
 
         # Column of julian day
         self.local_date_0 = self._data.index[0]
-        self._data["julian_day"] = (np.arange(0,self._data.index.size)//24)+1
+        self._data["julian_day"] = (np.arange(0, self._data.index.size) // 24) + 1
 
         # Converts self._data index from local time to solar time
         self._data["solar_time"] = self._data.index
