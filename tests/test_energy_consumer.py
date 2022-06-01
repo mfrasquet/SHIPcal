@@ -5,7 +5,6 @@ from shipcal.energy_consumer import Consumer
 
 import pytest
 
-@pytest.mark.skip
 def test_addup_toannualenery():
     """ 
     Check that the demand vector adds up to the provided annual_demand
@@ -18,7 +17,7 @@ def test_addup_toannualenery():
         'day_profile':[0,24]
     }
     company_consumer = Consumer(demand_profile=demand_profile)
-    assert company_consumer.demand_vector.sum() == pytest.approx(demand_profile["annual_demand"]), \
+    assert company_consumer.demand_vector.sum()["demand"] == pytest.approx(demand_profile["annual_demand"]), \
         "The demand vector does not add up to the provided annual demand"
 
     demand_profile = {
@@ -28,7 +27,7 @@ def test_addup_toannualenery():
         'day_profile':[8,20]
     }
     company_consumer = Consumer(demand_profile=demand_profile)
-    assert company_consumer.demand_vector.sum() == pytest.approx(demand_profile["annual_demand"]), \
+    assert company_consumer.demand_vector.sum()["demand"] == pytest.approx(demand_profile["annual_demand"]), \
         "The demand vector does not add up to the provided annual demand"
 
     demand_profile = {
@@ -38,5 +37,5 @@ def test_addup_toannualenery():
         'day_profile':[8,20]
     }
     company_consumer = Consumer(demand_profile=demand_profile)
-    assert company_consumer.demand_vector.sum() == pytest.approx(demand_profile["annual_demand"]), \
+    assert company_consumer.demand_vector.sum()["demand"] == pytest.approx(demand_profile["annual_demand"]), \
         "The demand vector does not add up to the provided annual demand"

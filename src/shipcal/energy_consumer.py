@@ -2,13 +2,90 @@
 This file contains the classes that define the energy consumers
 in the simulation.
 """
+from typing import Dict, Union
 from pathlib import Path
-import datetime
 
 import pandas as pd
 import numpy as np
 
 from shipcal.elements import Element
+
+
+MINS_YEAR = 365 * 24 * 60
+
+
+def resample_property(step_resolution: str, property_df_orig: pd.DataFrame) -> pd.DataFrame:
+    """
+    This function receives a DataFrame with a TimeIndex and resamples it
+    to a datagrame with a frequency given by the step resolution. The
+    property is uniformily distributed trough its higher resolution entries.
+    In this way if you initialy had
+
+    df_orig:
+        2022-01-01 01:00:00   1.917437
+        2022-01-01 02:00:00   0.000000
+
+    you will obtain
+    df_resampled:
+        2022-01-01 00:05:00  0.159786
+        2022-01-01 00:10:00  0.159786
+        2022-01-01 00:15:00  0.159786
+        2022-01-01 00:20:00  0.159786
+        2022-01-01 00:25:00  0.159786
+        2022-01-01 00:30:00  0.159786
+        2022-01-01 00:35:00  0.159786
+        2022-01-01 00:40:00  0.159786
+        2022-01-01 00:45:00  0.159786
+        2022-01-01 00:50:00  0.159786
+        2022-01-01 00:55:00  0.159786
+        2022-01-01 01:00:00  0.159786
+        2022-01-01 02:05:00  0.000000
+
+    Note that 0.159786 * 12 = 917437
+
+    Parameters
+    ----------
+    step_resolution : str
+        Offset alias. It must follow the format in
+        https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+        for example 5 min. The max resolution is 1 min.
+    property_df_orig : pd.DataFrame
+        A DataFrame with a TimeIndex of the property to be distributed.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame whith step_resolution as new frequency in the TimeIndex.
+        The property is distributed.
+    """
+
+    # Obtain dateoffset from string
+    step_resolution_dateoffset = pd.tseries.frequencies.to_offset(step_resolution)
+
+    # Copies original dataframe to a new variable for manipulation
+    distributed_prop_df = property_df_orig.copy()
+
+    # Shifts the index to start to the hour 0 of the year + the step_resolution
+    distributed_prop_df.index = \
+        distributed_prop_df.index - distributed_prop_df.index.freq \
+        + step_resolution_dateoffset
+
+    # Appends the last row to the end of the data fram so the new dataframe
+    # still ends at yyy-12-31 24:00
+    last_row = pd.DataFrame(
+        {distributed_prop_df.columns[0]: distributed_prop_df.iloc[-1, 0]},
+        index=[property_df_orig.index[-1]]
+    )
+    distributed_prop_df = pd.concat([distributed_prop_df, last_row])
+
+    # Resamples and fills forward the new rows
+    distributed_prop_df = distributed_prop_df.resample(step_resolution).ffill()
+
+    # Computes the normalization for the distribution.
+    distribution_norm = step_resolution_dateoffset \
+        / property_df_orig.index.freq
+    distributed_prop_df = distributed_prop_df * distribution_norm
+    return distributed_prop_df
 
 
 class Consumer(Element):
@@ -32,15 +109,12 @@ class Consumer(Element):
         super().__init__()
 
         self.boiler_efficiency = boiler_efficiency
+        self._step_resolution = step_resolution
 
         if location_csv:
-            self._demand_vector, self._step_resolution = self.read_demand_file(
-                location_csv, step_resolution
-            )
+            self._demand_vector = self.read_demand_file(location_csv)
         elif demand_profile:
-            self._demand_vector, self._step_resolution = self.create_demand_vector(
-                demand_profile, step_resolution
-            )
+            self._demand_vector = self.create_demand_vector(demand_profile)
         else:
             raise ValueError(
                 "Missing demand file (location_csv) or demand_profile dict"
@@ -69,16 +143,12 @@ class Consumer(Element):
         """ [-] String that represents the step resolution of the demand """
         return self._step_resolution
 
-    def read_demand_file(self, location_csv, step_resolution):
+    def read_demand_file(self, location_csv: str) -> pd.DataFrame:
         """
         Receives the path to the location of a csv. The csv is assumed to
         contain equally time spaced records of the energy consumption of
         the process trough year. Redefines the step_resolution if not
         provided
-
-        Returns:
-            - demand_vector
-            - step_resolution
         """
 
         # Read file
@@ -86,21 +156,22 @@ class Consumer(Element):
         if not location.exists():
             raise ValueError(f"Path to file {location} does not exists.")
         demand_vector = pd.read_csv(location, names=["demand"])
-        if step_resolution:
-            # TODO add resample of csv file if step_resolution is provided
-            step_resolution = pd.tseries.frequencies.to_offset("1h")
+
+        # Get current datetime index
+        periods = demand_vector.count()["demand"]
+        freq = str(MINS_YEAR // periods) + "min"
+        demand_vector.index = pd.date_range(
+            start="2022-01-01 01:00", periods=periods, freq=freq
+        )
+
+        if not self._step_resolution:
+            self._step_resolution = freq
         else:
-            # Sets the step resolution.]
-            year_mins = 365 * 24 * 60
-            step_mins = year_mins / len(demand_vector)
-            if not step_mins % 1 == 0:
-                raise ValueError("File exceeds max resolution of 1min")
-            step_mins = int(step_mins)
-            step_resolution = pd.tseries.frequencies.to_offset(f"{step_mins}min")
+            demand_vector = resample_property(self.step_resolution, demand_vector)
 
-        return demand_vector, step_resolution
+        return demand_vector
 
-    def create_demand_vector(self, demand_profile, step_resolution=None,  year=2022):
+    def create_demand_vector(self, demand_profile: Dict[str, Union[list, float]]) -> pd.DataFrame:
         """
         Receives a dictionary with the annual demand and monthly, week,
         and daily consumption profile to build the demand vector. If a
@@ -126,75 +197,68 @@ class Consumer(Element):
                 'annual_demand': 20000, # [kWh]
                 'monthly_profile': [1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12,1/12],
                 'week_profile':[1/7, 1/7, 1/7, 1/7, 1/7, 1/7, 1/7],
-                'day_profile':[0,24]}
-        step_resolution : String | Float, optional
-            Stablishes a resolution different than hourly. If receives a String
-            it will try to convert it using, by default None
-        year : int, optional
-            The current year in simulation, by default 2022
+                'day_profile':[0,24]
+            }
 
         Returns
         -------
-        _type_
-            _description_
+        pd.DataFrame
+            A data frame of with the demand column and timeindex with the
+            frequency either hourly or specified by self.step_resolution.
         """
 
-        # days_in_the_month[month_number]=how many days are in the month number "month_number"
-        days_in_the_month = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
+        days_in_month = np.array(
+            [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        )
+        h_ini = demand_profile["day_profile"][0]
+        h_end = demand_profile["day_profile"][1]
+        hour_percentage = 1 / (h_end - h_ini)
+        day_vector = np.array([
+            hour_percentage if (h < h_end and h >= h_ini) else 0
+            for h in range(24)
+        ])
 
-        # weeks_in_the_month[month_number]=how many weeks are in the month number "month_number"
-        weeks_in_the_month = days_in_the_month / 7
+        week_vector = np.array(demand_profile["week_profile"])
 
-        # saves 'week_profile' and 'day_profile' as numpy arrays
-        monthly_profile = np.array(demand_profile["monthly_profile"])
-        week_profile = np.array(demand_profile["week_profile"])
-        day_profile = np.array(demand_profile["day_profile"])
+        energy_month_vector = np.array(demand_profile["monthly_profile"])\
+            * demand_profile["annual_demand"]
 
-        # monthly_demand is the the distribuiton of the annual demand through the months,
-        # define by the monthly profile
-        monthly_demand = monthly_profile * demand_profile["annual_demand"]
+        demand_vector = np.array([])
+        for n_month, month_days in enumerate(days_in_month):
+            energy_month = energy_month_vector[n_month]
+            prev_months_days = days_in_month[:n_month].sum()
+            for day in range(month_days):
+                n_day = prev_months_days + day
+                # Always starts on monday
+                week_day = n_day % 7
+                if week_vector[week_day] == 0:
+                    demand_vector = np.append(
+                        demand_vector, [0 for _ in range(24)]
+                    )
+                else:
+                    demand_vector = np.append(
+                        demand_vector, [
+                            h_percentage * week_vector[week_day]
+                            for h_percentage in day_vector
+                        ]
+                    )
+            renormalization = demand_vector[prev_months_days * 24:].sum()
+            demand_vector[prev_months_days * 24:] = energy_month \
+                * demand_vector[prev_months_days * 24:] / renormalization
 
-        # Creates the array "hour_profile".
-        # This array has 24 entrace that uniformily distribute the hourly demand of all days
-        hour_profile = np.zeros(24)
-        for i in range(day_profile[0], day_profile[1]):
-            hour_profile[i] = 1 / (day_profile[1] - day_profile[0])
+        demand_df = pd.DataFrame(
+            {"demand": demand_vector},
+            index=pd.date_range(
+                start="2022-01-01 01:00", end="2023-01-01 00:00", freq="H"
+            )
+        )
 
-        # Creates an empty list that will save the hourly demand
-        demand_vector = []
+        if not self._step_resolution:
+            self._step_resolution = "1H"
+        else:
+            demand_df = resample_property(self.step_resolution, demand_df)
 
-        for n_month in range(12):
-
-            # Calculates the weekly_demand based on the monthly demand and
-            # the number of weeks in each month
-            weekly_demand = np.array(monthly_demand[n_month]) / weeks_in_the_month[n_month]
-
-            for ny_day in range(days_in_the_month[n_month]):
-
-                # Calculates wich day of the week correspondes a certain date
-                day_of_the_week = datetime.date(year, (n_month + 1), (ny_day + 1)).weekday()
-
-                # Calculates the demand of each day based on the weekly demand and
-                # week profile for a certain day of the week
-                day_demand = weekly_demand * week_profile[day_of_the_week]
-
-                # Saves the demand of each hour based on the day demand and
-                # the hour profile distribution
-                for hour in range(24):
-                    demand_vector.append(day_demand * hour_profile[hour])
-
-        # If a step_resolution is declared then the demand through each hour is
-        # uniformily distributed
-        if step_resolution:
-            time_step = int(60 / step_resolution)
-            demand_vector_aux = []
-            for i in range(len(demand_vector)):
-                for j in range(time_step):
-                    demand_vector_aux.append(demand_vector[i] / time_step)
-
-            demand_vector = demand_vector_aux
-
-        return (np.array(demand_vector), step_resolution)
+        return demand_df
 
 
 if __name__ == "__main__":

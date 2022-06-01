@@ -23,7 +23,8 @@ def funcion_nombre_representativo(nombre_repr_inpt_1, nombre_repr_inpt_2):
     return nombre_repr_resultado
 
 
-def interpolate_prop(self, h_id, prop_array):
+# Ejemplo de una función construida con el template
+def interpolate_prop(h_id, prop_array):
     """
     Interpolate the property to a fractional index of the array
 
