@@ -3,7 +3,7 @@ This file contains the main class SHIPcal which contains the logic
 to connect the elements together
 """
 
-from shipcal.weather.weather import Weather
+from shipcal import Weather
 from shipcal.energy_consumer import Consumer
 from shipcal.collectors.collector import Collector
 
@@ -21,7 +21,7 @@ class SHIPcal:
 
 
 if __name__ == "__main__":
-    sigma_aldrich = Consumer("./tests/demand_sin.csv")
     sevilla = Weather("./TMYs/Sevilla.csv")
+    sigma_aldrich = Consumer("./tests/demand_sin.csv")
     challenger = Collector()
     simulation = SHIPcal(sigma_aldrich, [], challenger, sevilla)
