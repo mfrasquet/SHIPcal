@@ -226,7 +226,7 @@ class Collector(Element):
         energy_gain : float
             Maximum energy that the collector could obtain. Energy before losses
         """
-        
+
         [theta_long, theta_trans] = self.get_incidence_angle(step)
         energy_gain = weather.dni[step] * self.aperture_area\
             * self.get_optic_eff(theta_long, theta_trans)
@@ -290,4 +290,11 @@ class Collector(Element):
 
 
 if __name__ == "__main__":
-    pass
+    fresnel_gen = Collector(
+        eff_opt_norm=0.68, nu_1=0.043, nu_2=0.0010, mdot_test=0.5,
+        aperture_area=13,
+        # azimuth_field=0, roll_field=0, pitch_field=0
+        # iam_file=pkg_resources.resource_filename(
+        #     "shipcal.collectors", "data/SOLATOM_real.csv"
+        # ),  # defuault
+    )
