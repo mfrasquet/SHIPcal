@@ -60,9 +60,6 @@ def get_iams_plot():
     # it differently
     angles_df = pd.DataFrame({
         "incidence_angle": np.linspace(0, 180, 180),
-        "iam_long": np.linspace(0, 180, 180),
-        "iam_tran": np.linspace(0, 180, 180),
-        "iam": np.linspace(0, 180, 180)
     })
     iams_df = pd.DataFrame(
         angles_df["incidence_angle"].apply(self.get_iam).to_list(),
