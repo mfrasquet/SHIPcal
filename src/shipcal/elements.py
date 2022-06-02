@@ -31,7 +31,7 @@ class Element:
         This is the base class that inherits all SHIPCAL elements.
     """
     
-    def __init__(self,P_bar=1,T_cel=30,h_kWh=''):
+    def __init__(self, P_bar=1, T_cel=30, h_kWh=''):
         """ 
         This method receives the imported attributes that 
         are found located in General_modules specifically 

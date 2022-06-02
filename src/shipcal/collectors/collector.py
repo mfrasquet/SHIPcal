@@ -8,12 +8,12 @@ import pkg_resources
 import pandas as pd
 
 from shipcal.elements import Element
-from shipcal.weather import Weather
 
 
-class FresnelOptics():
+class Collector(Element):
     """
-    Class for the optics in Linear Fresnel collectors.
+    Super class for every collector. This is the base class
+    for all the other implemenation of collectors.
     eff_opt_norm => Optical efficiency at normal incidence [-]
     iam_file => IAM file for the collector [csv]
     azimuth_field => azimuth of the solar field [deg]
@@ -21,12 +21,114 @@ class FresnelOptics():
     pitch_field => pitch of the solar field
     """
 
-    def __init__(self, eff_opt_norm, iam_file=None, azimuth_field=0, roll_field=0, pitch=0):
+    def __init__(
+        self, eff_opt_norm, nu_1, nu_2, mdot_test, aperture_area,
+        iam_file=None,
+        azimuth_field=0, roll_field=0, pitch_field=0
+    ):
+        Element.__init__(self)
+
         self.eff_opt_norm = eff_opt_norm
+        self.nu_1 = nu_1
+        self.nu_2 = nu_2
+        self.mdot_test = mdot_test
+        self.aperture_area = aperture_area
+
         self.iam_file = iam_file
+
         self.azimuth_field = azimuth_field
         self.roll_field = roll_field
-        self.pitch = pitch
+        self.pitch_field = pitch_field
+
+    @property
+    def eff_opt_norm(self):
+        """
+        [-] Maximum optical efficiency of the collector. This value must
+        be between 0 and 1.
+        """
+        return self._eff_opt_norm
+
+    @eff_opt_norm.setter
+    def eff_opt_norm(self, val):
+        self._eff_opt_norm = val
+
+    @property
+    def nu_1(self):
+        """
+        [W/(m^2 K)] The linear term in the energy losses equation.
+        """
+        return self._nu_1
+
+    @nu_1.setter
+    def nu_1(self, val):
+        self._nu_1 = val
+
+    @property
+    def nu_2(self):
+        """
+        [W/(m^2 K^2)] The quadratic term in the energy losses equation.
+        """
+        return self._nu_2
+
+    @nu_2.setter
+    def nu_2(self, val):
+        self._nu_2 = val
+
+    @property
+    def mdot_test(self):
+        """
+        [kg/sm2] Massic fluid used in the tests to obtain the module
+        characteristics
+        """
+        return self._mdot_test
+
+    @mdot_test.setter
+    def mdot_test(self, val):
+        self._mdot_test = val
+
+    @property
+    def aperture_area(self):
+        """
+        [m^2] Total area that could collect solar energy
+        """
+        return self._aperture_area
+
+    @aperture_area.setter
+    def aperture_area(self, val):
+        self._aperture_area = val
+
+    @property
+    def azimuth_field(self):
+        """
+        [°] Azimuth orientation of the solar field
+        """
+        return self._azimuth_field
+
+    @azimuth_field.setter
+    def azimuth_field(self, val):
+        self._azimuth_field = val
+
+    @property
+    def roll_field(self):
+        """
+        [°] Roll orientation of the solar field
+        """
+        return self._roll_field
+
+    @roll_field.setter
+    def roll_field(self, val):
+        self._roll_field = val
+
+    @property
+    def pitch_field(self):
+        """
+        [°] Pitch orientation of the solar field
+        """
+        return self._pitch
+
+    @pitch_field.setter
+    def pitch_field(self, val):
+        self._pitch = val
 
     @property
     def iam_file(self):
@@ -38,7 +140,7 @@ class FresnelOptics():
         0,0,1,1.01
         5,0.0872,0.9924,0.998
 
-        this is one line per equally spaced angle with its IAM values
+        This is one line per equally spaced angle with its IAM values
         """
         return self._iam_file
 
@@ -53,15 +155,7 @@ class FresnelOptics():
             if not self._iam_file.exists():
                 raise ValueError(f"No such IAM file {path_to_file}.")
 
-    def get_incidence_angle(self, step=None):
-        """
-        Returns the incidence angle [deg]
-        """
-        theta_long = 0.5 * step  # Dummy eq -- change
-        theta_trans = 1 * step  # Dummy eq -- change
-        return [theta_long, theta_trans]
-
-    def get_IAM(self, theta_long=0, theta_trans=0):
+    def get_iam(self, theta_long=0, theta_trans=0):
         """
         Obtains the IAM longitudinal, transversal, and its product
         obtained as IAM = IAM_long(theta_long) * IAM_trans(theta_trans) [-]
@@ -114,44 +208,7 @@ class FresnelOptics():
         iams.append(product)
         return iams
 
-    def get_optic_eff(self, theta_long, theta_trans):
-        """
-        Returns the optic efficiency at one specific time step
-        """
-        iams = self.get_IAM(theta_long, theta_trans)
-
-        return self.eff_opt_norm * iams[0]
-
-
-class Collector(Element, FresnelOptics):
-    """
-    Super class for every collector. This is the base class
-    for all the other implemenation of collectors.
-
-    Parameters
-    ----------
-    Element : _type_
-        _description_
-    FresnelOptics : _type_
-        _description_
-
-    Returns
-    -------
-    _type_
-        _description_
-    """
-    rho_optic = 0.5883  # [-]
-    nu_1 = 0.0783  # [W/(m^2 K)]
-    nu_2 = 0.003163  # [W/(m^2 K^2)]
-    mdot_test = 0.0308  # [kg/sm2]
-    aperture_area = 13.14  # [m^2]
-
-    def __init__(
-        self, eff_opt_norm, iam_file, azimuth_field, roll_field, pitch
-    ):
-        Element.__init__(self)
-        FresnelOptics.__init__(self, eff_opt_norm, iam_file, azimuth_field, roll_field, pitch)
-
+    # Check
     def get_energy_gain(self, step, weather):
         """
         Returns the maximum energy that the collector could win in the
@@ -172,7 +229,7 @@ class Collector(Element, FresnelOptics):
         
         [theta_long, theta_trans] = self.get_incidence_angle(step)
         energy_gain = weather.dni[step] * self.aperture_area\
-            * self.get_optic_eff(theta_long,theta_trans)
+            * self.get_optic_eff(theta_long, theta_trans)
         return energy_gain
 
     def get_energy_losses(self, step, weather):
@@ -217,15 +274,20 @@ class Collector(Element, FresnelOptics):
             - self.get_energy_losses(step, weather)
         return produced_energy
 
+    def get_incidence_angle(self, step, weather):
+        """
+        Returns the incidence angle [deg]
+        """
+        theta_long = 0.5 * step  # Dummy eq -- change
+        theta_trans = 1 * step  # Dummy eq -- change
+        return [theta_long, theta_trans]
+
+    def get_optic_eff(self, theta_long, theta_trans):
+        """
+        Returns the optic efficiency at one specific time step
+        """
+        return self.eff_opt_norm * self.get_iam(theta_long, theta_trans)[-1]
+
 
 if __name__ == "__main__":
-    #optic = FresnelOptics(67.56, None, 0, 0, 0)
-    sevilla_file = Path("C:/Users/migue/Desktop/PYTHON/SHIPcal/src/shipcal/weather/data/Sevilla.csv")
-    sevilla = Weather(sevilla_file, "10min")
-    collec = Collector(67, None, 0, 0, 0)
-    for i in range(1,68):
-        print(sevilla.dni[i])
-        print(collec.get_energy_gain(i,sevilla))
-
-    # sevilla = Weather(sevilla_file, "10min")
-    # collec.get_energy_gain(5,sevilla)
+    pass
