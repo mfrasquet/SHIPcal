@@ -11,7 +11,7 @@ from shipcal import Weather, Collector  # , Consumer
 from bokeh.plotting import show, figure
 
 
-def get_weather_plot(time_range: List[datetime], property_name: List[str] = None) -> Figure:
+def get_weather_plot(time_range: List[datetime] = None, property_name: List[str] = None) -> Figure:
     """
     Uses the atributes of an instance of a Weather class to create a
     bokeh figure of the desired weather property against the timeindex.
