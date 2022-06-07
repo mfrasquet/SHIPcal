@@ -5,10 +5,10 @@ to connect the elements together
 
 from shipcal import Weather
 from shipcal.energy_consumer import Consumer
-from shipcal.collectors.collector import Collector
+from shipcal import Fresnel
 
 
-class SHIPcal:
+class Simulation:
     """
     This class is a simulation, it is meant to manage the loop to simulate
     each step through the elements in the simulation array.
@@ -23,5 +23,8 @@ class SHIPcal:
 if __name__ == "__main__":
     sevilla = Weather("./TMYs/Sevilla.csv")
     sigma_aldrich = Consumer("./tests/demand_sin.csv")
-    challenger = Collector()
-    simulation = SHIPcal(sigma_aldrich, [], challenger, sevilla)
+    challenger = Fresnel(
+        eff_opt_norm=0.68, nu_1=0.043, nu_2=0.0010, mdot_test=0.5,
+        aperture_area=13
+    )
+    simulation = Simulation(sigma_aldrich, [], challenger, sevilla)

@@ -1,5 +1,9 @@
+from datetime import datetime
+from typing import List
+
 # This is just for the type hint you can ignore it.
 from bokeh.plotting.figure import Figure
+
 import pandas as pd
 import numpy as np
 
@@ -7,15 +11,18 @@ from shipcal import Weather, Collector  # , Consumer
 from bokeh.plotting import show, figure
 
 
-def get_weather_plot(property_name: str = "dni") -> Figure:
+def get_weather_plot(time_range: List[datetime], property_name: List[str] = None) -> Figure:
     """
     Uses the atributes of an instance of a Weather class to create a
     bokeh figure of the desired weather property against the timeindex.
 
     Parameters
     ----------
-    property_name : str, optional
-        Weather's property name, by default "dni"
+    time_range : List[datetime]
+        List of two datetimes to select the time range in which the poperty
+        is to be selected.
+    property_name : List[str], optional
+        Weather's property names, by default None
 
     Returns
     -------
@@ -27,6 +34,9 @@ def get_weather_plot(property_name: str = "dni") -> Figure:
     # help for the trasition to a class method
     self = Weather("src/shipcal/weather/data/Sevilla.csv")
 
+    if property_name is None:
+        property_name = "dni"
+
     # Code from here, the next lines may be useful but feel free to do
     # it differently
 
@@ -37,10 +47,16 @@ def get_weather_plot(property_name: str = "dni") -> Figure:
     return graph
 
 
-def get_iams_plot():
+def get_iams_plot(time_range: List[datetime] = None):
     """
     Returns a plot of three lines for each kinf of IAM; transeversal,
     longitudinal and global vs incidence angle.
+
+    Parameters
+    ----------
+    time_range : List[datetime]
+        List of two datetimes to select the time range in which the poperty
+        is to be selected.
 
     Returns
     -------
