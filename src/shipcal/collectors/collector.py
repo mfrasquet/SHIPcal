@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pkg_resources
 import pandas as pd
+import numpy as np
 
 from shipcal.elements import Element
 from shipcal.weather import Weather
@@ -53,12 +54,61 @@ class FresnelOptics():
             if not self._iam_file.exists():
                 raise ValueError(f"No such IAM file {path_to_file}.")
 
-    def get_incidence_angle(self, step=None):
+    def get_incidence_angle_v1(self, weather, step=None):
         """
-        Returns the incidence angle [deg]
+        Calculates the long & trans incidence angle. For
+        the moment only with 2 var (azimuth & roll, not pitch)
+
+        Parameters
+        ----------
+        step : int
+            Simulation step.
+        weather : weather object
+            [-] weather object with all information of weather
+        sun_azimuth : float
+            [rad] Sun azimuth. Origin = 0, solar noon = pi ( + clockwise)
+        sun_elevation : float
+            [rad] Sun elevation
+        azimuth_field : float
+            [rad] Azimuth of the solar field (usually North-South)
+        roll_field : float
+            [rad] Roll angle of the solar field
+        pitch : float
+            [rad] Pitch angle of the solar field
+
+        Returns
+        -------
+        theta_long : float
+            Returns Longitudinal incidence angle [deg]
+        theta_trans : float
+            Returns Transversal incidence angle [deg]
         """
-        theta_long = 0.5 * step  # Dummy eq -- change
-        theta_trans = 1 * step  # Dummy eq -- change
+
+        #Convert everything in rads
+        sun_azimuth = weather.get_solar_azimut(step) * np.pi/180
+        sun_elevation = weather.get_solar_altitude(step) * np.pi/180
+        azimuth_field = self.azimuth_field * np.pi/180
+        roll_field = self.roll_field * np.pi/180
+
+        #Incidence angle longitudinal
+        theta_i_rad=np.arccos(np.sqrt(1-(np.cos(sun_elevation-roll_field)\
+        -np.cos(roll_field)*np.cos(sun_elevation)*(1-np.cos(sun_azimuth-azimuth_field)))**2))
+
+        theta_long=theta_i_rad*180/np.pi
+
+        #Incidence angle transversal
+        theta_transv_rad=np.arctan((np.cos(sun_elevation)*np.sin(sun_azimuth\
+        -azimuth_field))/(np.sin(sun_elevation-roll_field)+np.sin(roll_field)*np.cos(sun_elevation)\
+        *(1-np.cos(sun_azimuth-azimuth_field))))
+
+        theta_trans=theta_transv_rad*180/np.pi
+
+        print('sun azimuth ',sun_azimuth)
+        print('sun elevation ',sun_elevation)
+        print('theta_long ',theta_long)
+        print('theta_trans ',theta_trans)
+
+
         return [theta_long, theta_trans]
 
     def get_IAM(self, theta_long=0, theta_trans=0):
@@ -79,8 +129,6 @@ class FresnelOptics():
             [°] Transversal incidence angle. Measured from the collector
             normal in the direction perpendicular to the longest side of the
             collector.
-
-        Returns
         -------
         iams : List
             Returns a list of the IAMs; long, trans and its product
@@ -169,7 +217,7 @@ class Collector(Element, FresnelOptics):
         energy_gain : float
             Maximum energy that the collector could obtain. Energy before losses
         """
-        
+
         [theta_long, theta_trans] = self.get_incidence_angle(step)
         energy_gain = weather.dni[step] * self.aperture_area\
             * self.get_optic_eff(theta_long,theta_trans)
@@ -221,11 +269,13 @@ class Collector(Element, FresnelOptics):
 if __name__ == "__main__":
     #optic = FresnelOptics(67.56, None, 0, 0, 0)
     sevilla_file = Path("C:/Users/migue/Desktop/PYTHON/SHIPcal/src/shipcal/weather/data/Sevilla.csv")
-    sevilla = Weather(sevilla_file, "10min")
+    sevilla = Weather(sevilla_file, "1h")
     collec = Collector(67, None, 0, 0, 0)
+    #collec.get_incidence_angle_v1(sevilla,50)
     for i in range(1,68):
-        print(sevilla.dni[i])
-        print(collec.get_energy_gain(i,sevilla))
+        collec.get_incidence_angle_v1(sevilla,i)
+        #print('DNI ',sevilla.dni[i])
+        #print('Gain ',collec.get_energy_gain(i,sevilla))
 
     # sevilla = Weather(sevilla_file, "10min")
     # collec.get_energy_gain(5,sevilla)
