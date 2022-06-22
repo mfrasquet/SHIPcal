@@ -1,4 +1,4 @@
-from shipcal import Collector
+from shipcal.collectors.collector import Collector
 
 
 class Fresnel(Collector):
