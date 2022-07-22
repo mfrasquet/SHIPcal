@@ -50,3 +50,7 @@ def interpolate_prop(h_id, prop_array):
     prop = prop_array[h_floor] + (dprop / h_change) * (h_id - h_floor)
 
     return prop
+
+#Energy loss plano y fresnel
+#Energy gain plano
+#Conversión a toneladas de vapor en proceso

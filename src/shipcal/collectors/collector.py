@@ -22,9 +22,16 @@ class Collector(Element):
     """
 
     def __init__(
-        self, eff_opt_norm, nu_1, nu_2, mdot_test, aperture_area,
+        self,
+        eff_opt_norm,
+        nu_1,
+        nu_2,
+        mdot_test,
+        aperture_area,
         iam_file=None,
-        azimuth_field=0, roll_field=0, pitch_field=0
+        azimuth_field=0,
+        roll_field=0,
+        pitch_field=0,
     ):
         Element.__init__(self)
 
@@ -148,7 +155,9 @@ class Collector(Element):
     def iam_file(self, path_to_file):
         if path_to_file is None:
             self._iam_file = Path(
-                pkg_resources.resource_filename("shipcal.collectors", "data/SOLATOM_real.csv")
+                pkg_resources.resource_filename(
+                    "shipcal.collectors", "data/SOLATOM_real.csv"
+                )
             )
         else:
             self._iam_file = Path(path_to_file)
@@ -184,8 +193,14 @@ class Collector(Element):
 
         # IAMs are available fot angle values ranging from 5º to 5º,
         # it is necessary to interpolate the result
-        theta_id = [int(round(theta_long / 5, 0)), int(round(theta_trans / 5, 0))]
-        theta_diff = [theta_long - (theta_id[0]) * 5, theta_trans - (theta_id[1]) * 5]
+        theta_id = [
+            int(round(theta_long / 5, 0)),
+            int(round(theta_trans / 5, 0)),
+        ]
+        theta_diff = [
+            theta_long - (theta_id[0]) * 5,
+            theta_trans - (theta_id[1]) * 5,
+        ]
         iams = []
 
         for i in range(0, len(theta_diff)):
@@ -228,8 +243,11 @@ class Collector(Element):
         """
 
         [theta_long, theta_trans] = self.get_incidence_angle(step)
-        energy_gain = weather.dni[step] * self.aperture_area\
+        energy_gain = (
+            weather.dni[step]
+            * self.aperture_area
             * self.get_optic_eff(theta_long, theta_trans)
+        )
         return energy_gain
 
     def get_energy_losses(self, step, weather):
@@ -270,8 +288,9 @@ class Collector(Element):
         produced_energy : float
             Energy after losses.
         """
-        produced_energy = self.get_energy_gain(step, weather) \
-            - self.get_energy_losses(step, weather)
+        produced_energy = self.get_energy_gain(
+            step, weather
+        ) - self.get_energy_losses(step, weather)
         return produced_energy
 
     def get_incidence_angle(self, step, weather):
@@ -291,7 +310,10 @@ class Collector(Element):
 
 if __name__ == "__main__":
     fresnel_gen = Collector(
-        eff_opt_norm=0.68, nu_1=0.043, nu_2=0.0010, mdot_test=0.5,
+        eff_opt_norm=0.68,
+        nu_1=0.043,
+        nu_2=0.0010,
+        mdot_test=0.5,
         aperture_area=13,
         # azimuth_field=0, roll_field=0, pitch_field=0
         # iam_file=pkg_resources.resource_filename(

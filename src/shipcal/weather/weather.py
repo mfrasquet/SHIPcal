@@ -13,7 +13,9 @@ from pvlib.iotools import read_tmy3, read_tmy2
 from pvlib.solarposition import get_solarposition, declination_spencer71
 
 
-def read_explorador_solar_tmy(file_loc: str) -> Tuple[pd.DataFrame, Dict[str, Union[str, float]]]:
+def read_explorador_solar_tmy(
+    file_loc: str,
+) -> Tuple[pd.DataFrame, Dict[str, Union[str, float]]]:
     """
     Reads tmy exported from the Chilean explorador solar app.
 
@@ -38,7 +40,7 @@ def read_explorador_solar_tmy(file_loc: str) -> Tuple[pd.DataFrame, Dict[str, Un
         latitude=float(metadata_line["Latitude"]),
         longitude=float(metadata_line["Longitude"]),
         altitude=float(metadata_line["Elevation"]),
-        TZ=float(metadata_line["Time Zone"])
+        TZ=float(metadata_line["Time Zone"]),
     )
     # get the date column as a pd.Series of numpy datetime64
     year_0 = tmy_data["Year"].iloc[0]
@@ -138,8 +140,11 @@ class Weather:
     """
 
     def __init__(
-        self, location_file: Union[Path, str], step_resolution: str = "1h",
-        mofdni: float = 1.0, local_time: bool = False
+        self,
+        location_file: Union[Path, str],
+        step_resolution: str = "1h",
+        mofdni: float = 1.0,
+        local_time: bool = False,
     ) -> None:
 
         self.mofdni = mofdni
@@ -154,7 +159,9 @@ class Weather:
         # Distributes or interpolate property accordingly
         self._data["DNI"] = self.resample_distribute(self._data_h["DNI"])
         self._data["GHI"] = self.resample_distribute(self._data_h["GHI"])
-        self._data["DryBulb"] = self.resample_interpolate(self._data_h["DryBulb"])
+        self._data["DryBulb"] = self.resample_interpolate(
+            self._data_h["DryBulb"]
+        )
         self._data["RHum"] = self.resample_interpolate(self._data_h["RHum"])
         self._data["Wspd"] = self.resample_interpolate(self._data_h["Wspd"])
 
@@ -165,14 +172,20 @@ class Weather:
 
         # Column of julian day
         self.local_date_0 = self._data.index[0]
-        self._data["julian_day"] = (np.arange(0, self._data.index.size) // 24) + 1
+        self._data["julian_day"] = (
+            np.arange(0, self._data.index.size) // 24
+        ) + 1
 
         # Converts self._data index from local time to solar time
         self._data["solar_time"] = self._data.index
         if local_time:
-            self._data["solar_time"] = self._data["solar_time"].apply(self._conv_local_to_solar)
+            self._data["solar_time"] = self._data["solar_time"].apply(
+                self._conv_local_to_solar
+            )
 
-        solarpos_df = get_solarposition(self._data["solar_time"],  self.lat, self.lon)
+        solarpos_df = get_solarposition(
+            self._data["solar_time"], self.lat, self.lon
+        )
         self._data = self._data.join(solarpos_df, on="solar_time")
 
         # Computes and stores the declination
@@ -192,7 +205,10 @@ class Weather:
         no parameters and returns nothing.
         """
 
-        with open(self.location_file, "r",) as orig_tmy2:
+        with open(
+            self.location_file,
+            "r",
+        ) as orig_tmy2:
             metaraw = orig_tmy2.readline()
             metaraw = " ".join(metaraw.split()).split(" ")
             if len(metaraw) < 11:
@@ -208,7 +224,9 @@ class Weather:
                 metaraw = " ".join(metaraw) + "\n"
                 modified_location_list = str(self.location_file).split(".")
                 modified_location = "".join(
-                    modified_location_list[:-1] + ["_modified."] + modified_location_list[-1:]
+                    modified_location_list[:-1]
+                    + ["_modified."]
+                    + modified_location_list[-1:]
                 )
             # Write into new file
             mod_file = open(modified_location, "w")
@@ -217,7 +235,9 @@ class Weather:
             mod_file.close()
             self.location_file = modified_location
 
-    def _conv_local_to_solar(self, local_datetime: datetime.datetime) -> datetime.datetime:
+    def _conv_local_to_solar(
+        self, local_datetime: datetime.datetime
+    ) -> datetime.datetime:
         """
         Computes the local solar datetime from the official local datetime.
 
@@ -240,8 +260,9 @@ class Weather:
 
         # "equation of time" operations
         b = np.radians((julian_days - 81) * (360 / 365))
-        equation_time = 9.87 * (np.sin(2 * b)) - 7.53 * (np.cos(b))\
-            - 1.5 * (np.sin(b))
+        equation_time = (
+            9.87 * (np.sin(2 * b)) - 7.53 * (np.cos(b)) - 1.5 * (np.sin(b))
+        )
 
         # Create correction factor timedelta
         correction_factor = datetime.timedelta(
@@ -334,9 +355,13 @@ class Weather:
             Distributed panda series of the property. Datetime Index is updated
         """
 
-        distribution_norm = pd.tseries.frequencies.to_offset(self.step_resolution)\
-            / pd.Timedelta('1h')
-        return prop_series.resample(self.step_resolution).bfill() * distribution_norm
+        distribution_norm = pd.tseries.frequencies.to_offset(
+            self.step_resolution
+        ) / pd.Timedelta("1h")
+        return (
+            prop_series.resample(self.step_resolution).bfill()
+            * distribution_norm
+        )
 
     def interpolate_prop(self, h_id: float, prop_array: pd.Series) -> float:
         """
@@ -397,27 +422,27 @@ class Weather:
 
     @property
     def tz_loc(self):
-        """ [-] Int. Timezone of the location in simulation """
+        """[-] Int. Timezone of the location in simulation"""
         return self._metadata["TZ"]
 
     @property
     def elev(self):
-        """ [m] Float. Height above sea level """
+        """[m] Float. Height above sea level"""
         return self._metadata["altitude"]
 
     @property
     def lat(self):
-        """ [°] Float. Latitude of location in simulation """
+        """[°] Float. Latitude of location in simulation"""
         return self._metadata["latitude"]
 
     @property
     def lon(self):
-        """ [°] Float. Longitude of location in simulation. """
+        """[°] Float. Longitude of location in simulation."""
         return self._metadata["longitude"]
 
     @property
     def location_file(self):
-        """ String. Location of the TMY file currently used """
+        """String. Location of the TMY file currently used"""
         return self._location_file
 
     @location_file.setter
@@ -437,11 +462,11 @@ class Weather:
 
     dni = property(
         get_dni,
-        doc=""" [W/m^2] Hourly array. Direct Normal Irradiation (dni). """
+        doc=""" [W/m^2] Hourly array. Direct Normal Irradiation (dni). """,
     )
 
     def get_ghi(self, hour=None):
-        """ [W/m^2] Hourly array. Global Horizontal Irradiation (ghi_ghi). """
+        """[W/m^2] Hourly array. Global Horizontal Irradiation (ghi_ghi)."""
 
         if hour:
             return self.distribute_prop(hour, self._data["GHI"])
@@ -450,7 +475,7 @@ class Weather:
 
     ghi_ghi = property(
         get_ghi,
-        doc=""" [W/m^2] Hourly array. Global Horizontal Irradiation (ghi_ghi). """
+        doc=""" [W/m^2] Hourly array. Global Horizontal Irradiation (ghi_ghi). """,
     )
 
     def get_amb_temp(self, hour=None):
@@ -464,8 +489,7 @@ class Weather:
             return self._data["DryBulb"]
 
     amb_temp = property(
-        get_amb_temp,
-        doc=""" [°C] Hourly array. Ambient temperature. """
+        get_amb_temp, doc=""" [°C] Hourly array. Ambient temperature. """
     )
 
     def get_grid_temp(self, hour=None):
@@ -499,17 +523,19 @@ class Weather:
             # The hourly year array is built by the temperature
             # calculated for the day printed 24 times for each day
             # This was taken from TRNSYS documentation.
-            grid_temps += [(
-                (amb_temp_mean + offset) +
-                ratio * (amb_temp_max / 2) * np.sin(
-                    np.radians(-90 + (day - 15 - lag) * 360 / 365)
+            grid_temps += [
+                (
+                    (amb_temp_mean + offset)
+                    + ratio
+                    * (amb_temp_max / 2)
+                    * np.sin(np.radians(-90 + (day - 15 - lag) * 360 / 365))
                 )
-            )] * 24
+            ] * 24
         return np.array(grid_temps)
 
     grid_temp = property(
         get_grid_temp,
-        doc=""" [°C] Hourly array. Water temperature from grid. """
+        doc=""" [°C] Hourly array. Water temperature from grid. """,
     )
 
     def get_humidity(self, hour=None):
@@ -523,8 +549,7 @@ class Weather:
             return self._data["RHum"]
 
     humidity = property(
-        get_humidity,
-        doc=""" [-] Hourly array. Relative humidity. """
+        get_humidity, doc=""" [-] Hourly array. Relative humidity. """
     )
 
     def get_wind_speed(self, hour=None):
@@ -538,8 +563,7 @@ class Weather:
             return self._data["Wspd"]
 
     wind_speed = property(
-        get_wind_speed,
-        doc=""" [m/s] Hourly array. Wind speed. """
+        get_wind_speed, doc=""" [m/s] Hourly array. Wind speed. """
     )
 
     def get_solar_altitude(self, hour=None):
@@ -554,7 +578,7 @@ class Weather:
 
     solar_elevation = property(
         get_solar_altitude,
-        doc=""" [°] Sun elevation from the astronomical horizon."""
+        doc=""" [°] Sun elevation from the astronomical horizon.""",
     )
 
     def get_solar_azimut(self, hour=None):
@@ -567,10 +591,7 @@ class Weather:
         else:
             return self._data["azimuth"]
 
-    solar_azimut = property(
-        get_solar_azimut,
-        doc=""" [°] Solar azimuth."""
-    )
+    solar_azimut = property(get_solar_azimut, doc=""" [°] Solar azimuth.""")
 
     def get_solar_declination(self, hour=None):
         """
@@ -583,24 +604,23 @@ class Weather:
             return self._data["declination"]
 
     declination = property(
-        get_solar_declination,
-        doc=""" [°] Earth's declination."""
+        get_solar_declination, doc=""" [°] Earth's declination."""
     )
 
     @property
     def solar_time(self):
-        """ [-] Solar datetime corresponding to the current datetime in the index."""
+        """[-] Solar datetime corresponding to the current datetime in the index."""
         return self._data["solar_time"]
 
 
 if __name__ == "__main__":
-    sevilla_file = Path(
-        "./src/shipcal/weather/data/Sevilla.csv"
-    )
+    sevilla_file = Path("./src/shipcal/weather/data/Sevilla.csv")
     sevilla = Weather(sevilla_file, local_time=True)
 
     rome_file = "./src/shipcal/weather/data/Roma_Ciampino_local_hour.tm2"
     rome = Weather(rome_file, local_time=True)
 
-    santiago_explorador_loc = "./src/shipcal/weather/data/Santiago_Chile_exlorador_solar.csv"
+    santiago_explorador_loc = (
+        "./src/shipcal/weather/data/Santiago_Chile_exlorador_solar.csv"
+    )
     santiago = Weather(santiago_explorador_loc, local_time=True)
