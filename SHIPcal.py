@@ -154,6 +154,10 @@ def SHIPcal(origin, inputsDjango, plots, imageQlty, confReport, modificators, de
     #%%
     # BLOCK 1.2 - PARAMETERS <><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
+
+    coll_optic = None
+
+
     # --> Finance parameters
     fuelCostRaise = 3.5  # Annual increase of fuel price [%]
 
@@ -2169,6 +2173,7 @@ def SHIPcal(origin, inputsDjango, plots, imageQlty, confReport, modificators, de
                 "solar_fraction_max": solar_fraction_max,
                 "solar_fraction_lim": solar_fraction_lim,
                 "DNI_anual_irradiation": DNI_anual_irradiation,
+                "coll_optic":coll_optic
             }
             reportsVar.update(finance)
             reportsVar.update(confReport)
