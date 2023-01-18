@@ -2173,7 +2173,7 @@ def SHIPcal(origin, inputsDjango, plots, imageQlty, confReport, modificators, de
                 "solar_fraction_max": solar_fraction_max,
                 "solar_fraction_lim": solar_fraction_lim,
                 "DNI_anual_irradiation": DNI_anual_irradiation,
-                "coll_optic":coll_optic
+                "coll_optic":coll_optic or "fresnel",
             }
             reportsVar.update(finance)
             reportsVar.update(confReport)
